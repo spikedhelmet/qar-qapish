@@ -1,0 +1,15 @@
+{
+  "name": "qapishma",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Qapishma: an original team shooter for LAN play in the browser",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "ws": "^8.22.0"
+  },
+  "type": "module"
+}
