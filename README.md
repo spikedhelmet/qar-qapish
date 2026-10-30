@@ -25,6 +25,12 @@ Qapishma server running.
 - If macOS asks whether to allow incoming connections for `node`, click **Allow**, otherwise friends can't connect.
 - Stop the server with `Ctrl+C`.
 
+**Choosing the mode.** The player on the host Mac sees **Host controls** in the Esc menu: switch between Team Deathmatch and Elimination, or restart the match. To start the server straight into Elimination:
+
+```bash
+npm start -- --mode=elim
+```
+
 ## Controls
 
 | Key | Action |
@@ -37,25 +43,40 @@ Qapishma server running.
 | Alt / Option | Walk quietly (no footsteps) |
 | C (or Ctrl) | Crouch. While sprinting: **slide** (jump out of it to keep the speed) |
 | R | Reload |
-| 1 / 2 / 3, Q, mouse wheel | Rifle / pistol / knife, last weapon, cycle |
+| 1 / 2 / 3, Q, mouse wheel | Primary / pistol / knife, last weapon, cycle |
 | Tab | Scoreboard |
+| B | Choose class (then 1–4) |
 | M | Switch team (only if it keeps teams balanced) |
 | Esc | Menu (sensitivity, field of view, volume) |
 
-## Current state: milestone 1
+## Current state: milestone 2
 
-- Team Deathmatch: first team to 50 kills, 15-minute time limit, then a new match starts automatically.
-- Teams auto-balance on join. Respawn after 3 s with 2 s of spawn protection.
-- Rifle, pistol and knife with spread, recoil, reloads, headshots (×4 damage) and leg shots (×0.75).
-- One map, "Yard": three lanes, containers, crates, raised decks, and sites A/B painted for the objective mode later.
-- Sprinting, sliding, quiet walking, and aiming down sights.
-- Announcer: plays your own recorded voice lines from `public/assets/sounds/announcer/`. Lines not recorded yet use the Mac's built-in voice. See [ASSETS.md](ASSETS.md#3-announcer-voice-lines-you-record-these) for the list.
+**Modes**
+- **Team Deathmatch:** first team to 50 kills (15-minute limit). Respawn after 3 s with 2 s of spawn protection.
+- **Elimination:** no respawns. Last team standing wins the round; if time runs out, the team with more players alive wins. First to 7 rounds. Each round opens with 5 s of freeze time to look around and change class. When you die you watch a teammate (click to switch).
+
+**Classes** (pick in the menu, or press B in game; also pistol + knife each)
+
+| Class | Primary | Notes |
+|---|---|---|
+| Assault | Rifle | All-rounder |
+| Marksman | Scoped sniper | One-shot body kill, drops out of scope after each shot, moves a bit slower |
+| Breacher | Pump shotgun | 8 pellets, damage drops off with distance |
+| Runner | SMG | Moves 8% faster, accurate on the move |
+
+Class changes apply instantly during freeze time or right after spawning, otherwise on your next spawn.
+
+**Also in**
+- Sprinting, sliding, quiet walking, aiming down sights (scope on the sniper).
+- Headshots and leg shots, recoil, spread, reloads, pump/bolt animations.
+- Announcer: plays your own recorded voice lines from `public/assets/sounds/announcer/`. Lines not recorded yet use the Mac's built-in voice. See [ASSETS.md](ASSETS.md#3-announcer-voice-lines-you-record-these).
+- One map, "Yard": three lanes, containers, crates, raised decks, and sites A/B ready for objective mode.
 - Characters, guns, textures and sounds are **stand-ins** built in code. See [ASSETS.md](ASSETS.md) for everything we're swapping in.
 
 ### Roadmap
 
 1. ~~Core: movement, LAN play, rifle/pistol/knife, Team Deathmatch~~
-2. Classes (Assault, Marksman, Breacher, Runner) with sniper, shotgun and SMG; Elimination mode
+2. ~~Classes (Assault, Marksman, Breacher, Runner) with sniper, shotgun and SMG; Elimination mode~~
 3. Objective mode (plant / defuse at A or B)
 4. Grenades: frag, smoke, flash
 5. Polish: real sounds, settings, more maps

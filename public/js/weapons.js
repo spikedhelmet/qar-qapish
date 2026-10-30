@@ -1,19 +1,21 @@
 // The local player's weapons: ammo, fire timing, spread, recoil and hit detection.
 import * as THREE from 'three';
-import { WEAPONS, LOADOUT } from './shared/config.js';
+import { WEAPONS, loadoutFor, DEFAULT_CLASS } from './shared/config.js';
 import { raycastMap, rayPlayer } from './shared/collision.js';
 
 export class Arsenal {
   constructor() {
     this.recoil = { pitch: 0, yaw: 0 };
-    this.reset();
+    this.reset(loadoutFor(DEFAULT_CLASS));
   }
 
-  reset() {
+  // Fresh ammo and the given weapons ([primary, pistol, knife]).
+  reset(loadout) {
+    this.loadout = loadout;
     this.ammo = {};
-    for (const w of LOADOUT) if (!WEAPONS[w].melee) this.ammo[w] = { mag: WEAPONS[w].mag, reserve: WEAPONS[w].reserve };
-    this.current = LOADOUT[0];
-    this.previous = LOADOUT[1];
+    for (const w of loadout) if (!WEAPONS[w].melee) this.ammo[w] = { mag: WEAPONS[w].mag, reserve: WEAPONS[w].reserve };
+    this.current = loadout[0];
+    this.previous = loadout[1];
     this.drawT = 0;
     this.reloadT = -1;
     this.cooldown = 0;
@@ -27,7 +29,7 @@ export class Arsenal {
   get def() { return WEAPONS[this.current]; }
 
   select(kind) {
-    if (kind === this.current || !LOADOUT.includes(kind)) return false;
+    if (kind === this.current || !this.loadout.includes(kind)) return false;
     this.previous = this.current;
     this.current = kind;
     this.drawT = 0;
@@ -38,8 +40,8 @@ export class Arsenal {
   }
 
   cycle(step) {
-    const i = LOADOUT.indexOf(this.current);
-    return this.select(LOADOUT[(i + step + LOADOUT.length) % LOADOUT.length]);
+    const l = this.loadout, i = l.indexOf(this.current);
+    return this.select(l[(i + step + l.length) % l.length]);
   }
 
   startReload() {
@@ -53,9 +55,12 @@ export class Arsenal {
   spread(moveSpeed, onGround, crouching) {
     const s = this.def.spread;
     if (!s) return 0;
-    let v = s.base + s.move * Math.min(1, moveSpeed / 5) + (onGround ? 0 : s.air) + this.heat;
+    // Aiming tightens the weapon's own inaccuracy a lot, movement penalties only by half.
+    let v = (s.base + this.heat) * this.adsMix('spread')
+      + s.move * Math.min(1, moveSpeed / 5) * (1 - 0.5 * this.adsT)
+      + (onGround ? 0 : s.air);
     if (crouching && onGround) v *= s.crouch;
-    return v * this.adsMix('spread');
+    return v;
   }
 
   // Blend a weapon's aim-down-sights multiplier by how far aimed in we are (1 when not aiming).
@@ -72,7 +77,9 @@ export class Arsenal {
     const def = this.def;
     this.drawT = Math.min(def.draw, this.drawT + dt);
     if (def.ads) {
-      const want = aimHeld && this.reloadT < 0 && this.drawT >= def.draw ? 1 : 0;
+      // Scoped weapons drop out of the scope while cycling the bolt.
+      const ready = !def.ads.scope || this.cooldown <= 0;
+      const want = aimHeld && ready && this.reloadT < 0 && this.drawT >= def.draw ? 1 : 0;
       const step = dt / def.ads.time;
       this.adsT = want ? Math.min(1, this.adsT + step) : Math.max(0, this.adsT - step);
     } else {
@@ -122,10 +129,11 @@ export class Arsenal {
     const results = [];
     for (let i = 0; i < def.pellets; i++) {
       const dir = coneSample(view.dir, spread);
-      results.push(trace(view.eye, dir, def.melee ? def.range : def.range, ctx));
+      results.push(trace(view.eye, dir, def.range, ctx));
     }
 
     if (def.spread) this.heat = Math.min(def.spread.max, this.heat + def.spread.perShot);
+    if (def.ads?.scope) this.adsT = 0;
     if (def.recoil) {
       this.shots++;
       this.recoil.pitch += def.recoil.pitch * (1 + Math.min(this.shots, 10) * 0.12);

@@ -29,6 +29,7 @@ export class Remotes {
     this.scene = scene;
     this.players = new Map();
     this.myTeam = null;
+    this.hiddenId = null;
   }
 
   applySnapshot(list, myId, myTeam) {
@@ -93,11 +94,12 @@ export class Remotes {
       r.state = st;
 
       const sol = r.soldier;
+      sol.root.visible = r.id !== this.hiddenId; // hidden while we watch through their eyes
       sol.root.position.set(st.x, st.y, st.z);
       sol.setWeapon(st.weapon);
       sol.update(dt, st);
       if (r.tag) {
-        r.tag.visible = st.alive;
+        r.tag.visible = st.alive && r.id !== this.hiddenId;
         r.tag.position.set(st.x, st.y + (st.crouch ? 1.5 : 2.1), st.z);
       }
 

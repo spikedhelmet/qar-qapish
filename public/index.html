@@ -13,13 +13,13 @@
   <canvas id="game"></canvas>
 
   <div id="hud" class="hidden">
+    <div id="scope" class="hidden"></div>
     <div id="scorebar">
-      <div class="team a"><span class="tname"></span><span class="tscore">0</span></div>
-      <div id="clock">15:00<small>first to 50</small></div>
-      <div class="team b"><span class="tscore">0</span><span class="tname"></span></div>
+      <div class="team a"><span class="pips"></span><span class="tname"></span><span class="tscore">0</span></div>
+      <div id="clock">--:--<small></small></div>
+      <div class="team b"><span class="tscore">0</span><span class="tname"></span><span class="pips"></span></div>
     </div>
     <div id="killfeed"></div>
-    <div id="scope" class="hidden"></div>
     <div id="announce"></div>
     <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i></div>
     <div id="hitmarker"></div>
@@ -31,6 +31,7 @@
       <div id="ammo"><span id="weapon-name">Rifle</span><span id="ammo-val">30<small>/ 90</small></span></div>
     </div>
     <div id="scoreboard" class="hidden"></div>
+    <div id="class-picker" class="hidden"></div>
   </div>
 
   <div id="menu" class="overlay">
@@ -38,6 +39,8 @@
       <h1>QAPISHMA</h1>
       <p class="tagline">LAN team shooter · Team Deathmatch</p>
       <label>Callsign<input id="name" maxlength="16" placeholder="Your name" autocomplete="off"></label>
+      <div class="field-label">Class</div>
+      <div id="class-buttons" class="class-buttons"></div>
       <label>Mouse sensitivity <output id="sens-out"></output><input id="sens" type="range" min="0.2" max="4" step="0.05"></label>
       <label>Field of view <output id="fov-out"></output><input id="fov" type="range" min="70" max="110" step="1"></label>
       <label>Volume <output id="vol-out"></output><input id="vol" type="range" min="0" max="1" step="0.05"></label>
@@ -48,6 +51,11 @@
           <option value="off">Off</option>
         </select>
       </label>
+      <div id="host-panel" class="host hidden">
+        <div class="field-label">Host controls</div>
+        <label>Game mode<select id="host-mode"></select></label>
+        <button id="host-restart" type="button" class="secondary">Restart match</button>
+      </div>
       <button id="play">Play</button>
       <p id="menu-status"></p>
       <details class="controls">
@@ -63,6 +71,7 @@
           <dt>R</dt><dd>Reload</dd>
           <dt>1 / 2 / 3, Q, wheel</dt><dd>Switch weapon</dd>
           <dt>Tab</dt><dd>Scoreboard</dd>
+          <dt>B</dt><dd>Choose class</dd>
           <dt>M</dt><dd>Switch team</dd>
           <dt>Esc</dt><dd>Menu</dd>
         </dl>

@@ -98,8 +98,8 @@ export class LocalPlayer {
     this.pitch = Math.max(-1.5, Math.min(1.5, this.pitch - dy * k));
   }
 
-  // opts: { speedMult, aiming, firing }. Returns sound events: { step, loud, landed, slide }.
-  update(dt, input, { speedMult = 1, aiming = false, firing = false } = {}) {
+  // opts: { speedMult, sprintMult, aiming, firing }. Returns sound events: { step, loud, landed, slide }.
+  update(dt, input, { speedMult = 1, sprintMult = 1, aiming = false, firing = false } = {}) {
     const P = PLAYER;
     const ev = { step: false, loud: false, landed: false, slide: false };
 
@@ -148,7 +148,7 @@ export class LocalPlayer {
     else this.sprintRecover = Math.max(0, this.sprintRecover - dt);
 
     const base = this.crouching ? P.crouchSpeed : walking ? P.walkSpeed : this.sprinting ? P.sprintSpeed : P.runSpeed;
-    const maxSpeed = base * (this.sprinting ? 1 : speedMult);
+    const maxSpeed = base * (this.sprinting ? sprintMult : speedMult);
     const wishSpeed = (fx || fz) && !this.sliding ? maxSpeed : 0;
 
     if (this.onGround) {

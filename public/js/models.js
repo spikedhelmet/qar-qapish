@@ -62,6 +62,53 @@ export function buildGun(kind) {
     grip.rotation.x = -0.3;
     g.add(grip);
     muzzle.position.set(0, 0.035, -0.77);
+  } else if (kind === 'sniper') {
+    g.add(box(0.05, 0.07, 0.42, MATS.metal, 0, 0.03, -0.06));
+    g.add(cyl(0.011, 0.62, MATS.metal, 0, 0.035, -0.58));
+    g.add(cyl(0.017, 0.07, MATS.metal, 0, 0.035, -0.92));            // muzzle brake
+    g.add(box(0.055, 0.09, 0.32, MATS.polymer, 0, -0.005, 0.27));    // stock
+    g.add(box(0.045, 0.035, 0.16, MATS.polymer, 0, 0.055, 0.22));    // cheek rest
+    g.add(box(0.06, 0.05, 0.26, MATS.polymer, 0, 0.0, -0.36));       // fore-stock
+    g.add(cyl(0.021, 0.3, MATS.polymer, 0, 0.115, -0.06));           // scope tube
+    g.add(cyl(0.03, 0.07, MATS.polymer, 0, 0.115, -0.24));           // objective bell
+    g.add(cyl(0.026, 0.05, MATS.polymer, 0, 0.115, 0.1));            // eyepiece
+    for (const z of [-0.14, 0.02]) g.add(box(0.03, 0.035, 0.025, MATS.metal, 0, 0.08, z)); // rings
+    const bolt = cyl(0.008, 0.05, MATS.metal, 0.04, 0.05, 0.06);
+    bolt.rotation.set(0, 0, Math.PI / 2);
+    g.add(bolt);
+    g.add(box(0.03, 0.06, 0.06, MATS.polymer, 0, -0.035, -0.12));   // magazine
+    const grip = box(0.034, 0.1, 0.045, MATS.polymer, 0, -0.05, 0.04);
+    grip.rotation.x = -0.35;
+    g.add(grip);
+    muzzle.position.set(0, 0.035, -0.96);
+  } else if (kind === 'shotgun') {
+    g.add(box(0.055, 0.08, 0.3, MATS.metal, 0, 0.025, -0.04));
+    g.add(cyl(0.014, 0.52, MATS.metal, 0, 0.05, -0.45));
+    g.add(cyl(0.012, 0.4, MATS.metal, 0, 0.018, -0.4));              // magazine tube
+    const pump = box(0.062, 0.052, 0.17, MATS.polymer, 0, 0.018, -0.38);
+    g.add(pump);
+    g.userData.pump = pump;
+    g.add(box(0.05, 0.09, 0.3, MATS.polymer, 0, -0.01, 0.25));
+    g.add(box(0.052, 0.12, 0.04, MATS.polymer, 0, -0.02, 0.4));
+    g.add(box(0.006, 0.008, 0.006, MATS.blade, 0, 0.067, -0.69));    // bead sight
+    const grip = box(0.034, 0.1, 0.045, MATS.polymer, 0, -0.05, 0.05);
+    grip.rotation.x = -0.3;
+    g.add(grip);
+    muzzle.position.set(0, 0.05, -0.72);
+  } else if (kind === 'smg') {
+    g.add(box(0.05, 0.075, 0.28, MATS.metal, 0, 0.03, -0.06));
+    g.add(box(0.056, 0.06, 0.12, MATS.polymer, 0, 0.028, -0.25));
+    g.add(cyl(0.01, 0.1, MATS.metal, 0, 0.04, -0.36));
+    g.add(box(0.03, 0.18, 0.045, MATS.polymer, 0, -0.1, -0.13));     // straight magazine
+    for (const x of [-0.018, 0.018]) g.add(box(0.008, 0.012, 0.22, MATS.metal, x, 0.02, 0.18)); // folding stock
+    g.add(box(0.05, 0.08, 0.015, MATS.metal, 0, 0.0, 0.29));
+    g.add(box(0.03, 0.012, 0.1, MATS.metal, 0, 0.073, -0.06));
+    for (const x of [-0.01, 0.01]) g.add(box(0.006, 0.025, 0.01, MATS.metal, x, 0.085, 0.0));
+    g.add(box(0.004, 0.035, 0.008, MATS.metal, 0, 0.078, -0.29));
+    const grip = box(0.034, 0.1, 0.045, MATS.polymer, 0, -0.05, 0.03);
+    grip.rotation.x = -0.25;
+    g.add(grip);
+    muzzle.position.set(0, 0.04, -0.42);
   } else if (kind === 'pistol') {
     g.add(box(0.03, 0.035, 0.19, MATS.metal, 0, 0.055, -0.06));
     g.add(box(0.028, 0.025, 0.15, MATS.polymer, 0, 0.026, -0.05));
@@ -99,6 +146,9 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 // Where the gun sits and where each hand goes, in the shoulder-height aim frame.
 const GRIPS = {
   rifle: { mount: [0.08, -0.2, -0.3], right: [0.08, -0.25, -0.28], left: [0.08, -0.22, -0.5] },
+  sniper: { mount: [0.08, -0.2, -0.32], right: [0.08, -0.25, -0.28], left: [0.08, -0.21, -0.52] },
+  shotgun: { mount: [0.08, -0.2, -0.3], right: [0.08, -0.25, -0.25], left: [0.08, -0.19, -0.56] },
+  smg: { mount: [0.08, -0.18, -0.36], right: [0.08, -0.23, -0.33], left: [0.08, -0.25, -0.5] },
   pistol: { mount: [0.03, -0.12, -0.5], right: [0.03, -0.16, -0.48], left: [0.0, -0.17, -0.46] },
   knife: { mount: [0.2, -0.3, -0.36], right: [0.2, -0.3, -0.34], left: [-0.26, -0.5, -0.05] },
 };
@@ -279,6 +329,8 @@ export class ViewModel {
 
   setWeapon(kind) {
     this.kind = kind;
+    this.pumpArm = null;
+    this.cycle = 0;
     this.holder.clear();
     this.gun = buildGun(kind);
     this.holder.add(this.gun);
@@ -297,6 +349,29 @@ export class ViewModel {
       arm(-0.01, -0.03, -0.36, -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.23, -0.48);
       this.adsPos = new THREE.Vector3(0, -0.105, -0.3); // iron sights on the crosshair
+    } else if (kind === 'sniper') {
+      arm(0, -0.05, 0.05, -1.0, 0.35);
+      arm(-0.01, -0.02, -0.36, -0.95, -0.75, 0.55);
+      this.base = new THREE.Vector3(0.19, -0.24, -0.5);
+      this.adsPos = new THREE.Vector3(0, -0.115, -0.25); // hidden behind the scope overlay anyway
+    } else if (kind === 'shotgun') {
+      arm(0, -0.05, 0.05, -1.0, 0.35);
+      this.pumpArm = new THREE.Group();
+      this.holder.add(this.pumpArm);
+      const a = new THREE.Group();
+      a.rotation.order = 'YXZ';
+      a.position.set(-0.01, -0.01, -0.38);
+      a.rotation.set(-0.95, -0.75, 0);
+      a.add(limb(0.042, 0.55, this.sleeve));
+      a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
+      this.pumpArm.add(a);
+      this.base = new THREE.Vector3(0.19, -0.24, -0.46);
+      this.adsPos = new THREE.Vector3(0, -0.068, -0.34);
+    } else if (kind === 'smg') {
+      arm(0, -0.05, 0.03, -1.0, 0.35);
+      arm(-0.01, -0.04, -0.24, -0.95, -0.6, 0.48);
+      this.base = new THREE.Vector3(0.17, -0.21, -0.42);
+      this.adsPos = new THREE.Vector3(0, -0.097, -0.3);
     } else if (kind === 'pistol') {
       arm(0, -0.04, 0.02, -1.05, 0.3);
       arm(-0.03, -0.05, 0.03, -1.05, -0.45);
@@ -346,10 +421,24 @@ export class ViewModel {
       p.x -= s * 0.16; p.z -= s * 0.12;
       ry += s * 0.9;
     }
+    // Pump / bolt: slide the forend (and the hand on it) back and forward.
+    if (this.cycle > 0) {
+      this.cycle = Math.max(0, this.cycle - dt);
+      const k = this.cycle < 0.45 ? Math.sin((1 - this.cycle / 0.45) * Math.PI) : 0;
+      const pump = this.gun.userData.pump;
+      if (pump) pump.position.z = -0.38 + k * 0.09;
+      if (this.pumpArm) this.pumpArm.position.z = k * 0.09;
+      rx -= k * 0.08;
+      rz -= k * (pump ? 0.05 : 0.18);
+    }
     this.holder.rotation.set(rx, ry, rz);
   }
 
-  fireKick() { this.kick = 1; }
+  // `cycleIn` > 0: pump or bolt action plays that many seconds after the shot.
+  fireKick(cycleIn = 0) {
+    this.kick = 1;
+    if (cycleIn) this.cycle = cycleIn;
+  }
   slash() { this.swing = 1; }
   muzzleWorld(target) { return this.gun.userData.muzzle.getWorldPosition(target); }
 }

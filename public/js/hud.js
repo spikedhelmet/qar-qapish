@@ -1,5 +1,5 @@
 // DOM heads-up display.
-import { TEAMS, WEAPONS, MODES } from './shared/config.js';
+import { TEAMS, WEAPONS, CLASSES, CLASS_ORDER } from './shared/config.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -19,7 +19,10 @@ export class Hud {
     document.querySelector('#scorebar .b .tname').textContent = TEAMS.B.name;
     this.scoreA = document.querySelector('#scorebar .a .tscore');
     this.scoreB = document.querySelector('#scorebar .b .tscore');
-    this.clock.innerHTML = `--:--<small>first to ${MODES.tdm.killLimit}</small>`;
+    this.clock.innerHTML = '--:--<small></small>';
+    this.goal = this.clock.querySelector('small');
+    this.pipsA = document.querySelector('#scorebar .a .pips');
+    this.pipsB = document.querySelector('#scorebar .b .pips');
     this.last = {};
   }
 
@@ -43,11 +46,32 @@ export class Hud {
     });
   }
 
-  match(score, secondsLeft) {
+  // info: { goal: text under the clock, pips: { A: [alive…], B: [alive…] } or null }
+  match(score, secondsLeft, info) {
     this.set('sa', score.A, v => { this.scoreA.textContent = v; });
     this.set('sb', score.B, v => { this.scoreB.textContent = v; });
     const m = Math.floor(secondsLeft / 60), s = String(secondsLeft % 60).padStart(2, '0');
     this.set('clock', `${m}:${s}`, v => { this.clock.firstChild.textContent = v; });
+    this.set('goal', info.goal, v => { this.goal.textContent = v; });
+    // One pip per player: filled while alive (Elimination).
+    const pips = list => (list || []).map(al => `<i class="${al ? 'on' : ''}"></i>`).join('');
+    this.set('pips', JSON.stringify(info.pips), () => {
+      this.pipsA.innerHTML = pips(info.pips?.A);
+      this.pipsB.innerHTML = pips(info.pips?.B);
+    });
+  }
+
+  classPicker(open, current) {
+    const el = $('class-picker');
+    this.set('picker', open ? current : '', () => {
+      el.classList.toggle('hidden', !open);
+      if (!open) return;
+      el.innerHTML = `<h2>Choose class</h2><div class="cards">${CLASS_ORDER.map((c, i) => {
+        const k = CLASSES[c];
+        return `<div class="card ${c === current ? 'active' : ''}"><kbd>${i + 1}</kbd><b>${k.name}</b>
+          <span>${WEAPONS[k.primary].name} · Pistol · Knife</span><p>${k.desc}</p></div>`;
+      }).join('')}</div><small>Press 1–4 to pick · B to close</small>`;
+    });
   }
 
   crosshair(spreadPx, visible) {
@@ -108,11 +132,11 @@ export class Hud {
     if (!visible) return;
     const side = team => {
       const rows = players.filter(p => p.tm === team).sort((a, b) => b.k - a.k || a.d - b.d)
-        .map(p => `<tr class="${p.id === myId ? 'me' : ''} ${p.al ? '' : 'dead'}"><td>${esc(p.n)}</td><td>${p.k}</td><td>${p.d}</td></tr>`).join('');
+        .map(p => `<tr class="${p.id === myId ? 'me' : ''} ${p.al ? '' : 'dead'}"><td>${esc(p.n)}</td><td class="cls">${CLASSES[p.c]?.name || ''}</td><td>${p.k}</td><td>${p.d}</td></tr>`).join('');
       return `<div class="side ${team.toLowerCase()}"><h3><span>${TEAMS[team].name}</span><span>${score[team]}</span></h3>
-        <table><tr><th>Player</th><th>K</th><th>D</th></tr>${rows}</table></div>`;
+        <table><tr><th>Player</th><th>Class</th><th>K</th><th>D</th></tr>${rows}</table></div>`;
     };
-    this.set('board', JSON.stringify([players.map(p => [p.id, p.k, p.d, p.al, p.tm]), score]), () => {
+    this.set('board', JSON.stringify([players.map(p => [p.id, p.k, p.d, p.al, p.tm, p.c]), score]), () => {
       this.board.innerHTML = side('A') + side('B');
     });
   }

@@ -132,3 +132,37 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
     linear-gradient(#000, #000) center / 1px 100% no-repeat,
     linear-gradient(#000, #000) center / 100% 1px no-repeat,
     radial-gradient(circle at center, transparent 0, transparent calc(min(42vw, 42vh)), #000 calc(min(42vw, 42vh) + 1px)); }
+
+/* ---------- classes, host, rounds ---------- */
+.field-label { margin-bottom: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.class-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.class-buttons button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; text-align: left;
+  color: var(--text); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 4px; cursor: pointer; }
+.class-buttons button b { font-size: 14px; }
+.class-buttons button span { font-size: 11px; color: var(--muted); }
+.class-buttons button.active { border-color: var(--accent); background: rgba(232, 197, 71, 0.12); }
+.host { margin: 4px 0 14px; padding: 12px; border: 1px dashed rgba(255, 255, 255, 0.16); border-radius: 4px; }
+.host label { margin-bottom: 10px; }
+button.secondary { width: 100%; padding: 8px; font-size: 13px; color: var(--text); background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 4px; cursor: pointer; }
+
+#scorebar .pips { display: flex; gap: 3px; }
+#scorebar .pips i { width: 8px; height: 14px; border-radius: 2px; background: rgba(255, 255, 255, 0.15); }
+#scorebar .a .pips i.on { background: var(--team-a); }
+#scorebar .b .pips i.on { background: var(--team-b); }
+#scorebar .pips:empty { display: none; }
+
+#scoreboard td.cls { color: var(--muted); font-size: 12px; }
+#scoreboard th:nth-child(2), #scoreboard td.cls { text-align: left; }
+
+#class-picker { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(760px, calc(100vw - 32px));
+  padding: 18px; background: var(--panel); border-radius: 8px; text-align: center; }
+#class-picker h2 { margin: 0 0 12px; font-size: 16px; letter-spacing: 0.12em; text-transform: uppercase; }
+#class-picker .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; text-align: left; }
+#class-picker .card { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; }
+#class-picker .card.active { border-color: var(--accent); background: rgba(232, 197, 71, 0.1); }
+#class-picker kbd { float: right; padding: 1px 6px; font: 600 12px/1.4 inherit; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 3px; }
+#class-picker b { display: block; font-size: 16px; margin-bottom: 4px; }
+#class-picker span { display: block; font-size: 12px; color: var(--accent); margin-bottom: 6px; }
+#class-picker p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+#class-picker small { display: block; margin-top: 12px; color: var(--muted); }

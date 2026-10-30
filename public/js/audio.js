@@ -78,6 +78,9 @@ function thump(dest, { freq, dur, gain }) {
 const SHOTS = {
   rifle: { crack: 2600, dur: 0.22, boom: 95, gain: 0.9 },
   pistol: { crack: 3200, dur: 0.16, boom: 130, gain: 0.7 },
+  smg: { crack: 3000, dur: 0.14, boom: 120, gain: 0.7 },
+  shotgun: { crack: 1500, dur: 0.38, boom: 65, gain: 1.0 },
+  sniper: { crack: 2200, dur: 0.5, boom: 55, gain: 1.1 },
 };
 
 export function playShot(weapon, pos) {

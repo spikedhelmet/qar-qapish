@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { MAP } from './public/js/shared/map.js';
-import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, LOADOUT, damageFor } from './public/js/shared/config.js';
+import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, loadoutFor, damageFor } from './public/js/shared/config.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -52,34 +52,70 @@ const server = http.createServer((req, res) => {
 
 const players = new Map();
 let nextId = 1;
-const mode = MODES.tdm;
-const match = { state: 'live', score: { A: 0, B: 0 }, endsAt: 0, restartAt: 0, winner: null };
+
+// Start-up mode: `npm start -- --mode=elim` or MODE=elim npm start. The host can change it in game.
+const argMode = (process.argv.find(a => a.startsWith('--mode=')) || '').split('=')[1] || process.env.MODE;
+
+// phase: 'freeze' (round start, can't move) → 'live' → 'roundEnd' → … → 'over'.
+// Team Deathmatch only uses 'live' and 'over'. score = team kills (TDM) or rounds won (Elimination).
+const match = {
+  mode: MODES[argMode] ? argMode : 'tdm',
+  phase: 'live', phaseEnds: 0, round: 0,
+  score: { A: 0, B: 0 }, winner: null, teamsAtStart: { A: 0, B: 0 },
+};
+const cfg = () => MODES[match.mode];
 
 function now() { return performance.now() / 1000; }
 
+function setPhase(phase, seconds) {
+  match.phase = phase;
+  match.phaseEnds = now() + seconds;
+}
+
 function startMatch() {
-  match.state = 'live';
   match.score = { A: 0, B: 0 };
   match.winner = null;
-  match.endsAt = now() + mode.timeLimit;
-  for (const p of players.values()) {
-    p.kills = 0; p.deaths = 0;
-    spawn(p);
+  match.round = 0;
+  for (const p of players.values()) { p.kills = 0; p.deaths = 0; }
+  broadcast({ t: 'match', state: 'live', mode: match.mode });
+  if (cfg().respawn) {
+    setPhase('live', cfg().timeLimit);
+    for (const p of players.values()) spawn(p);
+  } else {
+    startRound();
   }
-  broadcast({ t: 'match', state: 'live' });
+}
+
+function startRound() {
+  match.round++;
+  setPhase('freeze', cfg().freezeTime);
+  match.teamsAtStart = { A: teamCount('A'), B: teamCount('B') };
+  for (const p of players.values()) spawn(p);
+  broadcast({ t: 'round', phase: 'freeze', n: match.round, score: match.score });
+}
+
+function endRound(winner) {
+  if (winner) match.score[winner]++;
+  setPhase('roundEnd', cfg().roundEnd);
+  broadcast({ t: 'round', phase: 'end', n: match.round, winner, score: match.score });
 }
 
 function endMatch() {
-  match.state = 'over';
   const { A, B } = match.score;
   match.winner = A === B ? null : A > B ? 'A' : 'B';
-  match.restartAt = now() + mode.endScreen;
+  setPhase('over', cfg().endScreen);
   broadcast({ t: 'match', state: 'over', winner: match.winner, score: match.score });
 }
 
 function teamCount(team) {
   let n = 0;
   for (const p of players.values()) if (p.team === team) n++;
+  return n;
+}
+
+function aliveCount(team) {
+  let n = 0;
+  for (const p of players.values()) if (p.team === team && p.alive) n++;
   return n;
 }
 
@@ -103,24 +139,41 @@ function spawn(p) {
   p.hp = PLAYER.maxHp;
   p.alive = true;
   p.life++;
-  p.weapon = LOADOUT[0];
-  p.protectedUntil = now() + PLAYER.spawnProtection;
+  p.weapon = loadoutFor(p.cls)[0];
+  p.spawnedAt = now();
+  p.firedSinceSpawn = false;
+  p.protectedUntil = cfg().respawn ? now() + PLAYER.spawnProtection : 0;
   p.history = [];
   p.lastFire = {};
-  send(p, { t: 'spawn', life: p.life, pos: p.pos, yaw: p.yaw });
+  send(p, { t: 'spawn', life: p.life, pos: p.pos, yaw: p.yaw, cls: p.cls });
+}
+
+// Class changes apply right away during freeze time or just after spawning, otherwise at the next spawn.
+function changeClass(p, cls) {
+  if (!CLASSES[cls] || cls === p.cls) return;
+  p.cls = cls;
+  const fresh = p.alive && !p.firedSinceSpawn &&
+    (match.phase === 'freeze' || (cfg().respawn && now() - p.spawnedAt < 5));
+  if (fresh) {
+    p.weapon = loadoutFor(cls)[0];
+    p.lastFire = {};
+    send(p, { t: 'loadout', cls });
+  } else {
+    send(p, { t: 'notice', text: `${CLASSES[cls].name} on your next ${cfg().respawn ? 'spawn' : 'round'}` });
+  }
 }
 
 function kill(victim, killer, weapon, headshot) {
   victim.alive = false;
   victim.hp = 0;
   victim.deaths++;
-  victim.respawnAt = now() + PLAYER.respawnTime;
+  victim.respawnAt = cfg().respawn ? now() + PLAYER.respawnTime : 0;
   if (killer && killer !== victim) {
     killer.kills++;
-    match.score[killer.team]++;
+    if (cfg().respawn) match.score[killer.team]++;
   }
   broadcast({ t: 'kill', k: killer ? killer.id : null, v: victim.id, w: weapon, hs: headshot });
-  if (match.state === 'live' && match.score[killer?.team] >= mode.killLimit) endMatch();
+  if (cfg().respawn && killer && match.score[killer.team] >= cfg().killLimit) endMatch();
 }
 
 // Positions of a player over the last 350 ms, so hits on slightly stale positions still validate.
@@ -153,15 +206,18 @@ function hitIsPlausible(shooter, target, weapon, zone) {
 
 function handleFire(p, msg) {
   const w = WEAPONS[msg.w];
-  if (!p.alive || !w || match.state !== 'live') return;
+  if (!p.alive || !w || match.phase !== 'live' || !loadoutFor(p.cls).includes(msg.w)) return;
   const t = now();
   if (t - (p.lastFire[msg.w] || 0) < w.fireInterval * 0.75) return;
   p.lastFire[msg.w] = t;
   p.weapon = msg.w;
   p.protectedUntil = 0;
+  p.firedSinceSpawn = true;
 
-  broadcast({ t: 'fx', id: p.id, w: msg.w, o: msg.o, e: msg.e }, p);
+  broadcast({ t: 'fx', id: p.id, w: msg.w, o: msg.o, e: Array.isArray(msg.e) ? msg.e.slice(0, w.pellets) : [] }, p);
 
+  // Add up every pellet per target first, so a shotgun blast is one hit, not eight.
+  const totals = new Map();
   const hits = Array.isArray(msg.hits) ? msg.hits.slice(0, w.pellets) : [];
   for (const h of hits) {
     const target = players.get(h.id);
@@ -169,12 +225,18 @@ function handleFire(p, msg) {
     if (target.protectedUntil > t) continue;
     if (!['head', 'body', 'legs'].includes(h.zone)) continue;
     if (!hitIsPlausible(p, target, msg.w, h.zone)) continue;
-    const dmg = Math.round(damageFor(msg.w, h.zone));
-    target.hp -= dmg;
+    const dist = Math.hypot(target.pos[0] - p.pos[0], target.pos[1] - p.pos[1], target.pos[2] - p.pos[2]);
+    const sum = totals.get(target) || { dmg: 0, hs: false };
+    sum.dmg += damageFor(msg.w, h.zone, dist);
+    sum.hs ||= h.zone === 'head';
+    totals.set(target, sum);
+  }
+  for (const [target, { dmg, hs }] of totals) {
+    target.hp -= Math.round(dmg);
     send(target, { t: 'hurt', hp: Math.max(0, target.hp), from: p.pos });
     const killed = target.hp <= 0;
-    send(p, { t: 'hitok', hs: h.zone === 'head', kill: killed });
-    if (killed) kill(target, p, msg.w, h.zone === 'head');
+    send(p, { t: 'hitok', hs, kill: killed });
+    if (killed) kill(target, p, msg.w, hs);
   }
 }
 
@@ -190,7 +252,7 @@ function handleState(p, msg) {
   p.pitch = Number(msg.pt) || 0;
   p.crouch = !!msg.cr;
   p.slide = !!msg.sl;
-  if (WEAPONS[msg.w]) p.weapon = msg.w;
+  if (loadoutFor(p.cls).includes(msg.w)) p.weapon = msg.w;
 }
 
 function switchTeam(p) {
@@ -202,7 +264,26 @@ function switchTeam(p) {
   p.team = other;
   broadcast({ t: 'notice', text: `${p.name} joined the ${TEAMS[other].name}` });
   send(p, { t: 'team', team: other });
-  if (p.alive) { p.alive = false; p.respawnAt = now() + 1; }
+  if (cfg().respawn) {
+    if (p.alive) { p.alive = false; p.respawnAt = now() + 1; }
+  } else if (match.phase === 'freeze') {
+    spawn(p);
+  } else {
+    p.alive = false; // sits out until the next round
+  }
+}
+
+function handleHost(p, msg) {
+  if (!p.host) return;
+  if (msg.mode && MODES[msg.mode] && msg.mode !== match.mode) {
+    match.mode = msg.mode;
+    broadcast({ t: 'notice', text: `Host switched to ${cfg().name}` });
+    console.log(`Mode: ${cfg().name}`);
+    startMatch();
+  } else if (msg.restart) {
+    broadcast({ t: 'notice', text: 'Host restarted the match' });
+    startMatch();
+  }
 }
 
 // ---------------------------------------------------------------- networking
@@ -217,7 +298,10 @@ function broadcast(msg, except) {
 
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-wss.on('connection', ws => {
+// Whoever plays on the Mac running the server is the host and can change the mode.
+const isLocal = addr => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(addr);
+
+wss.on('connection', (ws, req) => {
   let p = null;
   ws.on('message', raw => {
     let msg;
@@ -226,19 +310,24 @@ wss.on('connection', ws => {
       if (msg.t !== 'join') return;
       const name = String(msg.name || '').replace(/[^\p{L}\p{N} _\-.]/gu, '').trim().slice(0, 16) || `Player${nextId}`;
       const team = teamCount('A') <= teamCount('B') ? 'A' : 'B';
-      p = { id: nextId++, ws, name, team, pos: [0, 0, 0], yaw: 0, pitch: 0, crouch: false, weapon: LOADOUT[0],
+      const cls = CLASSES[msg.cls] ? msg.cls : DEFAULT_CLASS;
+      p = { id: nextId++, ws, name, team, cls, host: isLocal(req.socket.remoteAddress),
+        pos: [0, 0, 0], yaw: 0, pitch: 0, crouch: false, weapon: loadoutFor(cls)[0],
         hp: 0, alive: false, life: 0, kills: 0, deaths: 0, respawnAt: 0, protectedUntil: 0, history: [], lastFire: {} };
       players.set(p.id, p);
-      send(p, { t: 'welcome', id: p.id, team, mode: 'tdm' });
+      send(p, { t: 'welcome', id: p.id, team, mode: match.mode, host: p.host });
       broadcast({ t: 'notice', text: `${name} joined the ${TEAMS[team].name}` }, p);
-      if (match.state === 'live') spawn(p);
-      console.log(`+ ${name} joined (${TEAMS[team].name}), ${players.size} online`);
+      if (cfg().respawn ? match.phase === 'live' : match.phase === 'freeze') spawn(p);
+      else if (!cfg().respawn) send(p, { t: 'notice', text: 'Round in progress. You join next round.' });
+      console.log(`+ ${name} joined (${TEAMS[team].name})${p.host ? ' [host]' : ''}, ${players.size} online`);
       return;
     }
     switch (msg.t) {
       case 's': handleState(p, msg); break;
       case 'fire': handleFire(p, msg); break;
       case 'team': switchTeam(p); break;
+      case 'class': changeClass(p, msg.cls); break;
+      case 'host': handleHost(p, msg); break;
       case 'ping': send(p, { t: 'pong', c: msg.c }); break;
     }
   });
@@ -251,22 +340,47 @@ wss.on('connection', ws => {
 });
 
 function tick() {
-  const t = now();
-  if (match.state === 'live') {
-    for (const p of players.values()) if (!p.alive && p.respawnAt && t >= p.respawnAt) spawn(p);
-    if (t >= match.endsAt) endMatch();
-  } else if (t >= match.restartAt) {
-    startMatch();
+  const t = now(), c = cfg();
+  switch (match.phase) {
+    case 'live':
+      if (c.respawn) {
+        for (const p of players.values()) if (!p.alive && p.respawnAt && t >= p.respawnAt) spawn(p);
+        if (t >= match.phaseEnds) endMatch();
+      } else {
+        // A team that started the round with players and has nobody left standing loses it.
+        const a = aliveCount('A'), b = aliveCount('B');
+        const outA = match.teamsAtStart.A > 0 && a === 0, outB = match.teamsAtStart.B > 0 && b === 0;
+        if (outA || outB) endRound(outA && outB ? null : outA ? 'B' : 'A');
+        else if (t >= match.phaseEnds) endRound(a === b ? null : a > b ? 'A' : 'B');
+      }
+      break;
+    case 'freeze':
+      if (t >= match.phaseEnds) {
+        setPhase('live', c.roundTime);
+        broadcast({ t: 'round', phase: 'live', n: match.round, score: match.score });
+      }
+      break;
+    case 'roundEnd':
+      if (t >= match.phaseEnds) {
+        if (Math.max(match.score.A, match.score.B) >= c.roundsToWin) endMatch();
+        else startRound();
+      }
+      break;
+    case 'over':
+      if (t >= match.phaseEnds) startMatch();
+      break;
   }
 
   const r = v => Math.round(v * 1000) / 1000;
   broadcast({
     t: 'snap',
-    st: match.state,
-    tl: Math.max(0, Math.ceil((match.state === 'live' ? match.endsAt : match.restartAt) - t)),
+    m: match.mode,
+    st: match.phase,
+    rd: match.round,
+    tl: Math.max(0, Math.ceil(match.phaseEnds - t)),
     sc: match.score,
     ps: [...players.values()].map(p => ({
-      id: p.id, n: p.name, tm: p.team, al: p.alive, hp: p.hp, k: p.kills, d: p.deaths, w: p.weapon,
+      id: p.id, n: p.name, tm: p.team, c: p.cls, al: p.alive, hp: p.hp, k: p.kills, d: p.deaths, w: p.weapon,
       x: r(p.pos[0]), y: r(p.pos[1]), z: r(p.pos[2]), yw: r(p.yaw), pt: r(p.pitch), cr: p.crouch, sl: !!p.slide,
       sp: p.protectedUntil > t,
     })),
@@ -282,7 +396,7 @@ function lanAddresses() {
 startMatch();
 setInterval(tick, 1000 / TICK_RATE);
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\nQapishma server running.`);
+  console.log(`\nQapishma server running (${cfg().name}).`);
   console.log(`  On this Mac:      http://localhost:${PORT}`);
   for (const ip of lanAddresses()) console.log(`  Friends on LAN:   http://${ip}:${PORT}`);
   console.log('');
