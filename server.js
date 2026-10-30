@@ -10,6 +10,8 @@ import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, loado
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
 
 const PORT = Number(process.env.PORT) || 3000;
+// The Mac running the server: its player is the host, and only it can use the dev tools.
+const isLocal = addr => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(addr);
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 // ---------------------------------------------------------------- static files
@@ -17,6 +19,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const STATIC = [
   ['/vendor/three/addons/', 'node_modules/three/examples/jsm/'],
   ['/vendor/three/', 'node_modules/three/build/'],
+  ['/assets-src/', 'assets-src/'],
   ['/', 'public/'],
 ];
 const MIME = {
@@ -30,6 +33,36 @@ const MIME = {
 const server = http.createServer((req, res) => {
   let url;
   try { url = decodeURIComponent(new URL(req.url, 'http://host').pathname); } catch { url = '/'; }
+  const local = isLocal(req.socket.remoteAddress);
+  if (url.startsWith('/assets-src/') && !local) { res.writeHead(403).end(); return; }
+  if (url === '/api/dev/save' && req.method === 'POST') { // asset build tool writes optimized files here
+    const rel = new URL(req.url, 'http://host').searchParams.get('path') || '';
+    if (!local || !/^game\/[\w\-./]+\.(glb|json)$/.test(rel) || rel.includes('..')) { res.writeHead(403).end(); return; }
+    const out = path.join(ROOT, 'public/assets', rel);
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      fs.writeFileSync(out, Buffer.concat(chunks));
+      res.writeHead(200).end('ok');
+    });
+    return;
+  }
+  if (url === '/api/assets') { // raw model files for the dev tools (/dev/viewer.html, /dev/build.html)
+    const list = (dir, ext) => {
+      const base = path.join(ROOT, 'assets-src', dir);
+      try {
+        return fs.readdirSync(base, { recursive: true })
+          .filter(f => ext.test(f)).map(f => `${dir}/${f.split(path.sep).join('/')}`).sort();
+      } catch { return []; }
+    };
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+    res.end(JSON.stringify({
+      characters: [...list('characters', /\.fbx$/i), ...list('animations', /\.fbx$/i)],
+      weapons: list('weapons', /\.(glb|gltf)$/i),
+    }));
+    return;
+  }
   if (url === '/api/announcer') { // which voice lines have been recorded
     fs.readdir(path.join(ROOT, 'public/assets/sounds/announcer'), (err, files) => {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
@@ -298,8 +331,6 @@ function broadcast(msg, except) {
 
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-// Whoever plays on the Mac running the server is the host and can change the mode.
-const isLocal = addr => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(addr);
 
 wss.on('connection', (ws, req) => {
   let p = null;

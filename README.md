@@ -71,7 +71,7 @@ Class changes apply instantly during freeze time or right after spawning, otherw
 - Headshots and leg shots, recoil, spread, reloads, pump/bolt animations.
 - Announcer: plays your own recorded voice lines from `public/assets/sounds/announcer/`. Lines not recorded yet use the Mac's built-in voice. See [ASSETS.md](ASSETS.md#3-announcer-voice-lines-you-record-these).
 - One map, "Yard": three lanes, containers, crates, raised decks, and sites A/B ready for objective mode.
-- Characters, guns, textures and sounds are **stand-ins** built in code. See [ASSETS.md](ASSETS.md) for everything we're swapping in.
+- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; realistic first-person guns. Map textures and sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 
 ### Roadmap
 
@@ -85,4 +85,6 @@ Class changes apply instantly during freeze time or right after spawning, otherw
 
 - `server.js` serves the game files and runs the match over WebSockets (`/ws`). It owns health, kills, score and respawns, and checks every reported hit for range, fire rate and walls in the way.
 - The browser (`public/js/`) handles rendering (three.js), movement, and finding what your shots hit, which keeps aiming feeling instant on a LAN.
+- `public/js/assets.js` + `public/js/soldier.js` load the built models and animate other players; if `public/assets/game/` is missing the game falls back to stand-in models.
+- `public/dev/` has two host-only tools: the asset **builder** and **viewer** (see ASSETS.md).
 - `public/js/shared/` holds rules both sides use: weapon stats and player speeds (`config.js`), the map layout (`map.js`), and collision (`collision.js`). Tweak numbers in `config.js` and restart the server.

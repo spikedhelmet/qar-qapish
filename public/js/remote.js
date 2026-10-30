@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { INTERP_DELAY, TEAMS } from './shared/config.js';
 import { Soldier } from './models.js';
+import { AnimatedSoldier } from './soldier.js';
+import { assets } from './assets.js';
 import { playStep, playSlide } from './audio.js';
 
 function nameTag(name, team) {
@@ -54,7 +56,7 @@ export class Remotes {
   }
 
   create(s, myTeam) {
-    const soldier = new Soldier(s.tm);
+    const soldier = assets.ready ? new AnimatedSoldier(s.tm) : new Soldier(s.tm);
     this.scene.add(soldier.root);
     const r = { id: s.id, team: s.tm, name: s.n, soldier, buf: [], state: null, stepDist: 0 };
     if (s.tm === myTeam) {
@@ -90,7 +92,11 @@ export class Remotes {
         yaw: lerpAngle(a.yw, b.yw, k), pitch: a.pt + (b.pt - a.pt) * k,
         crouch: k < 0.5 ? a.cr : b.cr, sliding: k < 0.5 ? a.sl : b.sl, alive: b.al, weapon: b.w,
       };
-      st.speed = span > 0 ? Math.hypot(b.x - a.x, b.z - a.z) / (span / 1000) : 0;
+      const secs = span / 1000;
+      st.vx = span > 0 ? (b.x - a.x) / secs : 0;
+      st.vy = span > 0 ? (b.y - a.y) / secs : 0;
+      st.vz = span > 0 ? (b.z - a.z) / secs : 0;
+      st.speed = Math.hypot(st.vx, st.vz);
       r.state = st;
 
       const sol = r.soldier;

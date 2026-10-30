@@ -6,7 +6,16 @@ Everything the game needs to look and sound finished. Right now it runs on stand
 - **You:** anything behind a login (Mixamo, Sketchfab, Freesound) and your own voice recordings.
 - **Claude, with your OK:** sites with no login (ambientCG, Poly Haven). Claude asks before downloading anything.
 
-Drop files into the folder listed for each item and tell Claude. Everything listed is free for games; **CC-BY** items need credit, which goes in the [Credits](#credits) section and on an in-game credits screen.
+Everything listed is free for games; **CC-BY** items need credit, which the game shows automatically under **Credits** in the menu.
+
+### How assets get into the game
+
+1. Put raw downloads in **`assets-src/`** (`characters/`, `animations/`, `weapons/`). This folder is **not** in git: the originals are huge (the black SWAT alone is 136 MB). Keep a backup elsewhere, such as iCloud or Google Drive; everything here can also be re-downloaded from the links below.
+2. If a file is new, add it to `public/dev/assets.config.js`.
+3. With the server running, open **http://localhost:3000/dev/build.html** on the host Mac and click **Build all assets**. It shrinks textures (2K for your own gun, 1K for everything else), converts characters and animations, sizes every gun the same way, reads each model's licence, and writes everything to `public/assets/game/`. That's what gets committed (about 50 MB, no Git LFS needed).
+4. **http://localhost:3000/dev/viewer.html** previews any raw character, animation or weapon if you want to check a download first.
+
+Sounds and announcer lines don't need building. They go straight into `public/assets/sounds/`.
 
 Priority: **P1** = first swap, the biggest visual and audio jump · **P2** = needed for milestones 2 to 4 · **P3** = polish.
 
@@ -16,7 +25,7 @@ Priority: **P1** = first swap, the biggest visual and audio jump · **P2** = nee
 
 Site: https://www.mixamo.com (free Adobe account). Licence: free for games, no credit required.
 
-### Characters → `public/assets/characters/`
+### Characters → `assets-src/characters/`
 Download: **FBX Binary (.fbx)**, **T-pose**, **With Skin**.
 
 | File | What | Priority |
@@ -24,7 +33,9 @@ Download: **FBX Binary (.fbx)**, **T-pose**, **With Skin**.
 | `team_a.fbx` | Soldier or tactical character for the Falcons | P1 |
 | `team_b.fbx` | A visibly different soldier for the Jackals | P1 |
 
-### Animations → `public/assets/animations/`
+### Animations → `assets-src/animations/`
+**In use:** Mixamo's **Pro Rifle Pack**, **Basic Shooter Pack** and **Pistol Handgun Locomotion Pack** (one zip each) cover almost all of the list below. Only a slide and a knife attack are still missing.
+
 Select one of your characters first, then search. Download: **FBX Binary, Without Skin, 30 fps**, and tick **In Place** whenever it appears.
 
 | File | Search Mixamo for | Priority |
@@ -53,7 +64,7 @@ Select one of your characters first, then search. Download: **FBX Binary, Withou
 
 ## 2. Weapons: Sketchfab (you)
 
-Site: https://sketchfab.com (free account). On each page: **Download 3D Model → glTF Binary (.glb)**. Save into `public/assets/weapons/`.
+Site: https://sketchfab.com (free account). On each page: **Download 3D Model → glTF Binary (.glb)**. Save into `assets-src/weapons/`.
 All picks were checked as **CC Attribution (CC-BY 4.0)** and downloadable; confirm the page still says so before downloading.
 
 | File | Model / creator | Link | Tris | Priority |
@@ -192,6 +203,13 @@ From https://polyhaven.com (CC0):
 
 ## Credits
 
-Fill in as assets are added (needed for every CC-BY item):
+Shown in the game's menu (built from each model's licence data). Currently:
 
-- _none yet_
+- Rifle: "AK-74M Assault Rifle" by FJH, CC-BY 4.0
+- Pistol: "Colt M1911 & Silencer" by FJH, CC-BY 4.0
+- Knife: "M9 Bayonet" by FJH, CC-BY 4.0
+- Sniper: "Modern Sniper Rifle | Free Lowpoly" by Vlasov Daniil, CC-BY 4.0
+- Shotgun: "Remington 870 Police Magnum 12 Gauge Shotgun" by 8sianDude, CC-BY 4.0
+- SMG: "MP5K" by Shorty_Digitan, CC-BY 4.0
+- Downloaded but not used yet: "M67 Fragmentation Grenade" (FJH), "M18 Smoke Grenade" and "M84 Stun Grenade" (Vanillatography), "IED" (davidthe19th), "FREE FPS Arms with glove" (Alexander_Ovelar), all CC-BY 4.0
+- Characters and animations: Mixamo (Adobe), free for games, no credit required

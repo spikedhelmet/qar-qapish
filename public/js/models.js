@@ -2,6 +2,7 @@
 // They expose the same small interface the real Mixamo / Sketchfab models will use later.
 import * as THREE from 'three';
 import { TEAMS } from './shared/config.js';
+import { weaponModel, weaponInfo } from './assets.js';
 
 const mat = (color, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
@@ -332,7 +333,7 @@ export class ViewModel {
     this.pumpArm = null;
     this.cycle = 0;
     this.holder.clear();
-    this.gun = buildGun(kind);
+    this.gun = weaponModel(kind, 'fp') || buildGun(kind); // real model once built, stand-in otherwise
     this.holder.add(this.gun);
     // Forearm from the hand back toward the camera: rx tilts it down, ry swings it sideways.
     const arm = (x, y, z, rx, ry, len = 0.42) => {
@@ -383,7 +384,10 @@ export class ViewModel {
       this.adsPos = this.base;
       this.gun.rotation.set(0.2, 0.1, 0.4);
     }
-    this.gun.traverse(o => { o.castShadow = false; });
+    this.gun.traverse(o => { o.castShadow = false; o.receiveShadow = false; });
+    // Real models: line the top of the gun (its sights) up with the screen center when aiming.
+    const info = weaponInfo(kind);
+    if (info && !this.gun.userData.pump && kind !== 'knife') this.adsPos = new THREE.Vector3(0, -info.sightY - 0.002, this.adsPos.z);
   }
 
   // drawT: 0→1 raise progress, reloadT: 0→1 reload progress (or -1), adsT: 0→1 aimed in

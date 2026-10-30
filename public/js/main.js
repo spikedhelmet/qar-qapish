@@ -12,6 +12,7 @@ import { Hud } from './hud.js';
 import { Net } from './net.js';
 import * as audio from './audio.js';
 import { initAnnouncer, announce, setAnnouncerMode } from './announcer.js';
+import { loadAssets } from './assets.js';
 
 // ---------------------------------------------------------------- settings
 
@@ -276,6 +277,7 @@ function setTeam(team) {
 const _v = new THREE.Vector3();
 function onRemoteFire(msg) {
   const r = remotes.players.get(msg.id);
+  r?.soldier.fireKick?.();
   const muzzle = r ? r.soldier.muzzleWorld(new THREE.Vector3()) : new THREE.Vector3().fromArray(msg.o);
   audio.playShot(msg.w, muzzle);
   if (WEAPONS[msg.w]?.melee) return;
@@ -617,6 +619,27 @@ document.addEventListener('pointerlockchange', () => {
 
 hud.message('');
 requestAnimationFrame(frame);
+
+// Load the real models before anyone can join; the game falls back to stand-ins without them.
+playBtn.disabled = true;
+loadAssets((done, total) => { status.textContent = `Loading models… ${done}/${total}`; }).then(a => {
+  playBtn.disabled = false;
+  status.textContent = a.ready ? '' : 'Using stand-in models (run /dev/build.html on the host to build the real ones).';
+  renderCredits(a.manifest);
+});
+
+function renderCredits(manifest) {
+  const list = document.getElementById('credits-list');
+  const rows = Object.entries(manifest?.weapons || {}).map(([kind, w]) => {
+    const c = w.credit || {};
+    const author = escapeHtml((c.author || 'unknown').replace(/\s*\(.*\)$/, ''));
+    return `<li><b>${escapeHtml(WEAPONS[kind]?.name || kind)}</b>: “${escapeHtml(c.title || '')}” by ${author}` +
+      (c.source ? ` · <a href="${escapeHtml(c.source)}" target="_blank" rel="noopener">source</a>` : '') +
+      ` · ${escapeHtml((c.license || '').split(' ')[0])}</li>`;
+  });
+  rows.push('<li><b>Characters and animations</b>: Mixamo (Adobe)</li>');
+  list.innerHTML = rows.join('');
+}
 
 // Handy for poking at the game from the browser console.
 window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, get viewModel() { return viewModel; } };

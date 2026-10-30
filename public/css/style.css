@@ -166,3 +166,6 @@ button.secondary { width: 100%; padding: 8px; font-size: 13px; color: var(--text
 #class-picker span { display: block; font-size: 12px; color: var(--accent); margin-bottom: 6px; }
 #class-picker p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
 #class-picker small { display: block; margin-top: 12px; color: var(--muted); }
+
+.credits { margin: 10px 0 0; padding-left: 18px; line-height: 1.5; }
+.credits a { color: var(--accent); }

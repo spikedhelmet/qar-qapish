@@ -1,0 +1,244 @@
+{
+ "version": 1,
+ "built": "2026-10-30T14:26:46.919Z",
+ "weapons": {
+  "rifle": {
+   "fp": "game/weapons/rifle_fp.glb",
+   "tp": "game/weapons/rifle_tp.glb",
+   "length": 0.94,
+   "muzzle": [
+    0,
+    0.037,
+    -0.658
+   ],
+   "sightY": 0.089,
+   "bounds": [
+    [
+     -0.033,
+     -0.174,
+     -0.658
+    ],
+    [
+     0.033,
+     0.089,
+     0.282
+    ]
+   ],
+   "credit": {
+    "title": "AK-74M Assault Rifle",
+    "author": "FJH (https://sketchfab.com/FJH)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/ak-74m-assault-rifle-9084c3bae8224d338103997bc3101480"
+   }
+  },
+  "pistol": {
+   "fp": "game/weapons/pistol_fp.glb",
+   "tp": "game/weapons/pistol_tp.glb",
+   "length": 0.22,
+   "muzzle": [
+    0,
+    0.029,
+    -0.174
+   ],
+   "sightY": 0.046,
+   "bounds": [
+    [
+     -0.015,
+     -0.093,
+     -0.174
+    ],
+    [
+     0.015,
+     0.046,
+     0.046
+    ]
+   ],
+   "credit": {
+    "title": "Colt M1911 & Silencer",
+    "author": "FJH (https://sketchfab.com/FJH)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/colt-m1911-silencer-066b5650970e4d01b721fd4d19ab8065"
+   }
+  },
+  "knife": {
+   "fp": "game/weapons/knife_fp.glb",
+   "tp": "game/weapons/knife_tp.glb",
+   "length": 0.31,
+   "muzzle": [
+    0,
+    0.002,
+    -0.245
+   ],
+   "sightY": 0.049,
+   "bounds": [
+    [
+     -0.017,
+     -0.037,
+     -0.245
+    ],
+    [
+     0.017,
+     0.049,
+     0.065
+    ]
+   ],
+   "credit": {
+    "title": "M9 Bayonet",
+    "author": "FJH (https://sketchfab.com/FJH)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/m9-bayonet-933c897ce36d44ebb06a9500f13b77c9"
+   }
+  },
+  "sniper": {
+   "fp": "game/weapons/sniper_fp.glb",
+   "tp": "game/weapons/sniper_tp.glb",
+   "length": 1.15,
+   "muzzle": [
+    0,
+    0.078,
+    -0.816
+   ],
+   "sightY": 0.224,
+   "bounds": [
+    [
+     -0.051,
+     -0.132,
+     -0.816
+    ],
+    [
+     0.051,
+     0.224,
+     0.333
+    ]
+   ],
+   "credit": {
+    "title": "Modern Sniper Rifle | Free Lowpoly",
+    "author": "Vlasov Daniil (https://sketchfab.com/dan741vlasov)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/modern-sniper-rifle-free-lowpoly-45c99509f1ee4c2a8c9c3336d3e2ff5a"
+   }
+  },
+  "shotgun": {
+   "fp": "game/weapons/shotgun_fp.glb",
+   "tp": "game/weapons/shotgun_tp.glb",
+   "length": 0.98,
+   "muzzle": [
+    0,
+    0.069,
+    -0.696
+   ],
+   "sightY": 0.086,
+   "bounds": [
+    [
+     -0.022,
+     -0.097,
+     -0.696
+    ],
+    [
+     0.022,
+     0.086,
+     0.284
+    ]
+   ],
+   "credit": {
+    "title": "Remington 870 Police Magnum 12 Gauge Shotgun",
+    "author": "8sianDude (https://sketchfab.com/haoliu95)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/remington-870-police-magnum-12-gauge-shotgun-eea11de7e9d24b6683962b8388c319eb"
+   }
+  },
+  "smg": {
+   "fp": "game/weapons/smg_fp.glb",
+   "tp": "game/weapons/smg_tp.glb",
+   "length": 0.33,
+   "muzzle": [
+    0,
+    0.084,
+    -0.274
+   ],
+   "sightY": 0.127,
+   "bounds": [
+    [
+     -0.025,
+     -0.137,
+     -0.274
+    ],
+    [
+     0.025,
+     0.127,
+     0.056
+    ]
+   ],
+   "credit": {
+    "title": "MP5K",
+    "author": "Shorty_Digitan (https://sketchfab.com/Shorty_Digitan)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/mp5k-b47fa4053c1e4cfabe91b0046689f8c9"
+   }
+  }
+ },
+ "characters": {
+  "A": {
+   "file": "game/characters/team_a.glb",
+   "height": 1.8
+  },
+  "B": {
+   "file": "game/characters/team_b.glb",
+   "height": 1.8
+  }
+ },
+ "animations": {
+  "file": "game/animations.glb",
+  "clips": [
+   "rifle_idle",
+   "rifle_walk_f",
+   "rifle_walk_b",
+   "rifle_walk_l",
+   "rifle_walk_r",
+   "rifle_walk_fl",
+   "rifle_walk_fr",
+   "rifle_walk_bl",
+   "rifle_walk_br",
+   "rifle_run_f",
+   "rifle_run_b",
+   "rifle_run_l",
+   "rifle_run_r",
+   "rifle_run_fl",
+   "rifle_run_fr",
+   "rifle_run_bl",
+   "rifle_run_br",
+   "sprint_f",
+   "crouch_idle",
+   "crouch_walk_f",
+   "crouch_walk_b",
+   "crouch_walk_l",
+   "crouch_walk_r",
+   "crouch_walk_fl",
+   "crouch_walk_fr",
+   "crouch_walk_bl",
+   "crouch_walk_br",
+   "jump_up",
+   "jump_loop",
+   "jump_down",
+   "death_front",
+   "death_back",
+   "death_right",
+   "death_head_front",
+   "death_head_back",
+   "death_crouch",
+   "rifle_fire",
+   "rifle_reload",
+   "hit",
+   "throw",
+   "pistol_idle",
+   "pistol_walk_f",
+   "pistol_walk_b",
+   "pistol_run_f",
+   "pistol_run_b",
+   "pistol_strafe_l",
+   "pistol_strafe_r",
+   "kneel_down",
+   "kneel_idle"
+  ]
+ }
+}

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asset Viewer</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #2a2e34; color: #eee; font: 13px Helvetica, Arial, sans-serif; overflow: hidden; }
+    canvas { display: block; }
+    #ui { position: fixed; top: 10px; left: 10px; max-width: 360px; padding: 10px; background: rgba(0, 0, 0, 0.55); border-radius: 4px; }
+    #ui select { width: 100%; margin: 4px 0 8px; }
+    #info { white-space: pre-wrap; color: #bbb; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js", "three/addons/": "/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <!-- Dev tool: preview raw characters, animations and weapons from assets-src/. Open /dev/viewer.html on the host Mac -->
+  <div id="ui">
+    <b>Character</b><select id="char"></select>
+    <b>Animation</b><select id="anim"></select>
+    <b>Weapon</b><select id="weapon"></select>
+    <div id="info">Loading…</div>
+  </div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xdde8f5, 0x4a443c, 2));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+    sun.position.set(2, 4, 3);
+    scene.add(sun);
+    scene.add(new THREE.GridHelper(4, 8, 0x666666, 0x444444));
+    const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.01, 100);
+    camera.position.set(1.6, 1.4, 2.6);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.95, 0);
+    addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    const info = document.getElementById('info');
+    const files = await (await fetch('/api/assets')).json();
+    const fill = (id, list) => {
+      document.getElementById(id).innerHTML = '<option value="">—</option>' + list.map(f => `<option>${f}</option>`).join('');
+    };
+    const chars = [], anims = [];
+    for (const f of files.characters) (/(^|\/)Ch\d+|team_|character/i.test(f) ? chars : anims).push(f);
+    fill('char', chars); fill('anim', anims); fill('weapon', files.weapons);
+
+    const fbx = new FBXLoader(), gltf = new GLTFLoader();
+    let character = null, mixer = null, weapon = null;
+    const url = f => '/assets-src/' + f.split('/').map(encodeURIComponent).join('/');
+
+    async function loadChar(f) {
+      if (character) scene.remove(character);
+      character = null; mixer = null;
+      if (!f) return;
+      info.textContent = `Loading ${f}…`;
+      const t0 = performance.now();
+      character = await fbx.loadAsync(url(f));
+      character.scale.setScalar(0.01); // Mixamo is in centimeters
+      scene.add(character);
+      mixer = new THREE.AnimationMixer(character);
+      let tris = 0;
+      character.traverse(o => { if (o.isMesh) tris += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; });
+      const box = new THREE.Box3().setFromObject(character);
+      info.textContent = `${f}\n${Math.round(tris)} triangles · height ${(box.max.y - box.min.y).toFixed(2)} m · loaded in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+      document.getElementById('anim').dispatchEvent(new Event('change'));
+    }
+
+    async function loadAnim(f) {
+      if (!mixer || !f) return;
+      try {
+        const clip = (await fbx.loadAsync(url(f))).animations[0];
+        // Strip forward travel so the character runs in place.
+        const hips = clip.tracks.find(t => /Hips\.position$/.test(t.name));
+        if (hips) for (let i = 0; i < hips.values.length; i += 3) { hips.values[i] = hips.values[0]; hips.values[i + 2] = hips.values[2]; }
+        mixer.stopAllAction();
+        mixer.clipAction(clip).play();
+        info.textContent = info.textContent.split('\n').slice(0, 2).join('\n') + `\n▶ ${f} (${clip.duration.toFixed(2)} s)`;
+      } catch (e) {
+        info.textContent += `\n✖ ${f}: ${e.message}`;
+      }
+    }
+
+    async function loadWeapon(f) {
+      if (weapon) scene.remove(weapon);
+      weapon = null;
+      if (!f) return;
+      const g = (await gltf.loadAsync(url(f))).scene;
+      const box = new THREE.Box3().setFromObject(g);
+      const size = box.getSize(new THREE.Vector3());
+      const s = 0.8 / Math.max(size.x, size.y, size.z); // show every weapon at a similar size
+      g.scale.setScalar(s);
+      g.position.set(-0.9, 1.0, 0).sub(box.getCenter(new THREE.Vector3()).multiplyScalar(s));
+      weapon = g;
+      scene.add(g);
+      info.textContent += `\nweapon ${f}: raw size ${size.toArray().map(v => v.toFixed(2)).join(' × ')}`;
+    }
+
+    document.getElementById('char').onchange = e => loadChar(e.target.value);
+    document.getElementById('anim').onchange = e => loadAnim(e.target.value);
+    document.getElementById('weapon').onchange = e => loadWeapon(e.target.value);
+    window.viewer = { loadChar, loadAnim, loadWeapon, files, scene, camera, controls, THREE };
+
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      mixer?.update(clock.getDelta());
+      controls.update();
+      renderer.render(scene, camera);
+    });
+    info.textContent = `${chars.length} characters, ${anims.length} animations, ${files.weapons.length} weapons found`;
+  </script>
+</body>
+</html>

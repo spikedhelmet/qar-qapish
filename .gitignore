@@ -151,3 +151,6 @@ vite.config.ts.timestamp-*
 # macOS / local tooling
 .DS_Store
 .claude/
+
+# Raw asset downloads (Mixamo / Sketchfab originals). Optimized copies live in public/assets/game.
+assets-src/

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asset Builder</title>
+  <style>
+    html, body { margin: 0; background: #1d2127; color: #e8e8e4; font: 14px/1.5 Helvetica, Arial, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    p { color: #a9adb3; }
+    button { padding: 10px 18px; font-size: 15px; font-weight: 700; color: #15171a; background: #e8c547; border: 0; border-radius: 4px; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #log { margin-top: 16px; padding: 12px; min-height: 200px; background: #111418; border-radius: 4px; white-space: pre-wrap; font: 12px/1.6 Menlo, monospace; }
+    .err { color: #ff8a80; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js", "three/addons/": "/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <main>
+    <h1>Asset Builder</h1>
+    <p>Turns the raw downloads in <code>assets-src/</code> into small game files in <code>public/assets/game/</code>,
+      using the settings in <code>public/dev/assets.config.js</code>. Run it on the host Mac after adding or changing assets.</p>
+    <button id="go">Build all assets</button>
+    <div id="log"></div>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+    import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+    import { WEAPONS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
+
+    const logEl = document.getElementById('log');
+    const log = (msg, cls) => {
+      const line = document.createElement('div');
+      line.textContent = msg;
+      if (cls) line.className = cls;
+      logEl.appendChild(line);
+      line.scrollIntoView({ block: 'end' });
+    };
+    const srcUrl = f => '/assets-src/' + f.split('/').map(encodeURIComponent).join('/');
+    const gltfLoader = new GLTFLoader(), fbxLoader = new FBXLoader(), exporter = new GLTFExporter();
+    const r3 = v => Math.round(v * 1000) / 1000;
+
+    async function save(rel, data) {
+      const body = data instanceof ArrayBuffer ? data : new TextEncoder().encode(JSON.stringify(data, null, 1));
+      const res = await fetch(`/api/dev/save?path=${encodeURIComponent(rel)}`, { method: 'POST', body });
+      if (!res.ok) throw new Error(`saving ${rel} failed (${res.status})`);
+      return body.byteLength;
+    }
+    const mb = n => `${(n / 1048576).toFixed(2)} MB`;
+
+    // JPEG for everything except color maps that need transparency.
+    function useJpeg(root) {
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        for (const m of [].concat(o.material)) {
+          for (const key of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap']) {
+            const tex = m[key];
+            if (!tex) continue;
+            const alpha = key === 'map' && (m.transparent || m.alphaTest > 0);
+            tex.userData.mimeType = alpha ? 'image/png' : 'image/jpeg';
+          }
+        }
+      });
+    }
+
+    function exportGlb(root, maxTextureSize, animations = []) {
+      return exporter.parseAsync(root, { binary: true, onlyVisible: true, maxTextureSize, animations });
+    }
+
+    function visibleBox(root) {
+      root.updateMatrixWorld(true);
+      const box = new THREE.Box3();
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        let shown = true;
+        for (let p = o; p; p = p.parent) if (!p.visible) shown = false;
+        if (shown) box.expandByObject(o);
+      });
+      return box;
+    }
+
+    async function buildWeapon(kind, cfg) {
+      const gltf = await gltfLoader.loadAsync(srcUrl(cfg.src));
+      const extras = gltf.parser.json.asset?.extras || {};
+      const model = gltf.scene;
+      if (cfg.hide) model.traverse(o => { if (o.isMesh && cfg.hide.test(o.name)) o.visible = false; });
+
+      // root (exported) → wrap (scale + grip offset) → turn (fix facing) → model
+      const turn = new THREE.Group();
+      turn.rotation.y = THREE.MathUtils.degToRad(cfg.rotateY || 0);
+      turn.add(model);
+      const wrap = new THREE.Group();
+      wrap.add(turn);
+      const root = new THREE.Group();
+      root.name = kind;
+      root.add(wrap);
+
+      const box = visibleBox(root), size = box.getSize(new THREE.Vector3());
+      const at = ([fromBack, fromBottom]) => new THREE.Vector3(
+        (box.min.x + box.max.x) / 2, box.min.y + fromBottom * size.y, box.max.z - fromBack * size.z);
+      const grip = at(cfg.grip), muzzle = at(cfg.muzzle);
+      const s = cfg.length / size.z;
+      wrap.scale.setScalar(s);
+      wrap.position.copy(grip).multiplyScalar(-s);
+      const toGame = p => p.clone().sub(grip).multiplyScalar(s).toArray().map(r3);
+
+      useJpeg(root);
+      const fp = await exportGlb(root, TEXTURE_SIZE.firstPerson);
+      const tp = await exportGlb(root, TEXTURE_SIZE.thirdPerson);
+      const fpSize = await save(`game/weapons/${kind}_fp.glb`, fp);
+      const tpSize = await save(`game/weapons/${kind}_tp.glb`, tp);
+      log(`  ${kind.padEnd(8)} ${mb(fpSize)} (first person) · ${mb(tpSize)} (others) · from ${cfg.src.split('/').pop()}`);
+      return {
+        fp: `game/weapons/${kind}_fp.glb`, tp: `game/weapons/${kind}_tp.glb`,
+        length: cfg.length, muzzle: toGame(muzzle),
+        sightY: r3((box.max.y - grip.y) * s),       // top of the gun above the grip, for aiming down sights
+        bounds: [toGame(box.min), toGame(box.max)],
+        credit: { title: extras.title, author: extras.author, license: extras.license, source: extras.source },
+      };
+    }
+
+    // FBX characters use Phong materials; game uses physically based ones.
+    function toStandard(m) {
+      const out = new THREE.MeshStandardMaterial({
+        name: m.name, map: m.map || null, normalMap: m.normalMap || null, color: m.map ? 0xffffff : m.color,
+        roughness: 0.8, metalness: 0, transparent: m.transparent, alphaTest: m.alphaTest,
+      });
+      if (out.map) out.map.colorSpace = THREE.SRGBColorSpace;
+      return out;
+    }
+
+    async function loadFbx(src) {
+      return fbxLoader.loadAsync(srcUrl(src));
+    }
+
+    // FBXLoader returns before embedded images finish decoding. Wait for them; drop any that never load.
+    async function waitForTextures(root, timeoutMs = 30000) {
+      const ready = t => t.image && (t.image.width || t.image.videoWidth) > 0;
+      const slots = [];
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        for (const m of [].concat(o.material)) for (const key of ['map', 'normalMap', 'emissiveMap']) if (m[key]) slots.push([m, key]);
+      });
+      const t0 = performance.now();
+      while (slots.some(([m, k]) => !ready(m[k])) && performance.now() - t0 < timeoutMs) await new Promise(r => setTimeout(r, 100));
+      for (const [m, key] of slots) if (!ready(m[key])) {
+        log(`    (skipped a ${key} on ${m.name}: image did not load)`);
+        m[key] = null;
+        m.needsUpdate = true;
+      }
+    }
+
+    async function buildCharacter(team, cfg) {
+      const fbx = await loadFbx(cfg.src);
+      fbx.traverse(o => {
+        if (!o.isMesh) return;
+        o.material = Array.isArray(o.material) ? o.material.map(toStandard) : toStandard(o.material);
+        o.castShadow = true;
+      });
+      await waitForTextures(fbx);
+      fbx.updateMatrixWorld(true);
+      const top = fbx.getObjectByName('mixamorigHeadTop_End');
+      const headTop = top ? top.getWorldPosition(new THREE.Vector3()).y : 180;
+      // Mixamo characters face +Z; the game's soldiers face -Z.
+      const wrap = new THREE.Group();
+      wrap.scale.setScalar(cfg.height / (headTop * 1.02));
+      wrap.rotation.y = Math.PI;
+      wrap.add(fbx);
+      const root = new THREE.Group();
+      root.name = `team_${team}`;
+      root.add(wrap);
+      useJpeg(root);
+      const glb = await exportGlb(root, TEXTURE_SIZE.character);
+      const file = `game/characters/team_${team.toLowerCase()}.glb`;
+      log(`  team ${team}  ${mb(await save(file, glb))} · from ${cfg.src.split('/').pop()}`);
+      return { file, height: cfg.height };
+    }
+
+    async function buildAnimations(skeletonSrc) {
+      const skeleton = SkeletonUtils.clone(await loadFbx(skeletonSrc));
+      skeleton.traverse(o => { if (o.isMesh) o.visible = false; });
+      skeleton.name = 'skeleton';
+      const clips = [];
+      for (const [id, entry] of Object.entries(ANIMATIONS)) {
+        const { src, move } = typeof entry === 'string' ? { src: entry, move: false } : entry;
+        try {
+          const clip = (await loadFbx(src)).animations[0];
+          clip.name = id;
+          // Play in place: hold the hips' horizontal position at its first frame.
+          const hips = clip.tracks.find(t => /Hips\.position$/.test(t.name));
+          if (hips && !move) for (let i = 0; i < hips.values.length; i += 3) {
+            hips.values[i] = hips.values[0];
+            hips.values[i + 2] = hips.values[2];
+          }
+          clip.optimize();
+          clips.push(clip);
+        } catch (e) {
+          log(`  ✖ ${id}: ${src} (${e.message})`, 'err');
+        }
+      }
+      const glb = await exportGlb(skeleton, Infinity, clips);
+      log(`  ${clips.length} clips  ${mb(await save('game/animations.glb', glb))}`);
+      return { file: 'game/animations.glb', clips: clips.map(c => c.name) };
+    }
+
+    async function buildAll() {
+      const t0 = performance.now();
+      const manifest = { version: 1, built: new Date().toISOString(), weapons: {}, characters: {}, animations: null };
+      log('Weapons');
+      for (const [kind, cfg] of Object.entries(WEAPONS)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
+      log('Characters');
+      for (const [team, cfg] of Object.entries(CHARACTERS)) manifest.characters[team] = await buildCharacter(team, cfg);
+      log('Animations');
+      manifest.animations = await buildAnimations(CHARACTERS.A.src);
+      await save('game/manifest.json', manifest);
+      log(`Done in ${((performance.now() - t0) / 1000).toFixed(1)} s. Reload the game to use the new assets.`);
+      return manifest;
+    }
+
+    const btn = document.getElementById('go');
+    btn.onclick = async () => {
+      btn.disabled = true;
+      logEl.textContent = '';
+      try { await buildAll(); } catch (e) { log(`Failed: ${e.message}`, 'err'); console.error(e); }
+      btn.disabled = false;
+    };
+    window.buildAll = buildAll;
+    window.builder = { buildWeapon, buildCharacter, buildAnimations, WEAPONS, CHARACTERS };
+  </script>
+</body>
+</html>
