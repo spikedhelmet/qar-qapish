@@ -11,10 +11,11 @@ import { Effects } from './effects.js';
 import { Hud } from './hud.js';
 import { Net } from './net.js';
 import * as audio from './audio.js';
+import { initAnnouncer, announce, setAnnouncerMode } from './announcer.js';
 
 // ---------------------------------------------------------------- settings
 
-const DEFAULTS = { name: '', sens: 1.2, fov: 90, vol: 0.7 };
+const DEFAULTS = { name: '', sens: 1.2, fov: 90, vol: 0.7, announcer: 'voice' };
 function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('qapishma.settings') || '{}') }; }
   catch { return { ...DEFAULTS }; }
@@ -78,6 +79,11 @@ const game = {
   winner: null,
   deathInfo: null,      // { killer, at }
   sendTimer: 0,
+  roll: 0,
+  killsThisMatch: 0,
+  streak: 0,            // my kills since my last death
+  recentKills: [],      // timestamps of my recent kills, for multi-kills
+  leading: null,        // was my team ahead at the last snapshot
 };
 
 const net = new Net(onMessage, () => {
@@ -109,6 +115,8 @@ function onMessage(msg) {
       break;
     case 'snap':
       game.players = msg.ps;
+      if (game.synced) announceScoreChanges(game.score, msg.sc, game.timeLeft, msg.tl, msg.st);
+      game.synced = true; // don't announce the score we joined into
       game.score = msg.sc;
       game.timeLeft = msg.tl;
       game.matchState = msg.st;
@@ -136,7 +144,10 @@ function onMessage(msg) {
       if (msg.v === game.myId) {
         me.alive = false;
         game.deathInfo = { killer, at: performance.now() };
+        if (game.streak >= 5) announce('streak_ended');
+        game.streak = 0;
       }
+      announceKill(msg);
       const r = remotes.players.get(msg.v);
       if (r?.state) effects.blood(new THREE.Vector3(r.state.x, r.state.y + 1.2, r.state.z), null);
       break;
@@ -144,9 +155,49 @@ function onMessage(msg) {
     case 'match':
       game.matchState = msg.state;
       game.winner = msg.winner ?? null;
+      if (msg.state === 'live') {
+        Object.assign(game, { killsThisMatch: 0, streak: 0, recentKills: [], leading: null });
+        announce('match_start', { priority: 2 });
+      } else {
+        announce(!game.winner ? 'draw' : game.winner === game.team ? 'victory' : 'defeat', { priority: 2 });
+      }
       break;
     case 'notice': hud.notice(msg.text); break;
   }
+}
+
+// ---------------------------------------------------------------- announcer triggers
+
+function announceKill(msg) {
+  game.killsThisMatch++;
+  if (game.killsThisMatch === 1) { announce('first_blood', { priority: 2 }); return; }
+  if (msg.k !== game.myId || msg.v === game.myId) return;
+
+  const now = performance.now();
+  game.streak++;
+  game.recentKills = game.recentKills.filter(t => now - t < 4000);
+  game.recentKills.push(now);
+  const multi = game.recentKills.length;
+  if (multi >= 4) announce('multi_kill', { priority: 2 });
+  else if (multi === 3) announce('triple_kill', { priority: 2 });
+  else if (multi === 2) announce('double_kill', { priority: 2 });
+  else if (game.streak === 10) announce('streak_10', { priority: 2 });
+  else if (game.streak === 5) announce('streak_5', { priority: 2 });
+  else if (msg.w === 'knife') announce('knife_kill');
+  else if (msg.hs) announce('headshot');
+}
+
+function announceScoreChanges(before, after, timeBefore, timeAfter, state) {
+  if (!game.team || state !== 'live') return;
+  const mine = after[game.team], theirs = after[game.team === 'A' ? 'B' : 'A'];
+  const leading = mine > theirs ? true : mine < theirs ? false : game.leading;
+  if (game.leading !== null && leading !== game.leading) announce(leading ? 'lead_taken' : 'lead_lost');
+  game.leading = leading;
+
+  const limit = MODES.tdm.killLimit;
+  if (before[game.team] < limit - 10 && mine >= limit - 10) announce('ten_kills_left');
+  if (before[game.team] < limit - 1 && mine >= limit - 1) announce('one_kill_left', { priority: 2 });
+  if (timeBefore > 60 && timeAfter <= 60) announce('one_minute', { priority: 2 });
 }
 
 function setTeam(team) {
@@ -232,24 +283,26 @@ function frame(now) {
 
   if (game.joined) {
     if (canAct) {
-      me.look(input.dx, input.dy, settings.sens);
+      me.look(input.dx, input.dy, settings.sens * arsenal.fovMult); // slower aim when zoomed
       handleWeaponKeys();
     }
+    const trigger = canAct && input.mouseDown;
+    const aimHeld = canAct && input.rightDown && !me.sprinting;
     if (me.alive) {
-      const step = me.update(dt, canAct ? input : NO_INPUT, WEAPONS[arsenal.current].speedMult);
-      if (step) audio.playStep(null, 0.6);
+      const ev = me.update(dt, canAct ? input : NO_INPUT, { speedMult: arsenal.moveMult, aiming: arsenal.aiming, firing: trigger });
+      if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6);
+      if (ev.slide) audio.playSlide(null);
     }
     if (playing && input.hit('KeyM')) net.send({ t: 'team' });
 
-    const trigger = canAct && input.mouseDown;
-    if (arsenal.update(dt, trigger) === 'reloaded') audio.playClick('reload');
-    if (canAct && arsenal.canFire(trigger)) shoot();
+    if (arsenal.update(dt, trigger, aimHeld) === 'reloaded') audio.playClick('reload');
+    if (canAct && arsenal.canFire(trigger, me.sprintRecover > 0)) shoot();
 
     game.sendTimer -= dt;
     if (me.alive && game.sendTimer <= 0) {
       game.sendTimer = 1 / SEND_RATE;
       const r = v => Math.round(v * 1000) / 1000;
-      net.send({ t: 's', l: me.life, p: me.pos.map(r), yw: r(me.yaw), pt: r(me.pitch + arsenal.recoil.pitch), cr: me.crouching, w: arsenal.current });
+      net.send({ t: 's', l: me.life, p: me.pos.map(r), yw: r(me.yaw), pt: r(me.pitch + arsenal.recoil.pitch), cr: me.crouching, sl: me.sliding, w: arsenal.current });
     }
     updateCamera(dt);
   } else {
@@ -266,12 +319,14 @@ function frame(now) {
 
   renderer.clear();
   renderer.render(scene, camera);
-  if (game.joined && me.alive && viewModel) {
+  const scoped = arsenal.def.ads?.scope && arsenal.adsT > 0.9;
+  if (game.joined && me.alive && viewModel && !scoped) {
     viewModel.update(dt, {
       speed: me.speed(), onGround: me.onGround,
       drawT: arsenal.drawT / arsenal.def.draw,
       reloadT: arsenal.reloadT >= 0 ? arsenal.reloadT / arsenal.def.reload : -1,
       lookDX: playing ? input.dx : 0, lookDY: playing ? input.dy : 0,
+      adsT: arsenal.adsT, sprinting: me.sprinting, sliding: me.sliding,
     });
     renderer.clearDepth();
     renderer.render(viewScene, viewCamera);
@@ -295,7 +350,8 @@ function updateCamera(dt) {
   if (me.alive) {
     const eye = me.eye();
     camera.position.set(eye[0], eye[1], eye[2]);
-    camera.rotation.set(me.pitch + arsenal.recoil.pitch, me.yaw + arsenal.recoil.yaw, 0);
+    game.roll += ((me.sliding ? 0.07 : 0) - game.roll) * Math.min(1, dt * 10);
+    camera.rotation.set(me.pitch + arsenal.recoil.pitch, me.yaw + arsenal.recoil.yaw, game.roll);
   } else {
     // Death camera: sink to the floor and turn toward whoever got you.
     camera.position.y += (me.pos[1] + 0.35 - camera.position.y) * Math.min(1, dt * 4);
@@ -308,7 +364,8 @@ function updateCamera(dt) {
     }
     camera.rotation.z += (0.25 - camera.rotation.z) * Math.min(1, dt * 3);
   }
-  if (camera.fov !== settings.fov) { camera.fov = settings.fov; camera.updateProjectionMatrix(); }
+  const fov = me.alive ? settings.fov * arsenal.fovMult : settings.fov;
+  if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
 }
 
 function updateHud() {
@@ -317,7 +374,8 @@ function updateHud() {
   hud.match(game.score, game.timeLeft);
   const spread = arsenal.spread(me.speed(), me.onGround, me.crouching);
   const px = (spread / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * (innerHeight / 2);
-  hud.crosshair(px, me.alive && !WEAPONS[arsenal.current].melee);
+  hud.crosshair(px, me.alive && !WEAPONS[arsenal.current].melee && arsenal.adsT < 0.3 && !me.sprinting);
+  hud.scope(me.alive && !!arsenal.def.ads?.scope && arsenal.adsT > 0.9);
   hud.scoreboard(input.down('Tab') || game.matchState === 'over', game.players, game.myId, game.score);
 
   let msg = '';
@@ -345,7 +403,7 @@ function escapeHtml(s) {
 const menu = document.getElementById('menu');
 const status = document.getElementById('menu-status');
 const playBtn = document.getElementById('play');
-const fields = { name: 'name', sens: 'sens', fov: 'fov', vol: 'vol' };
+const fields = { name: 'name', sens: 'sens', fov: 'fov', vol: 'vol', announcer: 'announcer' };
 
 for (const [key, id] of Object.entries(fields)) {
   const el = document.getElementById(id);
@@ -354,9 +412,10 @@ for (const [key, id] of Object.entries(fields)) {
   const show = () => { if (out) out.textContent = key === 'vol' ? `${Math.round(el.value * 100)}%` : el.value; };
   show();
   el.addEventListener('input', () => {
-    settings[key] = key === 'name' ? el.value : Number(el.value);
+    settings[key] = key === 'name' || key === 'announcer' ? el.value : Number(el.value);
     show();
     if (key === 'vol') audio.setVolume(settings.vol);
+    if (key === 'announcer') setAnnouncerMode(settings.announcer);
     saveSettings();
   });
 }
@@ -369,6 +428,11 @@ function showMenu(text = '') {
 let connecting = null;
 playBtn.addEventListener('click', async () => {
   audio.initAudio(settings.vol);
+  if (!connecting) {
+    const { ctx, master } = audio.audioGraph();
+    setAnnouncerMode(settings.announcer);
+    initAnnouncer(ctx, master, text => hud.announce(text));
+  }
   if (!connecting) {
     playBtn.disabled = true;
     status.textContent = 'Connecting…';

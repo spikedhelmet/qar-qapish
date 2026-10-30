@@ -55,6 +55,16 @@ export class Hud {
     this.set('crossVis', visible, v => { this.cross.style.display = v ? '' : 'none'; });
   }
 
+  scope(on) { this.set('scope', on, v => document.getElementById('scope').classList.toggle('hidden', !v)); }
+
+  announce(text) {
+    const el = document.getElementById('announce');
+    el.textContent = text;
+    el.classList.remove('show');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('show');
+  }
+
   hitmarker(kind) {
     this.hit.className = '';
     void this.hit.offsetWidth; // restart the animation

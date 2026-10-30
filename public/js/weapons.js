@@ -20,6 +20,7 @@ export class Arsenal {
     this.heat = 0;
     this.shots = 0;
     this.triggerReady = true;
+    this.adsT = 0;
     this.recoil.pitch = 0; this.recoil.yaw = 0;
   }
 
@@ -32,6 +33,7 @@ export class Arsenal {
     this.drawT = 0;
     this.reloadT = -1;
     this.heat = 0;
+    this.adsT = 0;
     return true;
   }
 
@@ -53,12 +55,29 @@ export class Arsenal {
     if (!s) return 0;
     let v = s.base + s.move * Math.min(1, moveSpeed / 5) + (onGround ? 0 : s.air) + this.heat;
     if (crouching && onGround) v *= s.crouch;
-    return v;
+    return v * this.adsMix('spread');
   }
 
-  update(dt, triggerDown) {
+  // Blend a weapon's aim-down-sights multiplier by how far aimed in we are (1 when not aiming).
+  adsMix(key) {
+    const ads = this.def.ads;
+    return ads ? 1 + (ads[key] - 1) * this.adsT : 1;
+  }
+
+  get fovMult() { return this.adsMix('fov'); }
+  get moveMult() { return this.def.speedMult * this.adsMix('speed'); }
+  get aiming() { return this.adsT > 0.05; }
+
+  update(dt, triggerDown, aimHeld) {
     const def = this.def;
     this.drawT = Math.min(def.draw, this.drawT + dt);
+    if (def.ads) {
+      const want = aimHeld && this.reloadT < 0 && this.drawT >= def.draw ? 1 : 0;
+      const step = dt / def.ads.time;
+      this.adsT = want ? Math.min(1, this.adsT + step) : Math.max(0, this.adsT - step);
+    } else {
+      this.adsT = 0;
+    }
     this.cooldown = Math.max(0, this.cooldown - dt);
     if (!triggerDown) this.triggerReady = true;
     if (def.spread) this.heat = Math.max(0, this.heat - def.spread.recover * dt);
@@ -80,8 +99,8 @@ export class Arsenal {
     return null;
   }
 
-  canFire(triggerDown) {
-    if (!triggerDown || this.cooldown > 0 || this.drawT < this.def.draw || this.reloadT >= 0) return false;
+  canFire(triggerDown, blocked) {
+    if (!triggerDown || blocked || this.cooldown > 0 || this.drawT < this.def.draw || this.reloadT >= 0) return false;
     if (!this.def.auto && !this.triggerReady) return false;
     return true;
   }

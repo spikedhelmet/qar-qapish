@@ -52,8 +52,9 @@ export function buildGun(kind) {
     g.add(cyl(0.017, 0.05, MATS.metal, 0, 0.035, -0.73));
     g.add(box(0.05, 0.075, 0.24, MATS.polymer, 0, 0.005, 0.2));
     g.add(box(0.052, 0.11, 0.04, MATS.polymer, 0, -0.005, 0.33));
-    g.add(box(0.03, 0.03, 0.12, MATS.metal, 0, 0.09, -0.07));
-    g.add(box(0.008, 0.05, 0.01, MATS.metal, 0, 0.08, -0.48));
+    g.add(box(0.03, 0.012, 0.12, MATS.metal, 0, 0.078, -0.07));   // top rail
+    for (const x of [-0.011, 0.011]) g.add(box(0.007, 0.03, 0.012, MATS.metal, x, 0.093, -0.02)); // rear notch
+    g.add(box(0.004, 0.05, 0.008, MATS.metal, 0, 0.08, -0.48));    // front post, tip on the sight line
     const mag = box(0.032, 0.17, 0.065, MATS.polymer, 0, -0.1, -0.15);
     mag.rotation.x = 0.28;
     g.add(mag);
@@ -121,6 +122,7 @@ export class Soldier {
     this.walkPhase = 0;
     this.deathT = -1;
     this.crouch = 0;
+    this.slide = 0;
     this.build();
     this.setWeapon('rifle');
   }
@@ -234,6 +236,19 @@ export class Soldier {
     this.spine.rotation.x = -0.18 * c;
     this.aim.rotation.x = s.pitch + 0.18 * c;
     this.neck.rotation.x = s.pitch * 0.6;
+
+    // Slide: legs out in front, leaning back, still aiming.
+    this.slide += ((s.sliding ? 1 : 0) - this.slide) * Math.min(1, dt * 14);
+    const k = this.slide;
+    if (k > 0.01) {
+      this.legs.forEach((leg, i) => {
+        leg.thigh.rotation.x += (1.35 + i * 0.15 - leg.thigh.rotation.x) * k;
+        leg.knee.rotation.x += ((i ? -0.9 : -0.2) - leg.knee.rotation.x) * k;
+      });
+      this.hips.position.y += (0.36 - this.hips.position.y) * k;
+      this.spine.rotation.x += (0.5 - this.spine.rotation.x) * k;
+      this.aim.rotation.x = s.pitch - this.spine.rotation.x;
+    }
   }
 
   muzzleWorld(target) {
@@ -257,6 +272,7 @@ export class ViewModel {
     this.swing = 0;
     this.bobT = 0;
     this.sway = new THREE.Vector2();
+    this.sprintT = 0;
   }
 
   setTeam(team) { this.sleeve.color.setHex(UNIFORMS[team].shirt); }
@@ -280,20 +296,25 @@ export class ViewModel {
       arm(0, -0.05, 0.03, -1.0, 0.35);
       arm(-0.01, -0.03, -0.36, -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.23, -0.48);
+      this.adsPos = new THREE.Vector3(0, -0.105, -0.3); // iron sights on the crosshair
     } else if (kind === 'pistol') {
       arm(0, -0.04, 0.02, -1.05, 0.3);
       arm(-0.03, -0.05, 0.03, -1.05, -0.45);
       this.base = new THREE.Vector3(0.14, -0.17, -0.42);
+      this.adsPos = new THREE.Vector3(0, -0.081, -0.32);
     } else {
       arm(0, 0, 0.03, -1.0, 0.35);
       this.base = new THREE.Vector3(0.2, -0.22, -0.36);
+      this.adsPos = this.base;
       this.gun.rotation.set(0.2, 0.1, 0.4);
     }
     this.gun.traverse(o => { o.castShadow = false; });
   }
 
-  // drawT: 0→1 raise progress, reloadT: 0→1 reload progress (or -1)
-  update(dt, { speed, onGround, drawT, reloadT, lookDX, lookDY }) {
+  // drawT: 0→1 raise progress, reloadT: 0→1 reload progress (or -1), adsT: 0→1 aimed in
+  update(dt, { speed, onGround, drawT, reloadT, lookDX, lookDY, adsT = 0, sprinting = false, sliding = false }) {
+    this.sprintT += ((sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 10);
+    const steady = 1 - adsT * 0.85; // aiming damps bob and sway
     this.kick += (0 - this.kick) * Math.min(1, dt * 14);
     this.swing = Math.max(0, this.swing - dt * 3.5);
     this.sway.x += (Math.max(-1, Math.min(1, -lookDX * 0.02)) - this.sway.x) * Math.min(1, dt * 8);
@@ -301,11 +322,16 @@ export class ViewModel {
     const moving = onGround ? Math.min(1, speed / 5) : 0;
     this.bobT += dt * (6 + speed);
 
-    const p = this.holder.position.copy(this.base);
-    p.x += Math.sin(this.bobT) * 0.012 * moving + this.sway.x * 0.02;
-    p.y += Math.abs(Math.cos(this.bobT)) * 0.012 * moving - this.sway.y * 0.015;
-    p.z += this.kick * 0.06;
-    let rx = this.kick * 0.12, rz = 0, ry = this.sway.x * 0.05;
+    const p = this.holder.position.lerpVectors(this.base, this.adsPos, adsT);
+    const bob = (this.sprintT > 0.5 ? 2 : 1) * steady;
+    p.x += (Math.sin(this.bobT) * 0.012 * moving + this.sway.x * 0.02) * bob;
+    p.y += (Math.abs(Math.cos(this.bobT)) * 0.012 * moving - this.sway.y * 0.015) * bob;
+    p.z += this.kick * (0.06 - adsT * 0.03);
+    let rx = this.kick * (0.12 - adsT * 0.08), rz = 0, ry = this.sway.x * 0.05 * steady;
+    // Sprint: gun swings down and across the body.
+    p.x -= this.sprintT * 0.07; p.y -= this.sprintT * 0.07;
+    rx -= this.sprintT * 0.35; ry += this.sprintT * 0.75;
+    if (sliding) rz += 0.18;
     const lower = 1 - Math.min(1, drawT);
     p.y -= lower * 0.25;
     rx -= lower * 0.6;

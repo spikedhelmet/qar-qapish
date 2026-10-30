@@ -31,9 +31,11 @@ Qapishma server running.
 |---|---|
 | WASD | Move |
 | Mouse / left click | Aim / fire |
+| Right click (hold) | Aim down sights: zoom, tighter spread, slower movement |
 | Space | Jump |
-| Shift | Walk quietly (no footsteps) |
-| C (or Ctrl) | Crouch |
+| Shift (hold, moving forward) | Sprint. You can't fire while sprinting |
+| Alt / Option | Walk quietly (no footsteps) |
+| C (or Ctrl) | Crouch. While sprinting: **slide** (jump out of it to keep the speed) |
 | R | Reload |
 | 1 / 2 / 3, Q, mouse wheel | Rifle / pistol / knife, last weapon, cycle |
 | Tab | Scoreboard |
@@ -46,7 +48,9 @@ Qapishma server running.
 - Teams auto-balance on join. Respawn after 3 s with 2 s of spawn protection.
 - Rifle, pistol and knife with spread, recoil, reloads, headshots (×4 damage) and leg shots (×0.75).
 - One map, "Yard": three lanes, containers, crates, raised decks, and sites A/B painted for the objective mode later.
-- Characters, guns, textures and sounds are **stand-ins** built in code. See [ASSETS.md](ASSETS.md) for the real models we're swapping in.
+- Sprinting, sliding, quiet walking, and aiming down sights.
+- Announcer: plays your own recorded voice lines from `public/assets/sounds/announcer/`. Lines not recorded yet use the Mac's built-in voice. See [ASSETS.md](ASSETS.md#3-announcer-voice-lines-you-record-these) for the list.
+- Characters, guns, textures and sounds are **stand-ins** built in code. See [ASSETS.md](ASSETS.md) for everything we're swapping in.
 
 ### Roadmap
 

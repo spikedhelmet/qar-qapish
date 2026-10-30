@@ -24,12 +24,19 @@ const MIME = {
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png',
   '.jpg': 'image/jpeg', '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json',
   '.fbx': 'application/octet-stream', '.bin': 'application/octet-stream',
-  '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.md': 'text/plain; charset=utf-8',
+  '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.md': 'text/plain; charset=utf-8',
 };
 
 const server = http.createServer((req, res) => {
   let url;
   try { url = decodeURIComponent(new URL(req.url, 'http://host').pathname); } catch { url = '/'; }
+  if (url === '/api/announcer') { // which voice lines have been recorded
+    fs.readdir(path.join(ROOT, 'public/assets/sounds/announcer'), (err, files) => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify(err ? [] : files.filter(f => /\.(m4a|mp3|wav|ogg)$/i.test(f))));
+    });
+    return;
+  }
   const route = STATIC.find(([prefix]) => url.startsWith(prefix));
   const base = path.join(ROOT, route[1]);
   const file = path.join(base, url.slice(route[0].length) || 'index.html');
@@ -182,6 +189,7 @@ function handleState(p, msg) {
   p.yaw = Number(msg.yw) || 0;
   p.pitch = Number(msg.pt) || 0;
   p.crouch = !!msg.cr;
+  p.slide = !!msg.sl;
   if (WEAPONS[msg.w]) p.weapon = msg.w;
 }
 
@@ -259,7 +267,7 @@ function tick() {
     sc: match.score,
     ps: [...players.values()].map(p => ({
       id: p.id, n: p.name, tm: p.team, al: p.alive, hp: p.hp, k: p.kills, d: p.deaths, w: p.weapon,
-      x: r(p.pos[0]), y: r(p.pos[1]), z: r(p.pos[2]), yw: r(p.yaw), pt: r(p.pitch), cr: p.crouch,
+      x: r(p.pos[0]), y: r(p.pos[1]), z: r(p.pos[2]), yw: r(p.yaw), pt: r(p.pitch), cr: p.crouch, sl: !!p.slide,
       sp: p.protectedUntil > t,
     })),
   });

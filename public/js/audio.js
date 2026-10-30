@@ -16,6 +16,8 @@ export function initAudio(volume) {
 
 export function setVolume(v) { if (master) master.gain.value = v; }
 
+export function audioGraph() { return { ctx, master }; }
+
 const fwd = new THREE.Vector3(), up = new THREE.Vector3();
 export function updateListener(camera) {
   if (!ctx) return;
@@ -98,6 +100,11 @@ export function playStep(pos, loud = 1) {
   const out = output(pos);
   burst(out, { dur: 0.09, freq: 420, q: 1.2, gain: 0.25 * loud });
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });
+}
+
+export function playSlide(pos) {
+  if (!ctx) return;
+  burst(output(pos), { dur: 0.7, freq: 900, q: 0.7, gain: 0.3, attack: 0.04, sweep: 0.35 });
 }
 
 export function playClick(kind) {

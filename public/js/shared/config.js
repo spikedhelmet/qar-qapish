@@ -16,9 +16,16 @@ export const PLAYER = {
   eye: 1.62,
   crouchEye: 1.26,
   maxHp: 100,
-  runSpeed: 5.6,
-  walkSpeed: 2.8,
+  runSpeed: 5.2,
+  sprintSpeed: 7.0,
+  walkSpeed: 2.6,
   crouchSpeed: 2.1,
+  slideSpeed: 9.0,      // initial slide speed (or current speed if faster)
+  slideTime: 0.8,       // seconds
+  slideFriction: 1.3,
+  slideCooldown: 0.9,   // seconds after a slide ends before the next one
+  slideEye: 0.95,
+  sprintRecover: 0.15,  // seconds after sprinting before you can fire
   accel: 70,
   airAccel: 14,
   friction: 11,
@@ -34,6 +41,8 @@ export const MODES = {
 };
 
 // Spread values are radians of random cone; recoil values are radians of view kick per shot.
+// ads: right-click aim. fov = zoom multiplier, spread/speed = multipliers while aiming,
+// time = seconds to aim in, scope = show a scope overlay instead of iron sights.
 export const WEAPONS = {
   rifle: {
     name: 'Rifle', slot: 1, auto: true, pellets: 1,
@@ -41,6 +50,7 @@ export const WEAPONS = {
     fireInterval: 0.1, mag: 30, reserve: 90, reload: 2.4, draw: 0.5,
     spread: { base: 0.003, move: 0.04, air: 0.12, crouch: 0.6, perShot: 0.007, max: 0.06, recover: 0.15 },
     recoil: { pitch: 0.011, yaw: 0.004, recover: 6 },
+    ads: { fov: 0.72, spread: 0.35, speed: 0.7, time: 0.18 },
     speedMult: 0.94,
   },
   pistol: {
@@ -49,6 +59,7 @@ export const WEAPONS = {
     fireInterval: 0.16, mag: 12, reserve: 48, reload: 1.8, draw: 0.35,
     spread: { base: 0.005, move: 0.025, air: 0.09, crouch: 0.7, perShot: 0.012, max: 0.05, recover: 0.12 },
     recoil: { pitch: 0.016, yaw: 0.005, recover: 8 },
+    ads: { fov: 0.85, spread: 0.55, speed: 0.8, time: 0.12 },
     speedMult: 1.0,
   },
   knife: {
