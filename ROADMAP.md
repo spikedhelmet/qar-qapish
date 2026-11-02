@@ -37,6 +37,21 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Villa map; grass texture (`feature/milestone-5`)
+- **New map "Villa"**, an original layout with one theme throughout: a walled estate around a two-storey house. 80 × 60 m.
+  - **Street (attackers' spawn):** parked cars and street lamps. Three ways into the grounds: the main gate, a side door by the gazebo, and a collapsed stretch of the estate wall at the west end.
+  - **Front garden:** a driveway round a fountain, hedges, trees, statues by the porch, and a gazebo.
+  - **The house:**
+    - Ground floor: an entrance hall open to the roof, with a grand staircase up to a gallery. Off it are the living room, dining room, library and kitchen, with doors and windows on every side.
+    - Upstairs: two bedroom wings with windows over the hall and the gardens, and a balcony over the front garden.
+  - **Outbuildings:** a garage on the east side, behind a side passage, and a garden shed on the west.
+  - **Back (defenders' spawn):** a terrace, lawn and pool behind the house.
+- **Not mirrored.** The defenders are about 10 m from the back doors; the attackers have about 20 m of garden to cross, with three ways in. The objective sites are the living room (A) and the garage (B).
+- New surfaces: grass (ambientCG Grass005) for the lawns, hedges and tree tops; plus wooden floorboards and painted pool water.
+- Checks:
+  - Map check: no open spawn lines, all 15,473 ground cells reachable.
+  - Walking it by script: the front door, the stairs up to the gallery, the bedrooms and the balcony; the pool to the kitchen to the garage; the street through the breach into the garden.
+
 ### 2026-11-02 · No cut-off shoulder in view (`feature/milestone-5`)
 - The arms are cut off at the shoulder, and the shotgun (and a little of the rifle and the SMG's empty reload) showed the cut.
 - Found by checking every clip at 11 points on a 16:9 screen for upper-arm vertices in view. The rifle, SMG and shotgun sets now sit closer to the eye and slightly lower, so the guns also look bigger:

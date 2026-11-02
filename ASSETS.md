@@ -177,7 +177,7 @@ Save into `public/assets/sounds/sfx/` as `.mp3`, `.ogg` or `.wav`. Good free sou
 
 **Done:** the map textures come from https://ambientcg.com (CC0).
 - The **1K-JPG** zips are unzipped in `assets-src/textures/<AssetId>/`.
-- `bash scripts/build-textures.sh` recompresses each surface's Color, NormalGL and Roughness maps into `public/assets/game/textures/` (5 MB). It uses macOS's built-in `sips`.
+- `bash scripts/build-textures.sh` recompresses each surface's Color, NormalGL and Roughness maps into `public/assets/game/textures/` (11 MB). It uses macOS's built-in `sips`.
 - Tile size, tint and per-surface tweaks live in `PHOTO` in `public/js/textures.js`.
 - If the folder is missing, the game falls back to its painted stand-ins.
 
@@ -190,7 +190,8 @@ Save into `public/assets/sounds/sfx/` as `.mp3`, `.ogg` or `.wav`. Good free sou
 | Containers | CorrugatedSteel005 | One grey steel, tinted red / blue / green |
 | Plaza floor | PavingStones136 | Warmed up (olive in the photo) |
 | Plaza walls | Tiles143 | Limestone blocks |
-| Pavilion walls | PaintedPlaster006 | Whitewashed plaster |
+| Pavilion walls, Villa house | PaintedPlaster006 | Whitewashed plaster |
+| Lawns, hedges, tree tops | Grass005 | Hedges darker and coarser |
 | Trims, doors | Metal plates / rusted metal | P3, not yet |
 
 To swap a texture:
@@ -244,4 +245,4 @@ Shown in the game's menu (built from each model's licence data). Currently:
   - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
-- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster006), CC0
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster006, Grass005), CC0

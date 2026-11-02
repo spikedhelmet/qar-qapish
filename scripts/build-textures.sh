@@ -19,6 +19,7 @@ SURFACES=(
   "paving PavingStones136"
   "stone Tiles143"
   "plaster PaintedPlaster006"
+  "grass Grass005"
 )
 
 mkdir -p "$OUT"

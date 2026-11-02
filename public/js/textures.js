@@ -183,6 +183,13 @@ function container(size, rgb, seed) {
   return c;
 }
 
+// Grass or hedge: green noise with darker speckles.
+function lawn(size, rgb, seed) {
+  const c = canvas(size), ctx = c.getContext('2d');
+  paintNoise(ctx, size, rgb, fbm(size, seed, [[8, 0.4], [32, 0.3], [128, 0.3]]), 0.45, 0.25, seed);
+  return c;
+}
+
 // Stone blocks or paving slabs: a noisy base color cut into a grid (alternate rows offset for blocks).
 function slabs(size, rgb, rows, cols, offset, seed) {
   const c = canvas(size), ctx = c.getContext('2d');
@@ -234,6 +241,10 @@ export function createSurfaces(renderer) {
     paving: make(slabs(size, [150, 145, 134], 4, 4, false, 61), 2, 0.9),
     stone: make(slabs(size, [196, 174, 136], 5, 3, true, 67), 2, 0.9),
     plaster: make(slabs(size, [214, 208, 196], 1, 1, false, 71), 3, 0.95),
+    grass: make(lawn(size, [78, 128, 52], 73), 2.5, 0.95),
+    hedge: make(lawn(size, [44, 84, 34], 79), 1.2, 0.95),
+    floor: make(slabs(size, [128, 88, 56], 8, 2, true, 83), 2.5, 0.8),
+    water: make(lawn(size, [46, 122, 158], 89), 3, 0.12, 0.1), // painted only: glossy pool water
   };
   loadPhotos(surfaces, renderer);
   return surfaces;
@@ -254,6 +265,9 @@ const PHOTO = {
   paving: { tex: 'paving', tile: [2.5, 2.5], tint: [1.12, 0.98, 0.88], rough: 0.9 }, // olive in the photo; warmer under the blue sky
   stone: { tex: 'stone', tile: [2.4, 2.4], rough: 0.9 },
   plaster: { tex: 'plaster', tile: [3, 3], tint: [0.9, 0.88, 0.84], rough: 0.95, bump: 0.6 },
+  grass: { tex: 'grass', tile: [2.5, 2.5], rough: 0.95 },
+  hedge: { tex: 'grass', tile: [1, 1], tint: [0.55, 0.72, 0.48], rough: 0.95, bump: 1.5 }, // the lawn photo, darker and coarser
+  floor: { tex: 'wood', tile: [2.5, 2.5], tint: [0.9, 0.8, 0.72], rough: 0.7 },             // the crate planks as floorboards
 };
 const PHOTO_DIR = '/assets/game/textures/';
 
