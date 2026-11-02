@@ -30,12 +30,15 @@ all(3.3, 11.6, 0.6, 5.8, 3, 'stone');
 ns(0, 11.6, 7.2, 5.8, 0.3, 'concrete', 3);
 
 // ---- each team's side (south half shown; mirrored north)
-// Wall between the band of cover and the lane, open at the passage.
-all(15.25, 14.5, 23.9, 0.6, 3, 'stone');
+// Wall between the band of cover and the lane (2.4 m: you can shoot over it from a crate), open at the
+// passage and with a doorway into the lane.
+all(8.65, 14.5, 10.7, 0.6, 2.4, 'stone');
+all(21.85, 14.5, 10.7, 0.6, 2.4, 'stone');
 // Short walls closing the band's ends off from the stairs.
 all(27.2, 16.9, 0.6, 4.8, 3, 'stone');
-// Spawn wall with a doorway near each end.
-ns(0, 23.1, 54, 0.6, 3, 'concrete');
+// Spawn wall with doorways near the ends and either side of the middle.
+ns(0, 23.1, 23.5, 0.6, 3, 'concrete');
+all(20.625, 23.1, 12.75, 0.6, 3, 'concrete');
 all(36.75, 23.1, 6.5, 0.6, 3, 'concrete');
 
 // ---- pavilions: x 23 … 40, z ±9.6, floor at H, roof at 5 m
@@ -55,9 +58,13 @@ for (let i = 1; i <= 8; i++) all(33, 14.5 - (i - 1) * 0.6 - 0.3, 6, 0.6, H * i /
 for (let i = 1; i <= 8; i++) ew(23 - (8 - i) * 0.6 - 0.3, 0, 0.6, 4, H * i / 8, 'concrete');
 
 // ---- cover
-// Bands
-all(20, 18.5, 1.4, 1.4, 1.4, 'crate');
-all(9, 16.6, 1.2, 1.2, 1.2, 'crate');
+// Bands: crates against the wall to stand on and shoot over it (two low steps walk you up), and cover.
+for (const x of [7.5, 22]) {
+  all(x, 15.5, 1.4, 1.4, 1.2, 'crate');
+  all(x, 16.5, 0.9, 0.6, 0.8, 'crate');
+  all(x, 17.1, 0.9, 0.6, 0.4, 'crate');
+}
+all(19, 19, 1.4, 1.4, 1.4, 'crate');
 ns(0, 19, 4, 0.6, 1.2, 'concrete');
 all(14, 20.5, 0.6, 3, 1.2, 'concrete');
 // Spawn strips: a little cover by each doorway

@@ -37,6 +37,14 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Plaza: firing spots and more doorways (`feature/milestone-5`)
+- The band between the spawn wall and the wall in front of it was a dead end. Now:
+  - That inner wall is 2.4 m, down from 3 m.
+  - Two firing spots against it on each side: a 1.2 m crate with two low steps (0.4 m, 0.8 m), so you walk straight up and stand with your eye 40 cm above the wall.
+  - A doorway through the inner wall into the lane.
+  - Two more doorways in the spawn wall, either side of the middle.
+- Checked by script: the steps walk up without jumping, the doorways lead through, and no spawn can see the other team's spawn.
+
 ### 2026-11-02 · Plaza, second version; three more textures (`feature/milestone-5`)
 - **Pavilions are raised and enclosed.** The floor is 2.2 m up, too high to climb. Plaster walls close the sides, a roof is at 5 m, and the plaza side has a half wall with a window band above it and a doorway. The objective sites sit inside the pavilions.
 - **Stairs go up:**
