@@ -357,5 +357,14 @@
    "kneel_idle"
   ]
  },
- "built": "2026-11-02T06:53:09.438Z"
+ "built": "2026-11-02T07:27:04.402Z",
+ "arms": {
+  "file": "game/arms/arms_fp.glb",
+  "credit": {
+   "title": "FREE FPS Arms with glove",
+   "author": "Alexander_Ovelar (https://sketchfab.com/Alexander_Ovelar)",
+   "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+   "source": "https://sketchfab.com/3d-models/free-fps-arms-with-glove-453e0248925c4c3e807d3d36fe1b916a"
+  }
+ }
 }

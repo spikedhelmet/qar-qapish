@@ -32,7 +32,7 @@
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
     import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
     import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-    import { WEAPONS, GRENADES, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
+    import { WEAPONS, GRENADES, ARMS, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
 
     const logEl = document.getElementById('log');
     const log = (msg, cls) => {
@@ -174,6 +174,30 @@
       };
     }
 
+    async function buildArms(cfg) {
+      const gltf = await gltfLoader.loadAsync(srcUrl(cfg.src));
+      const extras = gltf.parser.json.asset?.extras || {};
+      const model = gltf.scene;
+      model.updateMatrixWorld(true);
+      const [l, r] = cfg.shoulders.map(n => model.getObjectByName(n).getWorldPosition(new THREE.Vector3()));
+      const mid = l.clone().add(r).multiplyScalar(0.5);
+      // root → wrap (turn to face -Z, scale to meters, shoulders' midpoint at the origin) → model
+      const wrap = new THREE.Group();
+      wrap.rotation.y = Math.PI;
+      wrap.scale.setScalar(cfg.scale);
+      wrap.position.copy(mid).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI).multiplyScalar(-cfg.scale);
+      wrap.add(model);
+      const root = new THREE.Group();
+      root.name = 'arms';
+      root.add(wrap);
+      root.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+      useJpeg(root);
+      const glb = await exportGlb(root, TEXTURE_SIZE.firstPerson);
+      const file = 'game/arms/arms_fp.glb';
+      log(`  arms     ${mb(await save(file, glb))} · from ${cfg.src.split('/').pop()}`);
+      return { file, credit: { title: extras.title, author: extras.author, license: extras.license, source: extras.source } };
+    }
+
     // FBX characters use Phong materials; game uses physically based ones.
     function toStandard(m) {
       const out = new THREE.MeshStandardMaterial({
@@ -258,7 +282,7 @@
       return { file: 'game/animations.glb', clips: clips.map(c => c.name) };
     }
 
-    // only: rebuild just these sections ('weapons', 'grenades', 'props', 'characters', 'animations') and keep the rest.
+    // only: rebuild just these sections ('weapons', 'grenades', 'arms', 'props', 'characters', 'animations') and keep the rest.
     async function buildAll({ only } = {}) {
       const t0 = performance.now();
       const want = section => !only || only.includes(section);
@@ -275,6 +299,10 @@
       if (want('grenades')) {
         log('Grenades');
         for (const [kind, cfg] of Object.entries(GRENADES)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
+      }
+      if (want('arms')) {
+        log('Arms');
+        manifest.arms = await buildArms(ARMS);
       }
       if (want('props')) {
         log('Props');

@@ -11,6 +11,7 @@ export const assets = {
   clips: {},               // clip id → AnimationClip
   weapons: { fp: {}, tp: {} },
   props: {},               // kind → scene (charge, …)
+  arms: null,              // first-person arms scene (rigged)
 };
 
 const BASE = '/assets/game/';
@@ -30,6 +31,7 @@ export async function loadAssets(onProgress = () => {}) {
   const add = (file, use) => jobs.push({ file, use });
   for (const [team, c] of Object.entries(manifest.characters)) add(c.file, g => { assets.characters[team] = g.scene; });
   add(manifest.animations.file, g => { for (const clip of g.animations) assets.clips[clip.name] = clip; });
+  if (manifest.arms) add(manifest.arms.file, g => { assets.arms = g.scene; });
   for (const [kind, prop] of Object.entries(manifest.props || {})) add(prop.tp, g => { assets.props[kind] = g.scene; });
   for (const [kind, w] of Object.entries(manifest.weapons)) {
     add(w.fp, g => { assets.weapons.fp[kind] = g.scene; });
@@ -61,6 +63,11 @@ export async function loadAssets(onProgress = () => {}) {
 
 export function weaponInfo(kind) {
   return assets.manifest?.weapons[kind] || null;
+}
+
+// A fresh copy of the first-person arms (rigged), or null when not built.
+export function armsModel() {
+  return assets.arms ? SkeletonUtils.clone(assets.arms) : null;
 }
 
 // A fresh copy of a world prop (e.g. the charge), or null when not built.

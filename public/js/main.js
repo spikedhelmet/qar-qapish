@@ -803,7 +803,7 @@ loadAssets((done, total) => { status.textContent = `Loading models… ${done}/${
 
 function renderCredits(manifest) {
   const list = document.getElementById('credits-list');
-  const items = { ...(manifest?.weapons || {}), ...(manifest?.props || {}) };
+  const items = { ...(manifest?.weapons || {}), ...(manifest?.props || {}), ...(manifest?.arms ? { 'first-person arms': manifest.arms } : {}) };
   const rows = Object.entries(items).map(([kind, w]) => {
     const c = w.credit || {};
     const author = escapeHtml((c.author || 'unknown').replace(/\s*\(.*\)$/, ''));

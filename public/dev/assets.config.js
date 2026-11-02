@@ -39,6 +39,9 @@ export const GRENADES = {
   flash: { src: 'weapons/m84_stun_grenade_flashbang.glb', height: 0.135, hide: /_low00[23]_/, grip: [0.5, 0.4], muzzle: [0.5, 1] },
 };
 
+// First-person arms (rigged). Scaled to meters, turned to face -Z, origin between the shoulders.
+export const ARMS = { src: 'weapons/free_fps_arms_with_glove.glb', scale: 0.3, shoulders: ['upperarm_l_2', 'upperarm_r_5'] };
+
 // World objects (not held in first person): same frame as weapons, one 1K file each.
 export const PROPS = {
   charge: { src: 'weapons/ied.glb', length: 0.24, grip: [0.5, 0], muzzle: [1, 0.5] }, // origin: center of its base

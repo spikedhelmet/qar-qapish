@@ -217,5 +217,5 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Frag: "M67 Fragmentation Grenade" by FJH, CC-BY 4.0
 - Smoke: "M18 Smoke Grenade" by Vanillatography, CC-BY 4.0
 - Flashbang: "M84 Stun Grenade "Flashbang"" by Vanillatography, CC-BY 4.0
-- Downloaded but not used yet: "FREE FPS Arms with glove" (Alexander_Ovelar), CC-BY 4.0
+- First-person arms: "FREE FPS Arms with glove" by Alexander_Ovelar, CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required

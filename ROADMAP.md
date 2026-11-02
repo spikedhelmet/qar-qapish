@@ -18,13 +18,13 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
 | 4 | Grenades: frag, smoke, flashbang | ✅ Done, needs a playtest |
-| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads done) |
+| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms done) |
 
 ### Milestone 5: polish (in progress)
 - ~~**Per-weapon reload animations**~~ done (see log).
+- ~~**First-person arms**~~ done (see log).
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - Photo textures for the map (ambientCG / Poly Haven, CC0).
-- First-person arms (model downloaded: "FREE FPS Arms with glove").
 - Firing and reload animations on other players (clips already built).
 - More maps, key rebinding, graphics quality setting.
 - Your recorded announcer lines (ASSETS.md §3).
@@ -35,6 +35,13 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 2: first-person arms (`feature/milestone-5`)
+- The stand-in sleeves are replaced by the rigged "FREE FPS Arms with glove" model (bare forearms, fingerless gloves).
+- Every frame the hands are put on the weapon and the elbows bend to reach (two-bone IK, elbows down and out; the forearm stretches slightly rather than leave a gap when the left hand reaches far up a rifle). Fingers curl around the grip, the index finger less (trigger).
+- The old stand-in arm positions now only mark where the hands go, so every existing animation drives the real hands: recoil, sprint, reloads (support hand fetches the magazine / feeds shells), shotgun pump, knife swing, grenade throw.
+- Per-weapon hand poses: right hand on the pistol grip, left hand under the forend (rifle, sniper), on the pump (shotgun), on the front grip (SMG); pistol, knife and grenades are one-handed.
+- Tuning while testing: first right-hand pose had the palm facing the camera (fingers curling toward you); a two-handed pistol cup looked bunched up, so the pistol is held one-handed and a little further out.
 
 ### 2026-11-02 · Milestone 5, part 1: stronger flashbang, per-weapon reloads (`feature/milestone-5`)
 - Playtest feedback: the flashbang felt weak. Now up to 5 s (was 3.5 s), fully white for the first half, reaches 34 m, turning away only halves it, and game sound drops away while you're flashed (ear ring stays on top). Looking at one from 6 m: 3.2 s → 5.3 s.

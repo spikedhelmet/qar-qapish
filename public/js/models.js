@@ -2,7 +2,8 @@
 // They expose the same small interface the real Mixamo / Sketchfab models will use later.
 import * as THREE from 'three';
 import { TEAMS, WEAPONS } from './shared/config.js';
-import { weaponModel, weaponInfo } from './assets.js';
+import { weaponModel, weaponInfo, armsModel } from './assets.js';
+import { FpArms } from './fparms.js';
 import { playMech } from './audio.js';
 
 const mat = (color, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -345,6 +346,24 @@ const EJECT = {
 
 const rndSpin = () => (Math.random() * 2 - 1) * 25;
 
+// How the real first-person hands hold each weapon, in the gun's frame (barrel -Z, up +Y).
+// fingers: where the fingers point; across: pinky knuckle → index knuckle; off: nudge from the
+// stand-in hand position to the palm; curl: how tightly the fingers close (0 open … 1 fist).
+// Right hand on a pistol grip: wrist→knuckles runs forward along the grip, palm on its right side,
+// fingers curling round the front.
+const GRIP_RIGHT = { fingers: [0, 0.2, -1], across: [0, 1, 0.2], off: [0.03, -0.01, 0.025], curl: 0.85, trigger: 0.55 };
+const SUPPORT = { fingers: [1, 0.65, 0], across: [0, 0, -1], off: [-0.01, -0.025, 0], curl: 0.7 };
+const HAND_POSES = {
+  rifle: { right: GRIP_RIGHT, left: SUPPORT },
+  smg: { right: GRIP_RIGHT, left: SUPPORT },
+  sniper: { right: GRIP_RIGHT, left: SUPPORT },
+  shotgun: { right: GRIP_RIGHT, left: { ...SUPPORT, curl: 0.8 } },
+  pistol: { right: GRIP_RIGHT, left: null }, // one-handed: a two-handed cup reads badly at this distance
+  knife: { right: { fingers: [-1, -0.3, 0], across: [0, 0.2, -1], off: [0.02, 0, 0], curl: 1 }, left: null },
+  frag: { right: { fingers: [-0.7, 0.4, -0.5], across: [0, 1, 0.2], off: [0.035, -0.01, 0.01], curl: 0.75 }, left: null },
+};
+HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
+
 // Moving parts inside the real gun models (matched by mesh name): the magazine that comes out
 // on a reload, and the bolt / slide that gets racked afterwards.
 const PARTS = {
@@ -401,7 +420,7 @@ const REAL_VIEW = {
   sniper:  { hip: [0.15, -0.19, -0.36], adsZ: -0.1 },
   shotgun: { hip: [0.15, -0.19, -0.31], adsZ: -0.24 },
   smg:     { hip: [0.13, -0.16, -0.29], adsZ: -0.15, adsY: 0.012 }, // look through the rear drum, not over it
-  pistol:  { hip: [0.11, -0.13, -0.31], adsZ: -0.34 },
+  pistol:  { hip: [0.12, -0.14, -0.42], adsZ: -0.42 }, // far enough out that both hands fit on screen
   knife:   { hip: [0.17, -0.19, -0.29] },
   frag:    { hip: [0.15, -0.15, -0.28] },
   smoke:   { hip: [0.15, -0.15, -0.28] },
@@ -414,6 +433,13 @@ export class ViewModel {
     this.holder = new THREE.Group();
     this.group.add(this.holder);
     this.sleeve = mat(UNIFORMS[team].shirt, 0.95);
+    // Real arms model when built; the stand-in sleeves then only mark where the hands go.
+    const arms = armsModel();
+    if (arms) {
+      this.armsRig = new FpArms(arms);
+      arms.position.set(0, -0.3, -0.05); // shoulders just below and behind the eye
+      this.group.add(arms);
+    }
     this.recoilPos = new Spring(300, 22);
     this.recoilRot = new Spring(300, 22);
     this.shake = new Spring(500, 30);   // camera jolt, read by main.js
@@ -430,6 +456,7 @@ export class ViewModel {
     this.kind = kind;
     this.pumpArm = null;
     this.support = null;
+    this.handR = null;
     this.cycle = 0;
     this.throwT = -1;
     this.reload = null;
@@ -445,6 +472,8 @@ export class ViewModel {
       a.add(limb(0.042, len, this.sleeve));
       a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
       this.holder.add(a);
+      if (!this.handR) this.handR = a;
+      if (this.armsRig) a.children.forEach(c => { c.visible = false; });
       return a;
     };
     if (kind === 'rifle') {
@@ -468,6 +497,8 @@ export class ViewModel {
       a.add(limb(0.042, 0.55, this.sleeve));
       a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
       this.pumpArm.add(a);
+      this.support = a;
+      if (this.armsRig) a.children.forEach(c => { c.visible = false; });
       this.base = new THREE.Vector3(0.19, -0.24, -0.46);
       this.adsPos = new THREE.Vector3(0, -0.068, -0.34);
     } else if (kind === 'smg') {
@@ -578,6 +609,21 @@ export class ViewModel {
       rz -= k * (pump ? 0.05 : 0.18);
     }
     this.holder.rotation.set(rx, ry, rz);
+    if (this.armsRig) this.placeHands();
+  }
+
+  // Puts the real hands where the stand-in hands are, turned to hold this weapon.
+  placeHands() {
+    this.group.updateMatrixWorld(true);
+    const pose = HAND_POSES[this.kind] || HAND_POSES.rifle;
+    const q = this.holder.getWorldQuaternion(new THREE.Quaternion());
+    const target = (marker, p) => marker && p && {
+      palm: marker.localToWorld(new THREE.Vector3()).add(new THREE.Vector3(...p.off).applyQuaternion(q)),
+      fingers: new THREE.Vector3(...p.fingers).applyQuaternion(q),
+      across: new THREE.Vector3(...p.across).applyQuaternion(q),
+      curl: p.curl, trigger: p.trigger,
+    };
+    this.armsRig.update(target(this.handR, pose.right), target(this.support, pose.left));
   }
 
   // `cycleIn` > 0: pump or bolt action plays that many seconds after the shot.
