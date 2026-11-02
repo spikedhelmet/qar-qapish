@@ -81,9 +81,8 @@ const SHOTS = {
   smg: { crack: 3000, dur: 0.14, boom: 120, gain: 0.7 },
   shotgun: { crack: 1500, dur: 0.38, boom: 65, gain: 1.0 },
   sniper: { crack: 2200, dur: 0.5, boom: 55, gain: 1.1 },
-  carbine: { crack: 2900, dur: 0.2, boom: 105, gain: 0.85 },
-  scar: { crack: 2100, dur: 0.3, boom: 78, gain: 1.0 },
-  revolver: { crack: 2400, dur: 0.32, boom: 85, gain: 0.95 },
+  vsk: { crack: 1400, dur: 0.16, boom: 70, gain: 0.55 }, // suppressed: a dull thud
+  makarov: { crack: 3300, dur: 0.14, boom: 140, gain: 0.6 },
 };
 
 export function playShot(weapon, pos) {

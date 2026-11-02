@@ -54,7 +54,7 @@ PORT=3001 npm start
 | 4, then left / right click | Grenade: throw far / lob short |
 | G | Quick-throw your grenade |
 | Tab | Scoreboard |
-| B | Choose class (then 1–6) |
+| B | Choose class (then 1–5) |
 | M | Switch team (also in the Esc menu). By default only if it keeps teams even; the host can allow uneven teams |
 | Esc | Menu (sensitivity, field of view, volume, graphics) |
 
@@ -75,10 +75,9 @@ These are the default keys. To change one, open **Controls** in the menu, click 
 |---|---|---|---|
 | Assault | Rifle | Frag | All-rounder |
 | Marksman | Scoped sniper | Smoke | One-shot body kill, drops out of scope after each shot, moves a bit slower |
-| Breacher | Pump shotgun | Flashbang | 8 pellets, damage drops off with distance |
+| Breacher | Pump shotgun | Flashbang | 8 pellets, full damage to 12 m, then dropping off to 40 m |
 | Runner | SMG | Smoke | Moves 8% faster, accurate on the move |
-| Operator | Carbine (AR-15) | Flashbang | Fires fastest, lighter than the rifle, weaker past 25 m |
-| Vanguard | Battle rifle (FN SCAR) | Frag | Three hits kill but it kicks; 20-round magazine; carries a **revolver** (Colt Python) instead of the pistol |
+| Vanguard | Battle rifle (VSK-94) | Frag | Three hits kill but it kicks; 20-round magazine; carries a **Makarov** (8 rounds, weaker than the pistol) instead of the pistol |
 
 **Grenades** (one per life): bounce off walls and roll. **Frag** explodes after 2.2 s, damage falls off over 7 m and walls block it (it can hurt you, not teammates). **Smoke** makes a 5 m cloud for 16 s. **Flashbang** whites out anyone who can see it, worst if they're looking at it; walls and smoke block it.
 
@@ -92,7 +91,7 @@ Class changes apply instantly during freeze time or right after spawning, otherw
   - **Yard:** three long lanes with containers, crates and raised decks.
   - **Depot:** smaller and closer. A roofed hall in the middle, a raised loading dock to the north, and a rail yard of parked wagons to the south.
   - Both have plant sites A and B for objective mode.
-- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; realistic first-person guns, photo textures on the maps (ambientCG). Sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
+- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; first-person guns with arms and hand-made animations (idle, walk, fire, reload) by Cransh, photo textures on the maps (ambientCG). Sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 
 ### Roadmap
 

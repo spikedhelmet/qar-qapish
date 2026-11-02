@@ -2,8 +2,9 @@
 // They expose the same small interface the real Mixamo / Sketchfab models will use later.
 import * as THREE from 'three';
 import { TEAMS, WEAPONS } from './shared/config.js';
-import { weaponModel, weaponInfo, armsModel, characterModel } from './assets.js';
+import { weaponModel, weaponInfo, armsModel, characterModel, viewmodelAsset } from './assets.js';
 import { FpArms, RIGS } from './fparms.js';
+import { FpRig } from './fprig.js';
 import { playMech } from './audio.js';
 
 const mat = (color, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -46,7 +47,7 @@ function limb(radius, length, material) {
 // Barrel points along -z; origin is at the pistol grip. `userData.muzzle` marks the barrel tip.
 
 // Guns without a stand-in model of their own borrow one (and its hand placement) from a similar gun.
-const LIKE = { carbine: 'rifle', scar: 'rifle', revolver: 'pistol' };
+const LIKE = { vsk: 'rifle', makarov: 'pistol' };
 
 export function buildGun(kind) {
   kind = LIKE[kind] || kind;
@@ -341,9 +342,8 @@ const KICK = {
   pistol:  { back: 0.028, up: 0.008, pitch: 0.09, yaw: 0.012, roll: 0.02, shake: 0.003, flash: 0.7 },
   shotgun: { back: 0.065, up: 0.01, pitch: 0.12, yaw: 0.02, roll: 0.035, shake: 0.012, flash: 1.5 },
   sniper:  { back: 0.075, up: 0.01, pitch: 0.1, yaw: 0.012, roll: 0.025, shake: 0.012, flash: 1.4 },
-  carbine: { back: 0.026, up: 0.003, pitch: 0.028, yaw: 0.01, roll: 0.012, shake: 0.0025, flash: 0.9 },
-  scar:    { back: 0.042, up: 0.006, pitch: 0.05, yaw: 0.014, roll: 0.02, shake: 0.005, flash: 1.2 },
-  revolver: { back: 0.035, up: 0.012, pitch: 0.14, yaw: 0.015, roll: 0.025, shake: 0.006, flash: 1.0 },
+  vsk:     { back: 0.042, up: 0.006, pitch: 0.05, yaw: 0.014, roll: 0.02, shake: 0.005, flash: 0.6 }, // suppressed
+  makarov: { back: 0.024, up: 0.008, pitch: 0.08, yaw: 0.012, roll: 0.02, shake: 0.0025, flash: 0.6 },
 };
 export const flashSize = kind => KICK[kind]?.flash ?? 1;
 // Does this weapon aim through an optic (so the HUD draws a reticle when aiming)?
@@ -358,8 +358,8 @@ const EJECT = {
   pistol:  { port: [0.012, 0.045, -0.04], size: [0.0045, 0.02], color: 0xb08d3c },
   sniper:  { port: [0.03, 0.045, -0.04], size: [0.005, 0.045], color: 0xb08d3c },
   shotgun: { port: [0.025, 0.03, -0.08], size: [0.009, 0.05], color: 0x9a2a22 },
-  carbine: { port: [0.022, 0.05, -0.06], size: [0.0045, 0.03], color: 0xb08d3c },
-  scar:    { port: [0.026, 0.06, -0.08], size: [0.005, 0.04], color: 0xb08d3c }, // revolvers keep their cases
+  makarov: { port: [0.012, 0.04, -0.03], size: [0.0045, 0.018], color: 0xb08d3c },
+  vsk:     { port: [0.025, 0.05, -0.1], size: [0.005, 0.04], color: 0xb08d3c },
 };
 
 const rndSpin = () => (Math.random() * 2 - 1) * 25;
@@ -384,16 +384,15 @@ const HAND_POSES = {
   frag: { right: { fingers: [-0.7, 0.4, -0.5], across: [0, 1, 0.2], off: [0.035, -0.01, 0.01], curl: 0.75 }, left: null },
 };
 HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
-HAND_POSES.scar = HAND_POSES.rifle;
-HAND_POSES.carbine = { right: GRIP_RIGHT, left: { ...SUPPORT, curl: 0.55 } }; // slim handguard: fingers stay below the sight line
-HAND_POSES.revolver = HAND_POSES.pistol;
+HAND_POSES.vsk = HAND_POSES.rifle;
+HAND_POSES.makarov = HAND_POSES.pistol;
 
 // First-person hands are off for now: the guns float on their own. Set to true to bring back the
 // rigged arms (or the stand-in sleeves when no arms model is built).
 const SHOW_HANDS = false;
 
 // How far forward of the grip the support hand holds the handguard (rifle-shaped guns).
-const SUPPORT_Z = { rifle: -0.27, carbine: -0.27, scar: -0.3 };
+const SUPPORT_Z = { rifle: -0.27, vsk: -0.27 };
 
 // Where the arms' shoulders sit relative to the eye. The soldier's sit a little ahead of the eye
 // (its arms are shorter) — its chest stays below the bottom of the view.
@@ -411,10 +410,6 @@ const PARTS = {
   pistol: { mag: /^(Magazine|MagFollower)_/, bolt: /^Shutter_/, rack: 0.035 },
   sniper: { mag: /^Cube054_/ },
   smg:    { mag: /^Object_5$/ },
-  carbine: { mag: /^Magazine_/ },
-  scar:   { mag: /m5M4_mag/ },
-  // The cylinder (with its ejector rod) swings out to the left and back instead of a magazine change.
-  revolver: { mag: /^(wheel_low|wheel_rot|wheel_pan|handle_low)/, swing: [-0.035, -0.012, 0] },
 };
 
 // Returns a function that offsets `part` by (dx, dy, dz) meters in the gun's own frame,
@@ -456,6 +451,19 @@ class Spring {
   }
 }
 
+// Animated first-person sets (fprig.js): hip moves the whole set from where its creator framed it
+// (meters: right, up, back) and turn tilts it (radians: pitch, yaw, roll), both easing out when aiming.
+// relief: how far in front of the eye the rear sight sits when aiming (meters).
+const ANIM_VIEW = {
+  rifle:   { hip: [0, 0, 0], relief: 0.2 },
+  vsk:     { hip: [0.11, -0.14, -0.22], turn: [0.06, 0.12, 0.08], relief: 0.16 }, // no camera in the set: framed by hand
+  smg:     { hip: [0, 0, 0], relief: 0.14 },
+  shotgun: { hip: [0.02, -0.02, -0.08], relief: 0.18 },
+  sniper:  { hip: [0, 0, 0], relief: 0.07 },
+  pistol:  { hip: [0, 0, 0], relief: 0.36 },
+  makarov: { hip: [0.02, -0.09, 0], relief: 0.36 },
+};
+
 // Real gun models: where the grip sits at the hip, and how far in front of the eye the gun
 // sits when aiming (adsZ; the rear sight ends up roughly a hand's width from the eye).
 // Iron sights: the top of the gun lines up with the eye; adsY nudges that when the highest point
@@ -469,9 +477,6 @@ const REAL_VIEW = {
   sniper:  { hip: [0.15, -0.19, -0.36], adsZ: -0.1 },
   shotgun: { hip: [0.15, -0.19, -0.31], adsZ: -0.24 },
   smg:     { hip: [0.13, -0.16, -0.29], adsZ: -0.15, adsY: 0.012 }, // look through the rear drum, not over it
-  carbine: { hip: [0.15, -0.18, -0.33], adsZ: -0.07, optic: { y: 0.094 } },
-  scar:    { hip: [0.15, -0.18, -0.35], adsZ: -0.09, optic: { y: 0.146 } },
-  revolver: { hip: [0.12, -0.14, -0.42], adsZ: -0.42 },
   pistol:  { hip: [0.12, -0.14, -0.42], adsZ: -0.42 }, // far enough out that both hands fit on screen
   knife:   { hip: [0.17, -0.19, -0.29] },
   frag:    { hip: [0.15, -0.15, -0.28] },
@@ -535,6 +540,23 @@ export class ViewModel {
     this.throwT = -1;
     this.reload = null;
     this.holder.clear();
+    this.rig = null;
+    this.holder.position.set(0, 0, 0);
+    // Animated set (arms, gun and the creator's clips) when built.
+    const anim = viewmodelAsset(kind);
+    if (anim) {
+      this.rig = new FpRig(anim);
+      this.holder.add(this.rig.aimer);
+      this.gun = this.rig.scene;
+      const v = ANIM_VIEW[kind] || { hip: [0, 0, 0], relief: 0.2 };
+      this.base = new THREE.Vector3(...v.hip);
+      this.adsPos = this.base; // the set aims itself (FpRig.aim)
+      this.adsRelief = v.relief;
+      this.hipTurn = new THREE.Vector3(...(v.turn || [0, 0, 0]));
+      this.mag = []; this.bolt = [];
+      this.rig.draw(WEAPONS[kind].draw);
+      return;
+    }
     this.gun = weaponModel(kind, 'fp') || buildGun(kind); // real model once built, stand-in otherwise
     this.holder.add(this.gun);
     // Forearm from the hand back toward the camera: rx tilts it down, ry swings it sideways.
@@ -550,7 +572,7 @@ export class ViewModel {
       if (this.armsRig || !SHOW_HANDS) a.children.forEach(c => { c.visible = false; });
       return a;
     };
-    if (kind === 'rifle' || kind === 'carbine' || kind === 'scar') {
+    if (kind === 'rifle' || kind === 'vsk') {
       arm(0, -0.05, 0.03, -1.0, 0.35);
       this.support = arm(-0.01, -0.03, SUPPORT_Z[kind], -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.23, -0.48);
@@ -580,7 +602,7 @@ export class ViewModel {
       this.support = arm(-0.01, -0.04, -0.24, -0.95, -0.6, 0.48);
       this.base = new THREE.Vector3(0.17, -0.21, -0.42);
       this.adsPos = new THREE.Vector3(0, -0.097, -0.3);
-    } else if (kind === 'pistol' || kind === 'revolver') {
+    } else if (kind === 'pistol' || kind === 'makarov') {
       arm(0, -0.04, 0.02, -1.05, 0.3);
       this.support = arm(-0.03, -0.05, 0.03, -1.05, -0.45);
       this.base = new THREE.Vector3(0.14, -0.17, -0.42);
@@ -631,6 +653,7 @@ export class ViewModel {
     const moving = onGround ? Math.min(1, speed / 5) : 0;
     this.bobT += dt * (6 + speed);
 
+    if (this.rig) return this.updateRig(dt, { speed, onGround, drawT, reloadT, adsT, sprinting, sliding, steady });
     const p = this.holder.position.lerpVectors(this.base, this.adsPos, adsT);
     const bob = (this.sprintT > 0.5 ? 2 : 1) * steady;
     p.x += (Math.sin(this.bobT) * 0.012 * moving + this.sway.x * 0.02) * bob;
@@ -693,6 +716,51 @@ export class ViewModel {
     if (this.armsRig) this.placeHands();
   }
 
+  // Animated set: its own clips do the walking, firing and reloading; this adds look sway, a small
+  // recoil spring, the sprint pose for sets without a run clip, and the draw for sets without one.
+  updateRig(dt, { speed, onGround, drawT, reloadT, adsT, sprinting, sliding, steady }) {
+    const p = this.holder.position.copy(this.base).multiplyScalar(1 - adsT);
+    p.x += this.sway.x * 0.012 * steady;
+    p.y -= this.sway.y * 0.01 * steady;
+    p.addScaledVector(this.recoilPos.x, 0.4);
+    const hip = 1 - adsT;
+    let rx = this.recoilRot.x.x * 0.4 + this.hipTurn.x * hip, ry = this.sway.x * 0.03 * steady + this.hipTurn.y * hip,
+      rz = this.recoilRot.x.z * 0.4 + this.hipTurn.z * hip;
+    if (!this.rig.hasRun) {
+      p.x -= this.sprintT * 0.05; p.y -= this.sprintT * 0.06;
+      rx -= this.sprintT * 0.3; ry += this.sprintT * 0.6;
+    }
+    if (sliding) rz += 0.18;
+    if (!this.rig.actions.draw) {
+      const lower = 1 - Math.min(1, drawT);
+      p.y -= lower * 0.25; rx -= lower * 0.6;
+    }
+    // Reload sounds at the usual beats (the clip does the moving).
+    if (reloadT >= 0 && this.reload) {
+      const r = this.reload, t = Math.min(1, reloadT), crossed = at => r.last < at && t >= at;
+      if (this.kind === 'shotgun') {
+        for (let j = 0; j < r.shells; j++) if (crossed(0.15 + 0.65 * (j + 0.5) / r.shells)) playMech('shell');
+        if (crossed(0.9)) playMech('rack');
+      } else {
+        if (crossed(0.25)) playMech('magOut');
+        if (crossed(0.6)) playMech('magIn');
+        if (r.empty && crossed(0.85)) playMech('rack');
+      }
+      r.last = t;
+    } else if (this.reload) {
+      this.reload = null;
+      this.rig.stopReload();
+    }
+    // Pump / bolt guns: the casing comes out partway through the shot clip.
+    if (this.cycle > 0) {
+      const before = this.cycle;
+      this.cycle = Math.max(0, this.cycle - dt);
+      if (before > 0.2 && this.cycle <= 0.2) this.ejectShell();
+    }
+    this.holder.rotation.set(rx, ry, rz);
+    this.rig.update(dt, { speed: onGround ? speed : 0, sprinting, adsT, relief: this.adsRelief });
+  }
+
   // Puts the real hands where the stand-in hands are, turned to hold this weapon.
   placeHands() {
     this.group.updateMatrixWorld(true);
@@ -710,8 +778,8 @@ export class ViewModel {
 
   // `cycleIn` > 0: pump or bolt action plays that many seconds after the shot.
   fireKick(cycleIn = 0, adsT = 0) {
-    const k = KICK[this.kind];
-    if (!k) return;
+    this.rig?.fire();
+    const k = KICK[this.kind] || KICK.rifle;
     const calm = 1 - adsT * 0.5; // aiming down sights steadies the gun
     const rnd = () => Math.random() * 2 - 1;
     this.recoilPos.kick(rnd() * 0.004 * calm, k.up * calm, k.back * calm);
@@ -726,7 +794,8 @@ export class ViewModel {
     if (!e) return;
     const shell = new THREE.Mesh(new THREE.CylinderGeometry(e.size[0], e.size[0], e.size[1], 8),
       new THREE.MeshStandardMaterial({ color: e.color, metalness: 0.8, roughness: 0.35 }));
-    shell.position.fromArray(e.port).applyMatrix4(this.holder.matrix);
+    if (this.rig) this.group.worldToLocal(this.rig.portWorld(shell.position));
+    else shell.position.fromArray(e.port).applyMatrix4(this.holder.matrix);
     shell.rotation.set(Math.PI / 2, 0, Math.random());
     // Thrown out to the right and up, a little backward, tumbling.
     const v = new THREE.Vector3(1.3 + Math.random() * 0.6, 0.9 + Math.random() * 0.6, 0.25 + Math.random() * 0.3)
@@ -758,7 +827,8 @@ export class ViewModel {
 
   // Called when a reload starts. shells: how many the shotgun has to load one by one.
   startReload(shells = 0) {
-    this.reload = { last: 0, shells: Math.max(1, shells), shellMesh: null };
+    this.reload = { last: 0, shells: Math.max(1, shells), shellMesh: null, empty: shells >= (WEAPONS[this.kind]?.mag || 0) };
+    this.rig?.reload(WEAPONS[this.kind].reload, this.reload.empty);
   }
 
   endReload() {
@@ -830,5 +900,5 @@ export class ViewModel {
     return out;
   }
   throwGrenade(windup) { this.throwT = 0; this.throwWindup = windup; this.gun.visible = true; }
-  muzzleWorld(target) { return this.gun.userData.muzzle.getWorldPosition(target); }
+  muzzleWorld(target) { return this.rig ? this.rig.muzzleWorld(target) : this.gun.userData.muzzle.getWorldPosition(target); }
 }

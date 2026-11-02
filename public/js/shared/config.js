@@ -79,10 +79,9 @@ export const CLASSES = {
   marksman: { name: 'Marksman', primary: 'sniper',  grenade: 'smoke', speed: 0.96, desc: 'Scoped bolt-action. One shot, one kill.' },
   breacher: { name: 'Breacher', primary: 'shotgun', grenade: 'flash', speed: 1.0,  desc: 'Pump shotgun. Owns close quarters.' },
   runner:   { name: 'Runner',   primary: 'smg',     grenade: 'smoke', speed: 1.08, desc: 'SMG. Fastest on foot, accurate on the move.' },
-  operator: { name: 'Operator', primary: 'carbine', grenade: 'flash', speed: 1.02, desc: 'Carbine. Quick-firing and light, loses punch at long range.' },
-  vanguard: { name: 'Vanguard', primary: 'scar', secondary: 'revolver', grenade: 'frag', speed: 0.95, desc: 'Battle rifle: three hits kill, but it kicks. Carries a revolver.' },
+  vanguard: { name: 'Vanguard', primary: 'vsk', secondary: 'makarov', grenade: 'frag', speed: 0.95, desc: 'Battle rifle: three hits kill, but it kicks. Carries a Makarov.' },
 };
-export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner', 'operator', 'vanguard'];
+export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner', 'vanguard'];
 export const DEFAULT_CLASS = 'assault';
 
 // [primary, sidearm, knife, grenade]
@@ -123,8 +122,8 @@ export const WEAPONS = {
   },
   pistol: {
     name: 'Pistol', slot: 2, auto: false, pellets: 1,
-    damage: 25, headMult: 4, legMult: 0.75, range: 150,
-    fireInterval: 0.16, mag: 12, reserve: 48, reload: 1.8, draw: 0.35,
+    damage: 34, headMult: 4, legMult: 0.75, range: 150,
+    fireInterval: 0.22, mag: 12, reserve: 48, reload: 1.8, draw: 0.35,
     spread: { base: 0.005, move: 0.025, air: 0.09, crouch: 0.7, perShot: 0.012, max: 0.05, recover: 0.12 },
     recoil: { pitch: 0.016, yaw: 0.005, recover: 8 },
     ads: { fov: 0.85, spread: 0.55, speed: 0.8, time: 0.12 },
@@ -141,10 +140,10 @@ export const WEAPONS = {
   },
   shotgun: {
     name: 'Shotgun', slot: 1, auto: false, pellets: 8,
-    damage: 16, headMult: 1.5, legMult: 0.75, range: 45,
-    falloff: { start: 7, end: 25, min: 0.2 },
+    damage: 16, headMult: 1.5, legMult: 0.75, range: 60,
+    falloff: { start: 12, end: 40, min: 0.3 },
     fireInterval: 0.85, mag: 6, reserve: 24, reload: 2.8, draw: 0.55,
-    spread: { base: 0.055, move: 0.012, air: 0.03, crouch: 0.9, perShot: 0, max: 0, recover: 1 },
+    spread: { base: 0.045, move: 0.012, air: 0.03, crouch: 0.9, perShot: 0, max: 0, recover: 1 },
     recoil: { pitch: 0.045, yaw: 0.012, recover: 5 },
     ads: { fov: 0.88, spread: 0.8, speed: 0.85, time: 0.15 },
     speedMult: 0.95,
@@ -159,17 +158,7 @@ export const WEAPONS = {
     ads: { fov: 0.82, spread: 0.5, speed: 0.85, time: 0.14 },
     speedMult: 1.0,
   },
-  carbine: {
-    name: 'Carbine', slot: 1, auto: true, pellets: 1,
-    damage: 26, headMult: 4, legMult: 0.75, range: 220,
-    falloff: { start: 25, end: 60, min: 0.8 },
-    fireInterval: 0.08, mag: 30, reserve: 90, reload: 2.2, draw: 0.45,
-    spread: { base: 0.003, move: 0.035, air: 0.12, crouch: 0.6, perShot: 0.006, max: 0.05, recover: 0.17 },
-    recoil: { pitch: 0.009, yaw: 0.004, recover: 7 },
-    ads: { fov: 0.7, spread: 0.3, speed: 0.72, time: 0.16 },
-    speedMult: 0.97,
-  },
-  scar: {
+  vsk: {
     name: 'Battle Rifle', slot: 1, auto: true, pellets: 1,
     damage: 40, headMult: 3.5, legMult: 0.75, range: 280,
     fireInterval: 0.14, mag: 20, reserve: 60, reload: 2.6, draw: 0.55,
@@ -178,13 +167,13 @@ export const WEAPONS = {
     ads: { fov: 0.66, spread: 0.3, speed: 0.65, time: 0.2 },
     speedMult: 0.91,
   },
-  revolver: {
-    name: 'Revolver', slot: 2, auto: false, pellets: 1,
-    damage: 45, headMult: 3, legMult: 0.75, range: 150,
-    fireInterval: 0.4, mag: 6, reserve: 30, reload: 2.8, draw: 0.45,
-    spread: { base: 0.004, move: 0.03, air: 0.1, crouch: 0.7, perShot: 0.03, max: 0.06, recover: 0.25 },
-    recoil: { pitch: 0.04, yaw: 0.008, recover: 5 },
-    ads: { fov: 0.85, spread: 0.5, speed: 0.8, time: 0.14 },
+  makarov: {
+    name: 'Makarov', slot: 2, auto: false, pellets: 1,
+    damage: 25, headMult: 4, legMult: 0.75, range: 130,
+    fireInterval: 0.16, mag: 8, reserve: 32, reload: 1.9, draw: 0.35,
+    spread: { base: 0.006, move: 0.025, air: 0.09, crouch: 0.7, perShot: 0.013, max: 0.05, recover: 0.12 },
+    recoil: { pitch: 0.016, yaw: 0.005, recover: 8 },
+    ads: { fov: 0.85, spread: 0.55, speed: 0.8, time: 0.12 },
     speedMult: 1.0,
   },
   frag: { name: 'Frag', slot: 4, grenade: true, mag: 1, reserve: 0, draw: 0.35, fireInterval: 0.8, speedMult: 1.0 },

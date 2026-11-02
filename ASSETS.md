@@ -215,20 +215,30 @@ From https://polyhaven.com (CC0):
 
 Shown in the game's menu (built from each model's licence data). Currently:
 
-- Rifle: "AK-74M Assault Rifle" by FJH, CC-BY 4.0
-- Pistol: "Colt M1911 & Silencer" by FJH, CC-BY 4.0
+- Guns with first-person arms and animations: "FPS … animations" sets by **Cransh** (sketchfab.com/ccransh), CC-BY 4.0. Each set credits the models inside it:
+  - Rifle: "FPS AK-74m animations". AK-74m by creationwasteland.
+  - Sniper: "FPS animations sniper rifle". Rifle by Oleg Anufriev (Naches).
+  - Pistol: "FPS pistol animations". Springfield Armory XD by raimeiyonke.
+  - SMG: "SMG FPS Animations". Masterpiece Arms 30 SST by eNse7en.
+  - Shotgun: "FPS Arms remington (shotgun)". Remington 870 by tris09.
+  - Makarov: "Makarov PM FPS animations". Makarov PM by Martin Trafas (Bexxie).
+  - Battle rifle: "FPS animations VSK". VSK-94 by valterjherson1. This set comes with its own, bare arms.
+  - Arms in all the other sets: "FP Arms" by DJMaesen (bumstrum). The shotgun and Makarov sets came with a different version of the arms, so the AK set's arms were moved onto them.
 - Knife: "M9 Bayonet" by FJH, CC-BY 4.0
-- Sniper: "Modern Sniper Rifle | Free Lowpoly" by Vlasov Daniil, CC-BY 4.0
-- Shotgun: "Remington 870 Police Magnum 12 Gauge Shotgun" by 8sianDude, CC-BY 4.0
-- SMG: "MP5K" by Shorty_Digitan, CC-BY 4.0
 - Charge (objective mode): "IED" by davidthe19th, CC-BY 4.0
 - Frag: "M67 Fragmentation Grenade" by FJH, CC-BY 4.0
 - Smoke: "M18 Smoke Grenade" by Vanillatography, CC-BY 4.0
 - Flashbang: "M84 Stun Grenade "Flashbang"" by Vanillatography, CC-BY 4.0
-- First-person arms: "PSX First Person Arms" by Drillimpact, CC0 (credit optional) — https://drillimpact.itch.io/psx-first-person-arms-free
+- Built but switched off: first-person arms "PSX First Person Arms" by Drillimpact, CC0
+- Replaced by the animated sets (still in assets-src/weapons/, settings in git history), all CC-BY 4.0:
+  - "AK-74M Assault Rifle" (FJH)
+  - "Colt M1911 & Silencer" (FJH)
+  - "Modern Sniper Rifle" (Vlasov Daniil)
+  - "Remington 870 Police Magnum" (8sianDude)
+  - "MP5K" (Shorty_Digitan)
+  - "Ar-15" (3DYAROSLAV2)
+  - "FN SCAR" (nghiakua06)
+  - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
-- Carbine: "Ar-15" by 3DYAROSLAV2, CC-BY 4.0
-- Battle rifle: "FN SCAR" by nghiakua06, CC-BY 4.0 (its vertical foregrip is hidden)
-- Revolver: "GameReady: Colt Python Revolver" by HYQQM, CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
 - Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005), CC0

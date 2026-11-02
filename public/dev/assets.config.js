@@ -6,52 +6,52 @@
 // grip / muzzle: [fraction from the back, fraction from the bottom] of the visible model's bounding box.
 // rotateZ levels a model that was posed tilted (applied before rotateY). cuts: see applyCuts in build.html.
 export const WEAPONS = {
-  rifle: {
-    src: 'weapons/ak-74m_assault_rifle.glb', length: 0.94,
-    hide: /^(Round|Shell)_/, grip: [0.30, 0.66], muzzle: [1, 0.80], // display round + shell beside the gun
-  },
-  pistol: {
-    src: 'weapons/colt_m1911__silencer.glb', length: 0.22,
-    hide: /^(Silencer|Round|Shell)_/, grip: [0.21, 0.67], muzzle: [1, 0.88], // display bullet + shell lie under the gun
-  },
   knife: {
     src: 'weapons/m9_bayonet.glb', length: 0.31, rotateY: 180,
     grip: [0.21, 0.43], muzzle: [1, 0.45],
   },
-  sniper: {
-    src: 'weapons/modern_sniper_rifle__free_lowpoly.glb', length: 1.15,
-    grip: [0.29, 0.37], muzzle: [1, 0.59],
+};
+// The guns come from the animated sets below (VIEWMODELS). The static models used before them (AK-74M,
+// M1911, sniper, Remington, MP5K, AR-15, FN SCAR, Colt Python) are still in assets-src/weapons/; to
+// bring one back, add an entry here like the knife's (see git history for their settings).
+
+// First-person weapons with arms and animations: "FPS … animations" sets by Cransh (Sketchfab, CC-BY),
+// one glTF each with the arms, the gun and its clips. Built into a viewmodel (arms + gun + clips, eye at
+// the origin, real size) and a gun-only copy for other players to hold.
+// length: the gun's real length in meters (sets the scale). eye: bone or node the creator's camera sits
+// on (default: 'Camera', else 'Head_Cam'); eyeOffset moves it (meters: right, up, back) for a set
+// without a camera. clips: game action → clip name (without the 'Rig|' prefix).
+// armsFrom: take the arms from that set instead (same bone names), so every weapon shows the same arms.
+// scope: aim along the scope (instead of the line from the rear to the front sight).
+const AN = 'weapons/animated/';
+export const VIEWMODELS = {
+  rifle: {
+    src: `${AN}fps_ak-74m_animations.glb`, length: 0.94,
+    clips: { idle: 'AK_Idle', draw: 'AK_Draw', walk: 'AK_Walk', run: 'AK_Run', fire: 'AK_Shot', reload: 'AK_Reload_var2', reloadEmpty: 'AK_Reload_full' },
   },
-  shotgun: {
-    src: 'weapons/remington_870_police_magnum_12_gauge_shotgun.glb', length: 0.98,
-    hide: /^Object_[23]$/, grip: [0.29, 0.53], muzzle: [1, 0.91],
+  sniper: {
+    src: `${AN}fps_animations_sniper_rifle.glb`, length: 1.15, scope: true,
+    clips: { idle: 'SRifle_Idle', walk: 'SRifle_Walk', fire: 'SRifle_Shot_nosight', reload: 'SRifle_Reload', reloadEmpty: 'SRifle_Reload_Full' },
+  },
+  pistol: {
+    src: `${AN}fps_pistol_animations.glb`, length: 0.19,
+    clips: { idle: 'FPS_Pistol_Idle', walk: 'FPS_Pistol_Walk', fire: 'FPS_Pistol_Fire', reload: 'FPS_Pistol_Reload_easy', reloadEmpty: 'FPS_Pistol_Reload_full' },
   },
   smg: {
-    src: 'weapons/mp5k.glb', length: 0.33,
-    grip: [0.17, 0.52], muzzle: [1, 0.84],
+    src: `${AN}smg_fps_animations.glb`, length: 0.6,
+    clips: { idle: 'KDW_DPose_Idle', draw: 'KDW_Draw', walk: 'KDW_Walk', run: 'KDW_Run', fire: 'KDW_Shot', reload: 'KDW_Reload_fast', reloadEmpty: 'KDW_Reload_full' },
   },
-  carbine: {
-    src: 'weapons/ar-15.glb', length: 0.86, rotateY: 90, rotateZ: 15, // posed muzzle-down 15°
-    grip: [0.27, 0.62], muzzle: [1, 0.77],
-    // Staged for a picture: a spare magazine top sits on the rail (dropped), and the magazine lies
-    // beside the gun. It's moved into the magazine well; the matrix was worked out once from its shape
-    // (long axis up, floorplate down, curve forward, 30% inside the well).
-    cuts: [
-      { mesh: /^Object_4$/, box: [[0.2, 0.7, -0.12], [0.72, 1.1, 0.19]], any: true },
-      { mesh: /^Object_4$/, box: [[-9, -9, 0.19], [9, 9, 9]], any: true, name: 'Magazine',
-        matrix: [-0.9145, 0.4004, -0.058, 0, 0.3802, 0.8014, -0.4617, 0, -0.1384, -0.4443, -0.8851, 0, -0.2784, -0.3384, 0.5244, 1] },
-    ],
+  shotgun: {
+    src: `${AN}fps_arms_remington_shotgun.glb`, length: 1.0, eye: 'Head_Cam', armsFrom: 'rifle',
+    clips: { idle: 'SG_FPS_Idle', walk: 'SG_FPS_Walk', fire: 'SG_FPS_Shot', reload: 'SG_FPS_Reload' },
   },
-  scar: {
-    src: 'weapons/fn_scar.glb', length: 0.99, rotateY: 90,
-    hide: /foregrip/, // the vertical foregrip would sit in the support hand
-    grip: [0.25, 0.52], muzzle: [1, 0.69],
-    // The sight's own reticle (one small plane between the glass panes): the game draws its own.
-    cuts: [{ mesh: /Scope/, box: [[0.035, 0.588, -0.05], [0.058, 0.616, -0.01]] }],
+  makarov: {
+    src: `${AN}makarov_pm_fps_animations.glb`, length: 0.161, eye: 'Head_Cam', armsFrom: 'rifle',
+    clips: { idle: 'MK_Idle', walk: 'MK_walk', fire: 'MK_Shot', reload: 'MK_ReloadFast', reloadEmpty: 'MK_ReloadFull' },
   },
-  revolver: {
-    src: 'weapons/gameready_colt_python_revolver.glb', length: 0.29,
-    grip: [0.24, 0.68], muzzle: [1, 0.82],
+  vsk: {
+    src: `${AN}fps_animations_vsk.glb`, length: 0.89, eye: 'Root', eyeOffset: [0, 0.18, 0.1], // no camera: placed like the AK's
+    clips: { idle: 'VSK_Idle', walk: 'VSK_Walk', run: 'VSK_Sprint', fire: 'VSK_Fire', reload: 'VSK_ReloadNotFull', reloadEmpty: 'VSK_ReloadFull' },
   },
 };
 

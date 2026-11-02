@@ -32,7 +32,7 @@
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
     import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
     import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-    import { WEAPONS, GRENADES, ARMS, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
+    import { WEAPONS, VIEWMODELS, GRENADES, ARMS, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
 
     const logEl = document.getElementById('log');
     const log = (msg, cls) => {
@@ -226,6 +226,215 @@
       };
     }
 
+    // ---------------------------------------------------------------- animated first-person sets
+
+    const stripIndex = n => n.replace(/_\d+$/, ''); // 'Hand_R_037' → 'Hand_R'
+    const isArms = o => o.isSkinnedMesh && (o.name === 'arms' || /^(arms|material|Male_04.*)$/.test(o.material.name));
+    const findBone = (root, name) => { let hit = null; root.traverse(o => { if (!hit && stripIndex(o.name) === name) hit = o; }); return hit; };
+    const loadSet = async src => { const g = await gltfLoader.loadAsync(srcUrl(src)); await convertSpecGloss(g); return g; };
+
+    // Puts `donor`'s arms on this rig in place of its own (bones matched by name). The donor's bind data
+    // is kept, so each bone carries its part of the arms from the donor's rest pose to this rig's.
+    function swapArms(scene, donorScene) {
+      const bones = new Map();
+      scene.traverse(o => { if (o.isBone) bones.set(stripIndex(o.name), o); });
+      let own, donor;
+      scene.traverse(o => { if (isArms(o)) own = o; });
+      donorScene.traverse(o => { if (isArms(o)) donor = o; });
+      const root = bones.get('Root');
+      const mapped = donor.skeleton.bones.map(b => bones.get(stripIndex(b.name)) || root); // gun-only bones carry no arm weight
+      const mesh = new THREE.SkinnedMesh(donor.geometry, donor.material);
+      mesh.name = 'arms';
+      own.parent.add(mesh);
+      mesh.bind(new THREE.Skeleton(mapped, donor.skeleton.boneInverses.map(m => m.clone())), donor.bindMatrix.clone());
+      own.removeFromParent();
+    }
+
+    // Skinned vertex i of `mesh` in world space, with its normal (CPU skinning of the current pose).
+    const _sm = new THREE.Matrix4(), _bm = new THREE.Matrix4();
+    function skinned(mesh, i, pos, nrm) {
+      const g = mesh.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+      _sm.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      for (let k = 0; k < 4; k++) {
+        const w = sw.getComponent(i, k);
+        if (!w) continue;
+        const j = si.getComponent(i, k);
+        _bm.multiplyMatrices(mesh.skeleton.bones[j].matrixWorld, mesh.skeleton.boneInverses[j]).multiply(mesh.bindMatrix);
+        for (let e = 0; e < 16; e++) _sm.elements[e] += _bm.elements[e] * w;
+      }
+      pos.fromBufferAttribute(g.attributes.position, i).applyMatrix4(_sm);
+      if (nrm) nrm.fromBufferAttribute(g.attributes.normal, i).transformDirection(_sm);
+    }
+    const mainBone = (mesh, i) => {
+      const si = mesh.geometry.attributes.skinIndex, sw = mesh.geometry.attributes.skinWeight;
+      let best = -1, j = 0;
+      for (let k = 0; k < 4; k++) if (sw.getComponent(i, k) > best) { best = sw.getComponent(i, k); j = si.getComponent(i, k); }
+      return mesh.skeleton.bones[j];
+    };
+    const percentile = (arr, p) => { const a = [...arr].sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(a.length * p))]; };
+
+    let donorCache = {};
+    async function buildViewmodel(kind, cfg) {
+      const gltf = await loadSet(cfg.src);
+      const extras = gltf.parser.json.asset?.extras || {};
+      const scene = gltf.scene;
+      if (cfg.armsFrom) {
+        donorCache[cfg.armsFrom] ||= await loadSet(VIEWMODELS[cfg.armsFrom].src);
+        swapArms(scene, donorCache[cfg.armsFrom].scene);
+      }
+      // Clips under the game's names: idle, walk, fire, reload, …
+      const clips = [];
+      for (const [id, name] of Object.entries(cfg.clips)) {
+        const src = gltf.animations.find(a => a.name.split('|').pop() === name);
+        if (!src) { log(`  ✖ ${kind}: no clip "${name}"`, 'err'); continue; }
+        const clip = src.clone();
+        clip.name = id;
+        clips.push(clip);
+      }
+      // Measure the rig on the first frame of its idle.
+      const mixer = new THREE.AnimationMixer(scene);
+      mixer.clipAction(clips.find(c => c.name === 'idle')).play();
+      mixer.setTime(0);
+      scene.updateMatrixWorld(true);
+      const gunMeshes = [];
+      scene.traverse(o => { if (o.isSkinnedMesh && !isArms(o)) gunMeshes.push(o); });
+      // The gun's body bone carries most of its vertices (magazines, bolts and triggers have their own).
+      const count = new Map();
+      for (const m of gunMeshes) for (let i = 0; i < m.geometry.attributes.position.count; i++) {
+        const b = mainBone(m, i);
+        count.set(b, (count.get(b) || 0) + 1);
+      }
+      const body = [...count.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      // Length along the gun's own axis (the bone axis closest to the view direction, +Z in these files).
+      const toBody = new THREE.Matrix4().copy(body.matrixWorld).invert();
+      const axis = (() => {
+        const l = new THREE.Vector3(0, 0, 1).transformDirection(toBody);
+        const a = ['x', 'y', 'z'].reduce((best, k) => Math.abs(l[k]) > Math.abs(l[best]) ? k : best, 'x');
+        return new THREE.Vector3().setComponent('xyz'.indexOf(a), Math.sign(l[a])).transformDirection(body.matrixWorld);
+      })();
+      const v = new THREE.Vector3(), along0 = [];
+      for (const m of gunMeshes) for (let i = 0; i < m.geometry.attributes.position.count; i++) {
+        if (mainBone(m, i) !== body) continue;
+        skinned(m, i, v);
+        along0.push(v.dot(axis));
+      }
+      const s = cfg.length / (percentile(along0, 0.998) - percentile(along0, 0.002));
+      const eyeNode = findBone(scene, cfg.eye || 'Camera') || findBone(scene, 'Head_Cam');
+      const eye = eyeNode.getWorldPosition(new THREE.Vector3());
+      // root → wrap (turn to face -Z, scale to meters, eye at the origin) → scene
+      const wrap = new THREE.Group();
+      wrap.rotation.y = Math.PI;
+      wrap.scale.setScalar(s);
+      wrap.position.copy(eye).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI).multiplyScalar(-s);
+      if (cfg.eyeOffset) wrap.position.sub(new THREE.Vector3(...cfg.eyeOffset));
+      wrap.add(scene);
+      const root = new THREE.Group();
+      root.name = kind;
+      root.add(wrap);
+      root.updateMatrixWorld(true);
+
+      // The gun in its body bone's frame (position and turn only, in meters): which way is forward and up,
+      // where the muzzle and sight line are. The game finds the bone the same way at run time.
+      const bp = new THREE.Vector3(), bq = new THREE.Quaternion();
+      body.matrixWorld.decompose(bp, bq, new THREE.Vector3());
+      const bodyFrame = new THREE.Matrix4().compose(bp, bq, new THREE.Vector3(1, 1, 1));
+      const toBone = bodyFrame.clone().invert();
+      const pts = [];
+      for (const m of gunMeshes) for (let i = 0; i < m.geometry.attributes.position.count; i++) {
+        if (mainBone(m, i) !== body) continue;
+        skinned(m, i, v);
+        pts.push(v.clone());
+      }
+      // Barrel direction from the gun's shape: its long axis (the bone's own axes can be tilted).
+      const local = pts.map(p => p.clone().applyMatrix4(toBone));
+      const mean = local.reduce((a, p) => a.add(p), new THREE.Vector3()).multiplyScalar(1 / local.length);
+      const cov = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+      for (const p of local) {
+        const d = [p.x - mean.x, p.y - mean.y, p.z - mean.z];
+        for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) cov[a * 3 + b] += d[a] * d[b];
+      }
+      let fwd = new THREE.Vector3(1, 1, 1).normalize();
+      for (let k = 0; k < 60; k++) fwd = new THREE.Vector3(
+        cov[0] * fwd.x + cov[1] * fwd.y + cov[2] * fwd.z, cov[3] * fwd.x + cov[4] * fwd.y + cov[5] * fwd.z,
+        cov[6] * fwd.x + cov[7] * fwd.y + cov[8] * fwd.z).normalize();
+      if (fwd.dot(new THREE.Vector3(0, 0, -1).transformDirection(toBone)) < 0) fwd.negate(); // toward the front
+      const worldUp = new THREE.Vector3(0, 1, 0).transformDirection(toBone);
+      const up = worldUp.addScaledVector(fwd, -worldUp.dot(fwd)).normalize();
+      const along = local.map(p => p.dot(fwd)), height = local.map(p => p.dot(up));
+      const front = percentile(along, 0.998), back = percentile(along, 0.002);
+      const tip = local.filter((p, i) => along[i] > front - 0.012);
+      const muzzle = tip.reduce((a, p) => a.add(p), new THREE.Vector3()).multiplyScalar(1 / tip.length);
+      // Sight line: from the rear sight (highest point on the back three quarters) to the front sight
+      // (highest point on the front quarter). Sights and covers can hang off other bones, so every part
+      // of the gun counts except ones parked to the side for a reload. Scoped guns: along the scope.
+      let right = new THREE.Vector3().crossVectors(fwd, up);
+      const center = muzzle.dot(right), span = front - back;
+      let rearSight = null, frontSight = null;
+      for (const m of gunMeshes) for (let i = 0; i < m.geometry.attributes.position.count; i++) {
+        skinned(m, i, v);
+        const p = v.applyMatrix4(toBone), a = p.dot(fwd), h = p.dot(up);
+        if (a < back || a > front || Math.abs(p.dot(right) - center) > 0.04) continue;
+        if (cfg.scope || a < front - span / 4) { if (!rearSight || h > rearSight.dot(up)) rearSight = p.clone(); }
+        else if (!frontSight || h > frontSight.dot(up)) frontSight = p.clone();
+      }
+      if (!cfg.scope) {
+        fwd.copy(frontSight).sub(rearSight);
+        fwd.addScaledVector(right, -fwd.dot(right)).normalize();
+        up.addScaledVector(fwd, -up.dot(fwd)).normalize();
+        right = new THREE.Vector3().crossVectors(fwd, up);
+      }
+      const sight = rearSight.addScaledVector(right, center - rearSight.dot(right)); // the rear sight, centered
+      const top = sight.dot(up);
+      const port = muzzle.clone().addScaledVector(fwd, (back - front) * 0.62).addScaledVector(up, (top - muzzle.dot(up)) * 0.4).addScaledVector(right, 0.02);
+      // Grip: the palm of the right hand, centered on the gun.
+      const hand = findBone(scene, 'Hand_R'), finger = findBone(scene, 'Bone_R012') || findBone(scene, 'Middle_00_R');
+      const palm = hand.getWorldPosition(new THREE.Vector3()).lerp(finger ? finger.getWorldPosition(new THREE.Vector3()) : hand.getWorldPosition(new THREE.Vector3()), 0.5).applyMatrix4(toBone);
+      const grip = palm.clone().addScaledVector(right, muzzle.dot(right) - palm.dot(right));
+
+      useJpeg(root);
+      const vm = `game/viewmodels/${kind}.glb`;
+      const vmSize = await save(vm, await exportGlb(root, TEXTURE_SIZE.firstPerson, clips));
+
+      // Gun-only copy for other players: posed as in idle, in the usual weapon frame (barrel -Z, origin at the grip).
+      const toGun = new THREE.Matrix4().makeBasis(right, up, fwd.clone().negate()).transpose()
+        .multiply(new THREE.Matrix4().makeTranslation(-grip.x, -grip.y, -grip.z)).multiply(toBone);
+      const gun = new THREE.Group();
+      gun.name = kind;
+      const n = new THREE.Vector3();
+      for (const m of gunMeshes) {
+        const g = m.geometry, count = g.attributes.position.count;
+        const out = new THREE.BufferGeometry();
+        const P = new Float32Array(count * 3), N = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          skinned(m, i, v, n);
+          v.applyMatrix4(toGun); n.transformDirection(toGun);
+          v.toArray(P, i * 3); n.toArray(N, i * 3);
+        }
+        out.setAttribute('position', new THREE.BufferAttribute(P, 3));
+        out.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+        for (const a of ['uv', 'uv1', 'tangent']) if (g.attributes[a]) out.setAttribute(a, g.attributes[a].clone());
+        out.setIndex(g.index.clone());
+        const mesh = new THREE.Mesh(out, m.material);
+        mesh.name = m.name;
+        gun.add(mesh);
+      }
+      // Parts parked off to the side for a reload (a spare magazine) would stretch the box: measure the body only.
+      const bodyBox = new THREE.Box3();
+      for (const p of pts) bodyBox.expandByPoint(p.clone().applyMatrix4(toGun));
+      const tp = `game/weapons/${kind}_tp.glb`;
+      const tpSize = await save(tp, await exportGlb(gun, TEXTURE_SIZE.thirdPerson));
+      const muzzleGun = muzzle.clone().applyMatrix4(new THREE.Matrix4().copy(toGun).multiply(bodyFrame));
+      log(`  ${kind.padEnd(8)} ${mb(vmSize)} (first person, ${clips.length} clips) · ${mb(tpSize)} (others) · from ${cfg.src.split('/').pop()}`);
+      return {
+        tp, vm,
+        rig: { bone: body.name, forward: fwd.toArray().map(r3), up: up.toArray().map(r3), muzzle: muzzle.toArray().map(r3),
+          sight: sight.toArray().map(r3), port: port.toArray().map(r3), clips: clips.map(c => c.name) },
+        length: cfg.length, muzzle: muzzleGun.toArray().map(r3),
+        sightY: r3(bodyBox.max.y), bounds: [bodyBox.min.toArray().map(r3), bodyBox.max.toArray().map(r3)],
+        credit: { title: extras.title, author: extras.author, license: extras.license, source: extras.source },
+      };
+    }
+
     async function buildArms(cfg) {
       const gltf = await gltfLoader.loadAsync(srcUrl(cfg.src));
       const extras = cfg.credit || gltf.parser.json.asset?.extras || {};
@@ -341,8 +550,8 @@
       return { file: 'game/animations.glb', clips: clips.map(c => c.name) };
     }
 
-    // only: rebuild just these sections ('weapons', 'grenades', 'arms', 'props', 'characters', 'animations') and keep the rest.
-    // kinds: within those sections, only these weapons (e.g. ['carbine']).
+    // only: rebuild just these sections ('weapons', 'viewmodels', 'grenades', 'arms', 'props', 'characters', 'animations') and keep the rest.
+    // kinds: within those sections, only these weapons (e.g. ['rifle']).
     async function buildAll({ only, kinds } = {}) {
       const t0 = performance.now();
       const want = section => !only || only.includes(section);
@@ -355,6 +564,11 @@
       if (want('weapons')) {
         log('Weapons');
         for (const [kind, cfg] of Object.entries(WEAPONS)) if (!kinds || kinds.includes(kind)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
+      }
+      if (want('viewmodels')) {
+        log('Animated weapons (first person + others)');
+        for (const [kind, cfg] of Object.entries(VIEWMODELS)) if (!kinds || kinds.includes(kind)) manifest.weapons[kind] = await buildViewmodel(kind, cfg);
+        donorCache = {};
       }
       if (want('grenades')) {
         log('Grenades');
@@ -390,7 +604,7 @@
       btn.disabled = false;
     };
     window.buildAll = buildAll;
-    window.builder = { buildAll, buildWeapon, buildCharacter, buildAnimations, WEAPONS, CHARACTERS };
+    window.builder = { buildAll, buildWeapon, buildViewmodel, buildCharacter, buildAnimations, WEAPONS, CHARACTERS };
   </script>
 </body>
 </html>

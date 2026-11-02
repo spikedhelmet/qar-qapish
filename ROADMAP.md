@@ -22,7 +22,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ### Milestone 5: polish (in progress)
 - ~~**Per-weapon reload animations**~~ done (see log).
-- ~~**First-person arms**~~ built, then switched off for now (part 10): no version looked right yet.
+- ~~**First-person arms**~~ done with the animated gun sets (part 11).
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - ~~**Photo textures for the maps**~~ done (see log).
 - ~~**Other players' animations**~~ done: recoil and reload were already in, the grenade toss is now added.
@@ -36,6 +36,28 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 11: animated first-person guns (`feature/milestone-5`)
+- **Every gun now has arms and its creator's own animations.** They're "FPS … animations" sets by Cransh (CC-BY), covering the rifle (AK-74m), sniper, pistol (Springfield XD), SMG (MPA 30 SST), shotgun (Remington 870), Makarov and battle rifle (VSK-94).
+  - Each gun plays idle, walk, fire and reload, plus run and draw where the set has them, and a separate reload when the magazine is empty.
+  - Our own motion fills the gaps: look sway, a light recoil spring, a sprint pose and a draw for sets without one.
+  - The knife and grenades stay hands-free.
+- **The builder handles these sets** (`VIEWMODELS` in `assets.config.js`):
+  - It puts the eye at the creator's camera and scales each set by its gun's real length.
+  - It renames the clips to the game's actions.
+  - It finds the gun's barrel direction, muzzle, sight line (rear sight to front sight), ejection port and grip.
+  - It bakes a gun-only copy for other players to hold.
+  - The shotgun and Makarov sets came with different arms. The AK set's arms are moved onto their skeletons by bone name, so six of the seven guns show the same arms.
+- **Aiming** turns and moves the whole set so its sight line runs straight out of the eye, with the rear sight a set distance in front (`fprig.js`). It works from a smoothed pose, so idle sway settles but each shot still kicks.
+- **Classes:** the carbine and the Operator class are gone; two rifles is enough. Vanguard now carries the VSK-94 battle rifle and a Makarov. The FN SCAR, AR-15 and Colt Python static models are retired.
+- **Stats:**
+  - The Makarov took the pistol's old numbers with its real 8-round magazine (25 damage).
+  - The pistol hits harder but fires slower (34 damage, 0.22 s between shots).
+  - The shotgun keeps full damage to 12 m (was 7), falls off to 40 m (was 25) with a floor of 30% (was 20%), reaches 60 m and has a slightly tighter spread.
+- **Known rough spots:**
+  - The VSK set has no camera and comes with its own bare arms, so it's framed by hand and doesn't match the others.
+  - The shotgun's reload animation is 6.8 s, so it plays at 2.4× to fit the 2.8 s reload.
+  - Aimed views may need per-gun tuning after a playtest (`ANIM_VIEW` in `models.js`).
 
 ### 2026-11-02 · Milestone 5, part 10: optics, hands off (`feature/milestone-5`)
 - **Optic sights:** the carbine's holographic sight had no reticle, and the battle rifle shot low.

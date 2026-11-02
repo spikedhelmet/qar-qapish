@@ -10,6 +10,7 @@ export const assets = {
   characters: {},          // team → scene (clone with SkeletonUtils before use)
   clips: {},               // clip id → AnimationClip
   weapons: { fp: {}, tp: {} },
+  viewmodels: {},          // kind → { scene, clips }: animated first-person arms + gun
   props: {},               // kind → scene (charge, …)
   arms: null,              // first-person arms scene (rigged)
 };
@@ -34,7 +35,8 @@ export async function loadAssets(onProgress = () => {}) {
   if (manifest.arms) add(manifest.arms.file, g => { assets.arms = g.scene; });
   for (const [kind, prop] of Object.entries(manifest.props || {})) add(prop.tp, g => { assets.props[kind] = g.scene; });
   for (const [kind, w] of Object.entries(manifest.weapons)) {
-    add(w.fp, g => { assets.weapons.fp[kind] = g.scene; });
+    if (w.fp) add(w.fp, g => { assets.weapons.fp[kind] = g.scene; });
+    if (w.vm) add(w.vm, g => { assets.viewmodels[kind] = { scene: g.scene, clips: g.animations }; });
     add(w.tp, g => { assets.weapons.tp[kind] = g.scene; });
   }
 
@@ -63,6 +65,12 @@ export async function loadAssets(onProgress = () => {}) {
 
 export function weaponInfo(kind) {
   return assets.manifest?.weapons[kind] || null;
+}
+
+// A fresh copy of a weapon's animated first-person set (arms, gun, clips), or null when not built.
+export function viewmodelAsset(kind) {
+  const v = assets.viewmodels[kind];
+  return v ? { scene: SkeletonUtils.clone(v.scene), clips: v.clips, info: assets.manifest.weapons[kind] } : null;
 }
 
 // A fresh copy of a team's soldier (for first-person arms), or null when not built.

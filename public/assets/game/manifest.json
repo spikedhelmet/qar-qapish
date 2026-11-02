@@ -2,61 +2,133 @@
  "version": 1,
  "weapons": {
   "rifle": {
-   "fp": "game/weapons/rifle_fp.glb",
    "tp": "game/weapons/rifle_tp.glb",
+   "vm": "game/viewmodels/rifle.glb",
+   "rig": {
+    "bone": "PBody_058",
+    "forward": [
+     0.002,
+     1,
+     -0.021
+    ],
+    "up": [
+     -0.109,
+     -0.02,
+     -0.994
+    ],
+    "muzzle": [
+     0,
+     0.489,
+     0.001
+    ],
+    "sight": [
+     -0.007,
+     -0.17,
+     -0.037
+    ],
+    "port": [
+     -0.023,
+     -0.095,
+     -0.005
+    ],
+    "clips": [
+     "idle",
+     "draw",
+     "walk",
+     "run",
+     "fire",
+     "reload",
+     "reloadEmpty"
+    ]
+   },
    "length": 0.94,
    "muzzle": [
     0,
-    0.037,
-    -0.658
+    0.069,
+    -0.751
    ],
-   "sightY": 0.089,
+   "sightY": 0.129,
    "bounds": [
     [
-     -0.023,
-     -0.174,
-     -0.658
+     -0.026,
+     -0.062,
+     -0.755
     ],
     [
-     0.043,
-     0.089,
-     0.282
+     0.023,
+     0.129,
+     0.185
     ]
    ],
    "credit": {
-    "title": "AK-74M Assault Rifle",
-    "author": "FJH (https://sketchfab.com/FJH)",
+    "title": "FPS AK-74m animations",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/ak-74m-assault-rifle-9084c3bae8224d338103997bc3101480"
+    "source": "https://sketchfab.com/3d-models/fps-ak-74m-animations-94be8385c402474cacd39bc096c6ca14"
    }
   },
   "pistol": {
-   "fp": "game/weapons/pistol_fp.glb",
    "tp": "game/weapons/pistol_tp.glb",
-   "length": 0.22,
+   "vm": "game/viewmodels/pistol.glb",
+   "rig": {
+    "bone": "PBody_058",
+    "forward": [
+     0.05,
+     0.282,
+     0.958
+    ],
+    "up": [
+     -0.241,
+     0.934,
+     -0.263
+    ],
+    "muzzle": [
+     0,
+     0.178,
+     0.123
+    ],
+    "sight": [
+     -0.018,
+     0.158,
+     -0.065
+    ],
+    "port": [
+     -0.03,
+     0.148,
+     -0.007
+    ],
+    "clips": [
+     "idle",
+     "walk",
+     "fire",
+     "reload",
+     "reloadEmpty"
+    ]
+   },
+   "length": 0.19,
    "muzzle": [
     0,
-    0.029,
-    -0.174
+    0.078,
+    -0.298
    ],
-   "sightY": 0.046,
+   "sightY": 0.109,
    "bounds": [
     [
-     -0.015,
-     -0.093,
-     -0.174
+     -0.027,
+     -0.034,
+     -0.299
     ],
     [
-     0.015,
-     0.046,
-     0.046
+     0.036,
+     0.109,
+     -0.101
     ]
    ],
    "credit": {
-    "title": "Colt M1911 & Silencer",
-    "author": "FJH (https://sketchfab.com/FJH)",
+    "title": "FPS pistol animations",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/colt-m1911-silencer-066b5650970e4d01b721fd4d19ab8065"
+    "source": "https://sketchfab.com/3d-models/fps-pistol-animations-0d7a343dcb6f401197a73c91aee93f6d"
    }
   },
   "knife": {
@@ -89,90 +161,196 @@
    }
   },
   "sniper": {
-   "fp": "game/weapons/sniper_fp.glb",
    "tp": "game/weapons/sniper_tp.glb",
+   "vm": "game/viewmodels/sniper.glb",
+   "rig": {
+    "bone": "Body_057",
+    "forward": [
+     0.001,
+     0.848,
+     0.531
+    ],
+    "up": [
+     -0.102,
+     0.528,
+     -0.843
+    ],
+    "muzzle": [
+     0,
+     0.744,
+     0.416
+    ],
+    "sight": [
+     -0.019,
+     0.229,
+     -0.124
+    ],
+    "port": [
+     -0.028,
+     0.111,
+     -0.065
+    ],
+    "clips": [
+     "idle",
+     "walk",
+     "fire",
+     "reload",
+     "reloadEmpty"
+    ]
+   },
    "length": 1.15,
    "muzzle": [
     0,
-    0.078,
-    -0.816
+    -0.066,
+    -0.909
    ],
-   "sightY": 0.224,
+   "sightY": 0.12,
    "bounds": [
     [
-     -0.05,
-     -0.132,
-     -0.816
+     -0.061,
+     -0.386,
+     -0.914
     ],
     [
-     0.052,
-     0.224,
-     0.333
+     0.059,
+     0.12,
+     0.366
     ]
    ],
    "credit": {
-    "title": "Modern Sniper Rifle | Free Lowpoly",
-    "author": "Vlasov Daniil (https://sketchfab.com/dan741vlasov)",
+    "title": "FPS animations sniper rifle",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/modern-sniper-rifle-free-lowpoly-45c99509f1ee4c2a8c9c3336d3e2ff5a"
+    "source": "https://sketchfab.com/3d-models/fps-animations-sniper-rifle-c15ae8393d824f5b929e3f69691cdd31"
    }
   },
   "shotgun": {
-   "fp": "game/weapons/shotgun_fp.glb",
    "tp": "game/weapons/shotgun_tp.glb",
-   "length": 0.98,
+   "vm": "game/viewmodels/shotgun.glb",
+   "rig": {
+    "bone": "Body_058",
+    "forward": [
+     0.013,
+     0.779,
+     0.627
+    ],
+    "up": [
+     -0.221,
+     0.613,
+     -0.758
+    ],
+    "muzzle": [
+     0,
+     0.738,
+     0.474
+    ],
+    "sight": [
+     -0.013,
+     0.201,
+     0.02
+    ],
+    "port": [
+     -0.03,
+     0.186,
+     0.026
+    ],
+    "clips": [
+     "idle",
+     "walk",
+     "fire",
+     "reload"
+    ]
+   },
+   "length": 1,
    "muzzle": [
     0,
-    0.069,
-    -0.696
+    0.047,
+    -0.908
    ],
-   "sightY": 0.086,
+   "sightY": 0.064,
    "bounds": [
     [
-     -0.022,
-     -0.097,
-     -0.696
+     -0.026,
+     -0.126,
+     -0.91
     ],
     [
-     0.022,
-     0.086,
-     0.284
+     0.04,
+     0.064,
+     0.235
     ]
    ],
    "credit": {
-    "title": "Remington 870 Police Magnum 12 Gauge Shotgun",
-    "author": "8sianDude (https://sketchfab.com/haoliu95)",
+    "title": "FPS Arms remington (shotgun)",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/remington-870-police-magnum-12-gauge-shotgun-eea11de7e9d24b6683962b8388c319eb"
+    "source": "https://sketchfab.com/3d-models/fps-arms-remington-shotgun-e68ef617fe8a48cca8610d016ffd5881"
    }
   },
   "smg": {
-   "fp": "game/weapons/smg_fp.glb",
    "tp": "game/weapons/smg_tp.glb",
-   "length": 0.33,
+   "vm": "game/viewmodels/smg.glb",
+   "rig": {
+    "bone": "PBody_058",
+    "forward": [
+     0.006,
+     -0.053,
+     0.999
+    ],
+    "up": [
+     -0.105,
+     0.993,
+     0.054
+    ],
+    "muzzle": [
+     -0.001,
+     0.177,
+     0.398
+    ],
+    "sight": [
+     -0.007,
+     0.235,
+     0.175
+    ],
+    "port": [
+     -0.025,
+     0.213,
+     0.028
+    ],
+    "clips": [
+     "idle",
+     "draw",
+     "walk",
+     "run",
+     "fire",
+     "reload",
+     "reloadEmpty"
+    ]
+   },
+   "length": 0.6,
    "muzzle": [
     0,
-    0.084,
-    -0.274
+    0.149,
+    -0.565
    ],
-   "sightY": 0.127,
+   "sightY": 0.196,
    "bounds": [
     [
-     -0.031,
-     -0.137,
-     -0.274
+     -0.05,
+     -0.089,
+     -0.567
     ],
     [
-     0.019,
-     0.127,
-     0.056
+     0.049,
+     0.196,
+     0.034
     ]
    ],
    "credit": {
-    "title": "MP5K",
-    "author": "Shorty_Digitan (https://sketchfab.com/Shorty_Digitan)",
+    "title": "SMG FPS Animations",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/mp5k-b47fa4053c1e4cfabe91b0046689f8c9"
+    "source": "https://sketchfab.com/3d-models/smg-fps-animations-ca37ea9148dc4fcc9cc632175d311b23"
    }
   },
   "frag": {
@@ -262,91 +440,133 @@
     "source": "https://sketchfab.com/3d-models/m84-stun-grenade-flashbang-3dbda8fe68ff4efdbf59f7d414c5619c"
    }
   },
-  "carbine": {
-   "fp": "game/weapons/carbine_fp.glb",
-   "tp": "game/weapons/carbine_tp.glb",
-   "length": 0.86,
+  "makarov": {
+   "tp": "game/weapons/makarov_tp.glb",
+   "vm": "game/viewmodels/makarov.glb",
+   "rig": {
+    "bone": "Slide_016",
+    "forward": [
+     0.059,
+     0.747,
+     0.663
+    ],
+    "up": [
+     -0.046,
+     0.665,
+     -0.745
+    ],
+    "muzzle": [
+     0,
+     0.123,
+     -0.011
+    ],
+    "sight": [
+     -0.003,
+     0.068,
+     -0.04
+    ],
+    "port": [
+     -0.026,
+     0.044,
+     -0.072
+    ],
+    "clips": [
+     "idle",
+     "walk",
+     "fire",
+     "reload",
+     "reloadEmpty"
+    ]
+   },
+   "length": 0.161,
    "muzzle": [
     0,
-    0.044,
-    -0.628
+    0.202,
+    -0.094
    ],
-   "sightY": 0.111,
+   "sightY": 0.21,
    "bounds": [
     [
-     -0.028,
-     -0.181,
-     -0.628
+     -0.016,
+     0.083,
+     -0.105
     ],
     [
-     0.034,
-     0.111,
-     0.232
+     0.013,
+     0.21,
+     0.019
     ]
    ],
    "credit": {
-    "title": "Ar-15",
-    "author": "3DYAROSLAV2 (https://sketchfab.com/3DYAROSLAV2)",
+    "title": "Makarov PM FPS animations",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/ar-15-3a9d2f1ef1c64eccb3a2302164dd791b"
+    "source": "https://sketchfab.com/3d-models/makarov-pm-fps-animations-d02ebd58e3cf44acb7af73e3f156be28"
    }
   },
-  "scar": {
-   "fp": "game/weapons/scar_fp.glb",
-   "tp": "game/weapons/scar_tp.glb",
-   "length": 0.99,
+  "vsk": {
+   "tp": "game/weapons/vsk_tp.glb",
+   "vm": "game/viewmodels/vsk.glb",
+   "rig": {
+    "bone": "Body_051",
+    "forward": [
+     0.04,
+     0.933,
+     0.359
+    ],
+    "up": [
+     -0.076,
+     0.361,
+     -0.93
+    ],
+    "muzzle": [
+     0,
+     0.463,
+     -0.036
+    ],
+    "sight": [
+     -0.017,
+     -0.014,
+     -0.184
+    ],
+    "port": [
+     -0.041,
+     -0.059,
+     -0.221
+    ],
+    "clips": [
+     "idle",
+     "walk",
+     "run",
+     "fire",
+     "reload",
+     "reloadEmpty"
+    ]
+   },
+   "length": 0.89,
    "muzzle": [
     0,
-    0.059,
-    -0.742
+    0.25,
+    -0.491
    ],
-   "sightY": 0.165,
+   "sightY": 0.3,
    "bounds": [
     [
-     -0.05,
-     -0.179,
-     -0.742
+     -0.023,
+     -0.151,
+     -0.513
     ],
     [
-     0.029,
-     0.165,
-     0.248
+     0.02,
+     0.3,
+     0.321
     ]
    ],
    "credit": {
-    "title": "FN SCAR",
-    "author": "nghiakua06 (https://sketchfab.com/nghiakua06)",
+    "title": "FPS animations VSK",
+    "author": "Cransh (https://sketchfab.com/ccransh)",
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/fn-scar-6143fe54cf544d59a9dd7576333e940a"
-   }
-  },
-  "revolver": {
-   "fp": "game/weapons/revolver_fp.glb",
-   "tp": "game/weapons/revolver_tp.glb",
-   "length": 0.29,
-   "muzzle": [
-    0,
-    0.019,
-    -0.22
-   ],
-   "sightY": 0.042,
-   "bounds": [
-    [
-     -0.051,
-     -0.09,
-     -0.22
-    ],
-    [
-     0.016,
-     0.042,
-     0.07
-    ]
-   ],
-   "credit": {
-    "title": "GameReady: Colt Python Revolver",
-    "author": "HYQQM (https://sketchfab.com/HYQQM)",
-    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-    "source": "https://sketchfab.com/3d-models/gameready-colt-python-revolver-3def6e3980e64dfa832f298004ce1b94"
+    "source": "https://sketchfab.com/3d-models/fps-animations-vsk-191e34e043d546718d9e899d19d2f974"
    }
   }
  },
@@ -444,7 +664,7 @@
    "kneel_idle"
   ]
  },
- "built": "2026-11-02T10:14:11.591Z",
+ "built": "2026-11-02T11:20:23.225Z",
  "arms": {
   "file": "game/arms/arms_fp.glb",
   "credit": {
