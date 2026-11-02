@@ -71,8 +71,8 @@ export class Hud {
       el.innerHTML = `<h2>Choose class</h2><div class="cards">${CLASS_ORDER.map((c, i) => {
         const k = CLASSES[c];
         return `<div class="card ${c === current ? 'active' : ''}"><kbd>${i + 1}</kbd><b>${k.name}</b>
-          <span>${WEAPONS[k.primary].name} · Pistol · Knife</span><p>${k.desc}</p></div>`;
-      }).join('')}</div><small>Press 1–4 to pick · ${keyName('classMenu')} to close</small>`;
+          <span>${WEAPONS[k.primary].name} · ${WEAPONS[k.secondary || 'pistol'].name} · Knife</span><p>${k.desc}</p></div>`;
+      }).join('')}</div><small>Press 1–${CLASS_ORDER.length} to pick · ${keyName('classMenu')} to close</small>`;
     });
   }
 

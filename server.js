@@ -96,6 +96,7 @@ const argMode = (process.argv.find(a => a.startsWith('--mode=')) || '').split('=
 const match = {
   mode: MODES[argMode] ? argMode : 'tdm',
   map: MAP.id,
+  evenTeams: true, // team switches may not leave one team two players ahead (host can turn this off)
   phase: 'live', phaseEnds: 0, round: 0,
   score: { A: 0, B: 0 }, winner: null, teamsAtStart: { A: 0, B: 0 },
   attackers: 'A', charge: null,
@@ -498,7 +499,7 @@ function handleState(p, msg) {
 
 function switchTeam(p) {
   const other = p.team === 'A' ? 'B' : 'A';
-  if (teamCount(other) >= teamCount(p.team)) {
+  if (match.evenTeams && teamCount(other) >= teamCount(p.team)) {
     send(p, { t: 'notice', text: `${TEAMS[other].name} already have enough players` });
     return;
   }
@@ -517,6 +518,12 @@ function switchTeam(p) {
 
 function handleHost(p, msg) {
   if (!p.host) return;
+  if (typeof msg.even === 'boolean' && msg.even !== match.evenTeams) {
+    match.evenTeams = msg.even;
+    broadcast({ t: 'notice', text: msg.even ? 'Teams must stay even' : 'Anyone can switch teams' });
+    broadcast({ t: 'host', even: match.evenTeams });
+    return;
+  }
   if (msg.map && MAPS[msg.map] && msg.map !== match.map) {
     setMap(msg.map);
     match.map = msg.map;
@@ -561,7 +568,7 @@ wss.on('connection', (ws, req) => {
         pos: [0, 0, 0], yaw: 0, pitch: 0, crouch: false, weapon: loadoutFor(cls)[0],
         hp: 0, alive: false, life: 0, kills: 0, deaths: 0, respawnAt: 0, protectedUntil: 0, history: [], lastFire: {} };
       players.set(p.id, p);
-      send(p, { t: 'welcome', id: p.id, team, mode: match.mode, map: match.map, host: p.host });
+      send(p, { t: 'welcome', id: p.id, team, mode: match.mode, map: match.map, host: p.host, even: match.evenTeams });
       broadcast({ t: 'notice', text: `${name} joined the ${TEAMS[team].name}` }, p);
       if (cfg().respawn ? match.phase === 'live' : match.phase === 'freeze') spawn(p);
       else if (!cfg().respawn) send(p, { t: 'notice', text: 'Round in progress. You join next round.' });

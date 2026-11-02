@@ -227,6 +227,8 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Flashbang: "M84 Stun Grenade "Flashbang"" by Vanillatography, CC-BY 4.0
 - First-person arms: "PSX First Person Arms" by Drillimpact, CC0 (credit optional) — https://drillimpact.itch.io/psx-first-person-arms-free
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
-- Downloaded, not wired in yet: "Ar-15" (3DYAROSLAV2), "FN SCAR" (nghiakua06), "GameReady: Colt Python Revolver" (HYQQM), all CC-BY 4.0
+- Carbine: "Ar-15" by 3DYAROSLAV2, CC-BY 4.0
+- Battle rifle: "FN SCAR" by nghiakua06, CC-BY 4.0 (its vertical foregrip is hidden)
+- Revolver: "GameReady: Colt Python Revolver" by HYQQM, CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
 - Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005), CC0

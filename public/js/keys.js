@@ -1,6 +1,6 @@
 // Key bindings. The game reads every action by its default key; a rebound key is translated to
 // that default as it comes in, and the default key itself goes quiet unless something else uses it.
-// Weapon slots (1–4) stay fixed: the same keys pick a class in the class menu.
+// Number keys stay fixed: 1–4 pick weapons, and 1–6 pick a class in the class menu.
 
 export const ACTIONS = [
   { id: 'forward', label: 'Move forward', key: 'KeyW' },
@@ -21,8 +21,8 @@ export const ACTIONS = [
 ];
 const BY_ID = Object.fromEntries(ACTIONS.map(a => [a.id, a]));
 
-// Keys that can't be bound: Esc leaves the game, Cmd is the browser's, 1–4 are weapon slots.
-export const RESERVED = /^(Escape|Meta|OS|Digit[1-4]$)/;
+// Keys that can't be bound: Esc leaves the game, Cmd is the browser's, 1–6 are weapons and classes.
+export const RESERVED = /^(Escape|Meta|OS|Digit[1-6]$)/;
 
 const custom = {};     // action → key, only where it differs from the default
 let remap = new Map(); // key pressed → key the game reads (null: ignored)

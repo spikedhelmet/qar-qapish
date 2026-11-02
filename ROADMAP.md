@@ -18,7 +18,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
 | 4 | Grenades: frag, smoke, flashbang | ✅ Done, needs a playtest |
-| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms, 2nd map, settings, map textures done) |
+| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms, 2nd map, settings, map textures, new guns done) |
 
 ### Milestone 5: polish (in progress)
 - ~~**Per-weapon reload animations**~~ done (see log).
@@ -30,11 +30,34 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Your recorded announcer lines (ASSETS.md §3).
 
 ### Ideas parked for later
+- **Climbing / mantling:** pull up onto ledges about chest high (crates, the loading dock, low walls) by jumping at them. The map is all boxes, so the climbable spots can be found automatically. This needs a climb-up animation for other players (Mixamo has "Climbing" / "Climb Up Wall").
 - Slide and knife-attack animations (Mixamo).
 - Kill-cam, round MVP, match stats.
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 9: new guns, firing feel, movement (`feature/milestone-5`)
+- **Two new classes and three new guns**, all CC-BY 4.0 from Sketchfab:
+  - **Operator** with a carbine (AR-15): 750 rounds per minute, 26 damage, weaker past 25 m, flashbang.
+  - **Vanguard** with a battle rifle (FN SCAR): 430 rounds per minute, 40 damage, 20 rounds, hard recoil, frag.
+  - Vanguard carries a **revolver** (Colt Python) instead of the pistol: 6 rounds, 45 damage, one-shot headshot. On a reload its cylinder swings out and back.
+  - Classes can now name their sidearm.
+- **Builder: models staged for a picture.** The asset builder can now level a tilted model (`rotateZ`) and cut parts out of a mesh (`cuts`), either dropping them or moving them. The AR-15 download needed both:
+  - it was posed muzzle-down at 15°;
+  - its magazine lay beside the gun, and a spare magazine top sat on the rail.
+  - The magazine was moved into the well with a matrix worked out once from its shape, so it also drops out on a reload.
+  - The builder's bounding box is now exact, not rough. A rough box of a tilted model came out 4 cm too tall, which threw off the aim.
+- **Firing looks real, not cartoonish:**
+  - The gun snaps straight back and settles in about 0.1 s, with a 1–2° muzzle rise on rifles. Before, the springs were bouncy and the flips were big: 5° on the rifle, 14° on the pistol, 17° on the shotgun.
+  - The rifle's bolt and the pistol's slide cycle on every shot.
+  - The muzzle flash is a small, irregular burst that lasts about two frames, with four shapes picked at random. It leaves a faint wisp of smoke.
+- **Movement:**
+  - Jumps carry at most 5.4 m/s forward, so a sprint jump covers 3.5 m instead of 4.5 m. Slide jumps are capped the same way.
+  - For 0.45 s after a jump lands, the player is up to 45% slower and jumps lower. Chained hops start at 3 m/s and cover 2.2 m each, so bunny hopping is slower than running.
+  - Stepping off a ledge or down stairs doesn't count as a landing.
+- **Left hand on long guns:** it now sits under the handguard and wraps its right side. Before, it sat to the left of the gun.
+- **Team switching:** Falcons / Jackals buttons in the Esc menu. The host can allow uneven teams.
 
 ### 2026-11-02 · Milestone 5, part 8: photo textures (`feature/milestone-5`)
 - Both maps now use CC0 photo textures from ambientCG:

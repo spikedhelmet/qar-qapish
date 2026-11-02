@@ -87,6 +87,8 @@ export class LocalPlayer {
     this.slideCooldown = 0;
     this.sprintRecover = 0;
     this.stepDist = 0;
+    this.landT = 0;
+    this.jumped = false;
   }
 
   spawn(pos, yaw, life) {
@@ -156,8 +158,12 @@ export class LocalPlayer {
     if (this.sprinting) this.sprintRecover = P.sprintRecover;
     else this.sprintRecover = Math.max(0, this.sprintRecover - dt);
 
+    // Just landed: slower for a moment, so hopping doesn't keep speed up.
+    this.landT = Math.max(0, this.landT - dt);
+    const fresh = 1 - P.landSlow * (this.landT / P.landRecover);
     const base = this.crouching ? P.crouchSpeed : walking ? P.walkSpeed : this.sprinting ? P.sprintSpeed : P.runSpeed;
-    const maxSpeed = base * (this.sprinting ? sprintMult : speedMult);
+    let maxSpeed = base * (this.sprinting ? sprintMult : speedMult) * fresh;
+    if (!this.onGround) maxSpeed = Math.min(maxSpeed, P.jumpMaxSpeed); // no speeding up mid-air
     const wishSpeed = (fx || fz) && !this.sliding ? maxSpeed : 0;
 
     if (this.onGround) {
@@ -176,15 +182,21 @@ export class LocalPlayer {
     }
 
     if (this.onGround && input.hit('Space') && canStand(this.map, this.pos, P.height)) {
-      this.vel[1] = P.jumpSpeed;
+      // Jumps carry at most jumpMaxSpeed forward, less right after a landing.
+      const cap = P.jumpMaxSpeed * fresh, speed = this.speed();
+      if (speed > cap) { this.vel[0] *= cap / speed; this.vel[2] *= cap / speed; }
+      this.vel[1] = P.jumpSpeed * (1 - 0.3 * (1 - fresh) / P.landSlow);
       this.onGround = false;
-      this.sliding = false; // slide-jump keeps the momentum
+      this.sliding = false;
+      this.jumped = true;
     }
     this.vel[1] -= P.gravity * dt;
 
     const before = [this.pos[0], this.pos[2]];
     const res = moveBody(this.map, this.pos, this.vel, dt, this.height, this.onGround);
     ev.landed = !this.onGround && res.onGround;
+    if (ev.landed && this.jumped) this.landT = P.landRecover; // stepping off a ledge or stairs doesn't count
+    if (this.onGround) this.jumped = false;
     this.onGround = res.onGround;
     if (this.pos[1] < -20) this.pos = [0, 2, 0]; // safety net
 

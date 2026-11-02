@@ -9,7 +9,7 @@ import { photoTextures } from './textures.js';
 import { Input, LocalPlayer } from './player.js';
 import { Arsenal } from './weapons.js';
 import { Remotes } from './remote.js';
-import { ViewModel } from './models.js';
+import { ViewModel, flashSize } from './models.js';
 import { Effects } from './effects.js';
 import { Hud } from './hud.js';
 import { Net } from './net.js';
@@ -161,6 +161,7 @@ function onMessage(msg) {
       game.myId = msg.id;
       game.host = msg.host;
       game.mode = msg.mode;
+      game.even = msg.even !== false;
       changeMap(msg.map);
       setTeam(msg.team);
       game.joined = true;
@@ -169,6 +170,11 @@ function onMessage(msg) {
       break;
     case 'team':
       setTeam(msg.team);
+      renderTeamButtons();
+      break;
+    case 'host':
+      game.even = msg.even;
+      updateHostPanel();
       break;
     case 'spawn':
       me.spawn(msg.pos, msg.yaw, msg.life);
@@ -184,6 +190,7 @@ function onMessage(msg) {
       break;
     case 'snap': {
       game.players = msg.ps;
+      if (!menu.classList.contains('hidden')) renderTeamButtons(); // keeps the menu's team counts current
       if (game.synced) announceScoreChanges(game.score, msg.sc, game.timeLeft, msg.tl, msg.st);
       game.synced = true; // don't announce the score we joined into
       game.mode = msg.m;
@@ -378,7 +385,7 @@ function onRemoteFire(msg) {
   const muzzle = r ? r.soldier.muzzleWorld(new THREE.Vector3()) : new THREE.Vector3().fromArray(msg.o);
   audio.playShot(msg.w, muzzle);
   if (WEAPONS[msg.w]?.melee) return;
-  effects.muzzleFlash(muzzle, null);
+  effects.muzzleFlash(muzzle, null, flashSize(msg.w));
   for (const e of msg.e || []) {
     const end = _v.fromArray(e).clone();
     effects.tracer(muzzle, end);
@@ -414,7 +421,7 @@ function shoot() {
     _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
     _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
     const worldMuzzle = eye.clone().addScaledVector(_dir, 0.7).addScaledVector(_right, 0.14).addScaledVector(_up, -0.12);
-    effects.muzzleFlash(worldMuzzle, viewModel.muzzleWorld(new THREE.Vector3()));
+    effects.muzzleFlash(worldMuzzle, viewModel.muzzleWorld(new THREE.Vector3()), flashSize(kind));
     for (const res of out.results) {
       effects.tracer(worldMuzzle, res.point);
       if (res.wall) { effects.impact(res.point, res.normal); audio.playImpact(res.point); }
@@ -806,6 +813,8 @@ const hostPanel = document.getElementById('host-panel');
 const hostMode = document.getElementById('host-mode');
 hostMode.innerHTML = MODE_ORDER.map(m => `<option value="${m}">${MODES[m].name}</option>`).join('');
 hostMode.addEventListener('change', () => net.send({ t: 'host', mode: hostMode.value }));
+const hostEven = document.getElementById('host-even');
+hostEven.addEventListener('change', () => net.send({ t: 'host', even: hostEven.checked }));
 const hostMap = document.getElementById('host-map');
 hostMap.innerHTML = MAP_ORDER.map(m => `<option value="${m}">${MAPS[m].name}</option>`).join('');
 hostMap.addEventListener('change', () => net.send({ t: 'host', map: hostMap.value }));
@@ -814,6 +823,7 @@ function updateHostPanel() {
   hostPanel.classList.toggle('hidden', !game.host);
   hostMode.value = game.mode;
   hostMap.value = MAP.id;
+  hostEven.checked = game.even !== false;
   document.querySelector('.tagline').textContent = `LAN team shooter · ${MODES[game.mode].name} · ${MAP.name}`;
 }
 
@@ -821,7 +831,28 @@ function showMenu(text = '') {
   menu.classList.remove('hidden');
   status.textContent = text;
   updateHostPanel();
+  teamKey = '';
+  renderTeamButtons();
 }
+
+// Team buttons in the menu, once in a game: your team is highlighted, click the other to switch.
+const teamButtons = document.getElementById('team-buttons');
+let teamKey = '';
+function renderTeamButtons() {
+  teamButtons.parentElement.classList.toggle('hidden', !game.joined);
+  if (!game.joined) return;
+  const count = t => (game.players || []).filter(p => p.tm === t).length;
+  const key = `${game.team}${count('A')}:${count('B')}`;
+  if (key === teamKey) return;
+  teamKey = key;
+  teamButtons.innerHTML = Object.entries(TEAMS).map(([t, info]) =>
+    `<button type="button" data-team="${t}" class="${t === game.team ? 'active' : ''}" style="--team:${info.css}">` +
+    `<b>${info.name}</b><span>${count(t)} player${count(t) === 1 ? '' : 's'}${t === game.team ? ' · your team' : ''}</span></button>`).join('');
+}
+teamButtons.addEventListener('click', e => {
+  const b = e.target.closest('button[data-team]');
+  if (b && b.dataset.team !== game.team) net.send({ t: 'team' });
+});
 
 let connecting = null;
 playBtn.addEventListener('click', async () => {
@@ -891,4 +922,4 @@ function renderCredits(manifest) {
 }
 
 // Handy for poking at the game from the browser console.
-window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, get viewModel() { return viewModel; }, get objective() { return objective; }, grenadeView };
+window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, effects, get viewModel() { return viewModel; }, get objective() { return objective; }, grenadeView };

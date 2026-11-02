@@ -261,6 +261,93 @@
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
     "source": "https://sketchfab.com/3d-models/m84-stun-grenade-flashbang-3dbda8fe68ff4efdbf59f7d414c5619c"
    }
+  },
+  "carbine": {
+   "fp": "game/weapons/carbine_fp.glb",
+   "tp": "game/weapons/carbine_tp.glb",
+   "length": 0.86,
+   "muzzle": [
+    0,
+    0.044,
+    -0.628
+   ],
+   "sightY": 0.111,
+   "bounds": [
+    [
+     -0.028,
+     -0.181,
+     -0.628
+    ],
+    [
+     0.034,
+     0.111,
+     0.232
+    ]
+   ],
+   "credit": {
+    "title": "Ar-15",
+    "author": "3DYAROSLAV2 (https://sketchfab.com/3DYAROSLAV2)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/ar-15-3a9d2f1ef1c64eccb3a2302164dd791b"
+   }
+  },
+  "scar": {
+   "fp": "game/weapons/scar_fp.glb",
+   "tp": "game/weapons/scar_tp.glb",
+   "length": 0.99,
+   "muzzle": [
+    0,
+    0.059,
+    -0.742
+   ],
+   "sightY": 0.165,
+   "bounds": [
+    [
+     -0.05,
+     -0.179,
+     -0.742
+    ],
+    [
+     0.029,
+     0.165,
+     0.248
+    ]
+   ],
+   "credit": {
+    "title": "FN SCAR",
+    "author": "nghiakua06 (https://sketchfab.com/nghiakua06)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/fn-scar-6143fe54cf544d59a9dd7576333e940a"
+   }
+  },
+  "revolver": {
+   "fp": "game/weapons/revolver_fp.glb",
+   "tp": "game/weapons/revolver_tp.glb",
+   "length": 0.29,
+   "muzzle": [
+    0,
+    0.019,
+    -0.22
+   ],
+   "sightY": 0.042,
+   "bounds": [
+    [
+     -0.051,
+     -0.09,
+     -0.22
+    ],
+    [
+     0.016,
+     0.042,
+     0.07
+    ]
+   ],
+   "credit": {
+    "title": "GameReady: Colt Python Revolver",
+    "author": "HYQQM (https://sketchfab.com/HYQQM)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/gameready-colt-python-revolver-3def6e3980e64dfa832f298004ce1b94"
+   }
   }
  },
  "props": {
@@ -357,7 +444,7 @@
    "kneel_idle"
   ]
  },
- "built": "2026-11-02T08:28:44.129Z",
+ "built": "2026-11-02T09:49:41.214Z",
  "arms": {
   "file": "game/arms/arms_fp.glb",
   "credit": {

@@ -9,7 +9,7 @@ export class Arsenal {
     this.reset(loadoutFor(DEFAULT_CLASS));
   }
 
-  // Fresh ammo and the given weapons ([primary, pistol, knife]).
+  // Fresh ammo and the given weapons ([primary, sidearm, knife, grenade]).
   reset(loadout) {
     this.loadout = loadout;
     this.ammo = {};

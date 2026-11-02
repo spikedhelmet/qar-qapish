@@ -45,7 +45,11 @@ function limb(radius, length, material) {
 // ---------------------------------------------------------------- guns
 // Barrel points along -z; origin is at the pistol grip. `userData.muzzle` marks the barrel tip.
 
+// Guns without a stand-in model of their own borrow one (and its hand placement) from a similar gun.
+const LIKE = { carbine: 'rifle', scar: 'rifle', revolver: 'pistol' };
+
 export function buildGun(kind) {
+  kind = LIKE[kind] || kind;
   const g = new THREE.Group();
   const muzzle = new THREE.Object3D();
   if (kind === 'rifle') {
@@ -262,7 +266,7 @@ export class Soldier {
     this.gunMount.clear();
     this.gun = buildGun(kind);
     this.gunMount.add(this.gun);
-    const pose = GRIPS[kind];
+    const pose = GRIPS[kind] || GRIPS[LIKE[kind]];
     this.gunMount.position.fromArray(pose.mount);
     solveArm(this.armR, new THREE.Vector3().fromArray(pose.right));
     solveArm(this.armL, new THREE.Vector3().fromArray(pose.left));
@@ -327,13 +331,23 @@ export function teamColor(team) {
 
 // How each gun kicks in your hands (the aim kick itself lives in weapons.js).
 // back/up in meters, pitch/yaw/roll in radians at the peak; shake = camera jolt.
+// Per shot: the gun snaps straight back into the shoulder (back, up: meters), the muzzle rises a little
+// (pitch, radians) with a touch of random yaw and roll, and the camera jolts (shake). Kept small: the
+// aim itself climbs through the weapon's recoil pattern, the gun only shows the punch.
+// flash: muzzle flash size.
 const KICK = {
-  rifle:   { back: 0.045, up: 0.006, pitch: 0.09, yaw: 0.03, roll: 0.05, shake: 0.004 },
-  smg:     { back: 0.03, up: 0.004, pitch: 0.06, yaw: 0.03, roll: 0.04, shake: 0.003 },
-  pistol:  { back: 0.035, up: 0.012, pitch: 0.24, yaw: 0.03, roll: 0.06, shake: 0.004 },
-  shotgun: { back: 0.09, up: 0.02, pitch: 0.3, yaw: 0.05, roll: 0.1, shake: 0.016 },
-  sniper:  { back: 0.1, up: 0.02, pitch: 0.25, yaw: 0.03, roll: 0.07, shake: 0.016 },
+  rifle:   { back: 0.032, up: 0.004, pitch: 0.035, yaw: 0.01, roll: 0.015, shake: 0.003, flash: 1 },
+  smg:     { back: 0.022, up: 0.003, pitch: 0.025, yaw: 0.01, roll: 0.012, shake: 0.002, flash: 0.8 },
+  pistol:  { back: 0.028, up: 0.008, pitch: 0.09, yaw: 0.012, roll: 0.02, shake: 0.003, flash: 0.7 },
+  shotgun: { back: 0.065, up: 0.01, pitch: 0.12, yaw: 0.02, roll: 0.035, shake: 0.012, flash: 1.5 },
+  sniper:  { back: 0.075, up: 0.01, pitch: 0.1, yaw: 0.012, roll: 0.025, shake: 0.012, flash: 1.4 },
+  carbine: { back: 0.026, up: 0.003, pitch: 0.028, yaw: 0.01, roll: 0.012, shake: 0.0025, flash: 0.9 },
+  scar:    { back: 0.042, up: 0.006, pitch: 0.05, yaw: 0.014, roll: 0.02, shake: 0.005, flash: 1.2 },
+  revolver: { back: 0.035, up: 0.012, pitch: 0.14, yaw: 0.015, roll: 0.025, shake: 0.006, flash: 1.0 },
 };
+export const flashSize = kind => KICK[kind]?.flash ?? 1;
+// The bolt or slide cycles on every shot of a self-loading gun: back in a blink, then home.
+const SHOT_CYCLE = 0.07; // seconds
 
 // Where spent casings leave the gun (gun space) and what they look like.
 const EJECT = {
@@ -342,6 +356,8 @@ const EJECT = {
   pistol:  { port: [0.012, 0.045, -0.04], size: [0.0045, 0.02], color: 0xb08d3c },
   sniper:  { port: [0.03, 0.045, -0.04], size: [0.005, 0.045], color: 0xb08d3c },
   shotgun: { port: [0.025, 0.03, -0.08], size: [0.009, 0.05], color: 0x9a2a22 },
+  carbine: { port: [0.022, 0.05, -0.06], size: [0.0045, 0.03], color: 0xb08d3c },
+  scar:    { port: [0.026, 0.06, -0.08], size: [0.005, 0.04], color: 0xb08d3c }, // revolvers keep their cases
 };
 
 const rndSpin = () => (Math.random() * 2 - 1) * 25;
@@ -353,8 +369,9 @@ const rndSpin = () => (Math.random() * 2 - 1) * 25;
 // Right hand on a pistol grip: wrist→knuckles runs forward along the grip, palm on its right side,
 // fingers curling round the front.
 const GRIP_RIGHT = { fingers: [0, 0.2, -1], across: [0, 1, 0.2], thumb: [-0.4, 0.1, -1], off: [0.03, -0.01, 0.025], curl: 0.85, trigger: 0.55 };
-// Support hand under the handguard: fingers wrap up its right side, thumb runs forward along its left.
-const SUPPORT = { fingers: [1, 0.65, 0], across: [0, 0, -1], thumb: [0.1, 0.25, -1], off: [-0.01, -0.025, 0], curl: 0.7 };
+// Support hand under the handguard: palm cupping its underside, fingers wrapping up its right side,
+// thumb running forward along its left.
+const SUPPORT = { fingers: [0.8, 0.6, 0], across: [0, 0, -1], thumb: [0.1, 0.25, -1], off: [0.015, 0.02, 0], curl: 0.75 };
 const HAND_POSES = {
   rifle: { right: GRIP_RIGHT, left: SUPPORT },
   smg: { right: GRIP_RIGHT, left: SUPPORT },
@@ -365,6 +382,12 @@ const HAND_POSES = {
   frag: { right: { fingers: [-0.7, 0.4, -0.5], across: [0, 1, 0.2], off: [0.035, -0.01, 0.01], curl: 0.75 }, left: null },
 };
 HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
+HAND_POSES.scar = HAND_POSES.rifle;
+HAND_POSES.carbine = { right: GRIP_RIGHT, left: { ...SUPPORT, curl: 0.55 } }; // slim handguard: fingers stay below the sight line
+HAND_POSES.revolver = HAND_POSES.pistol;
+
+// How far forward of the grip the support hand holds the handguard (rifle-shaped guns).
+const SUPPORT_Z = { rifle: -0.27, carbine: -0.27, scar: -0.3 };
 
 // Where the arms' shoulders sit relative to the eye. The soldier's sit a little ahead of the eye
 // (its arms are shorter) — its chest stays below the bottom of the view.
@@ -382,6 +405,10 @@ const PARTS = {
   pistol: { mag: /^(Magazine|MagFollower)_/, bolt: /^Shutter_/, rack: 0.035 },
   sniper: { mag: /^Cube054_/ },
   smg:    { mag: /^Object_5$/ },
+  carbine: { mag: /^Magazine_/ },
+  scar:   { mag: /m5M4_mag/ },
+  // The cylinder (with its ejector rod) swings out to the left and back instead of a magazine change.
+  revolver: { mag: /^(wheel_low|wheel_rot|wheel_pan|handle_low)/, swing: [-0.035, -0.012, 0] },
 };
 
 // Returns a function that offsets `part` by (dx, dy, dz) meters in the gun's own frame,
@@ -431,6 +458,9 @@ const REAL_VIEW = {
   sniper:  { hip: [0.15, -0.19, -0.36], adsZ: -0.1 },
   shotgun: { hip: [0.15, -0.19, -0.31], adsZ: -0.24 },
   smg:     { hip: [0.13, -0.16, -0.29], adsZ: -0.15, adsY: 0.012 }, // look through the rear drum, not over it
+  carbine: { hip: [0.15, -0.18, -0.33], adsZ: -0.07, adsY: 0.023 }, // through the holographic sight's window
+  scar:    { hip: [0.15, -0.18, -0.35], adsZ: -0.09, adsY: 0.025 },  // through the red dot
+  revolver: { hip: [0.12, -0.14, -0.42], adsZ: -0.42 },
   pistol:  { hip: [0.12, -0.14, -0.42], adsZ: -0.42 }, // far enough out that both hands fit on screen
   knife:   { hip: [0.17, -0.19, -0.29] },
   frag:    { hip: [0.15, -0.15, -0.28] },
@@ -445,8 +475,9 @@ export class ViewModel {
     this.group.add(this.holder);
     this.sleeve = mat(UNIFORMS[team].shirt, 0.95);
     this.buildArms(team);
-    this.recoilPos = new Spring(300, 22);
-    this.recoilRot = new Spring(300, 22);
+    // Stiff, well-damped springs: a sharp kick that settles in about a tenth of a second, no wobble.
+    this.recoilPos = new Spring(1100, 60);
+    this.recoilRot = new Spring(700, 45);
     this.shake = new Spring(500, 30);   // camera jolt, read by main.js
     this.shells = [];
     this.swing = 0;
@@ -487,6 +518,7 @@ export class ViewModel {
     this.support = null;
     this.handR = null;
     this.cycle = 0;
+    this.shotT = 0;
     this.throwT = -1;
     this.reload = null;
     this.holder.clear();
@@ -505,9 +537,9 @@ export class ViewModel {
       if (this.armsRig) a.children.forEach(c => { c.visible = false; });
       return a;
     };
-    if (kind === 'rifle') {
+    if (kind === 'rifle' || kind === 'carbine' || kind === 'scar') {
       arm(0, -0.05, 0.03, -1.0, 0.35);
-      this.support = arm(-0.01, -0.03, -0.27, -0.95, -0.75, 0.55);
+      this.support = arm(-0.01, -0.03, SUPPORT_Z[kind], -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.23, -0.48);
       this.adsPos = new THREE.Vector3(0, -0.105, -0.3); // iron sights on the crosshair
     } else if (kind === 'sniper') {
@@ -535,7 +567,7 @@ export class ViewModel {
       this.support = arm(-0.01, -0.04, -0.24, -0.95, -0.6, 0.48);
       this.base = new THREE.Vector3(0.17, -0.21, -0.42);
       this.adsPos = new THREE.Vector3(0, -0.097, -0.3);
-    } else if (kind === 'pistol') {
+    } else if (kind === 'pistol' || kind === 'revolver') {
       arm(0, -0.04, 0.02, -1.05, 0.3);
       this.support = arm(-0.03, -0.05, 0.03, -1.05, -0.45);
       this.base = new THREE.Vector3(0.14, -0.17, -0.42);
@@ -625,6 +657,13 @@ export class ViewModel {
       p.x -= s * 0.16; p.z -= s * 0.12;
       ry += s * 0.9;
     }
+    // Self-loading guns: the bolt / slide flicks back and returns after each shot.
+    if (this.shotT > 0) {
+      this.shotT = Math.max(0, this.shotT - dt);
+      const ph = 1 - this.shotT / SHOT_CYCLE, back = ph < 0.3 ? ph / 0.3 : (1 - ph) / 0.7;
+      const rack = PARTS[this.kind]?.rack || 0;
+      if (!this.reload) for (const b of this.bolt) b(0, 0, rack * back);
+    }
     // Pump / bolt: slide the forend (and the hand on it) back and forward.
     if (this.cycle > 0) {
       const before = this.cycle;
@@ -666,7 +705,7 @@ export class ViewModel {
     this.recoilRot.kick(k.pitch * calm, rnd() * k.yaw * calm, rnd() * k.roll * calm);
     this.shake.kick(k.shake * (0.7 + Math.random() * 0.3), rnd() * k.shake * 0.4, rnd() * k.shake);
     if (cycleIn) this.cycle = cycleIn;
-    else this.ejectShell();
+    else { this.ejectShell(); this.shotT = SHOT_CYCLE; }
   }
 
   ejectShell() {
@@ -754,8 +793,14 @@ export class ViewModel {
 
     // Magazine weapons: old magazine drops away, a new one comes up and seats, then rack the bolt.
     const out1 = smooth(0.15, 0.32, t), in1 = smooth(0.4, 0.6, t);
-    const magY = t < 0.36 ? -0.2 * out1 : -0.2 * (1 - in1);
-    for (const m of this.mag) m(0, magY, t < 0.36 ? 0.02 * out1 : 0);
+    const swing = PARTS[this.kind]?.swing;
+    if (swing) {
+      const k = t < 0.36 ? out1 : 1 - in1;
+      for (const m of this.mag) m(swing[0] * k, swing[1] * k, swing[2] * k);
+    } else {
+      const magY = t < 0.36 ? -0.2 * out1 : -0.2 * (1 - in1);
+      for (const m of this.mag) m(0, magY, t < 0.36 ? 0.02 * out1 : 0);
+    }
     if (crossed(0.18)) playMech('magOut');
     if (crossed(0.58)) { playMech('magIn'); out.pos.y += 0.01; }
     // Support hand goes down for the fresh magazine and brings it up.

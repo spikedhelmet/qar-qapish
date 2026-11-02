@@ -154,6 +154,9 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 .class-buttons button b { font-size: 14px; }
 .class-buttons button span { font-size: 11px; color: var(--muted); }
 .class-buttons button.active { border-color: var(--accent); background: rgba(232, 197, 71, 0.12); }
+.team-buttons button { border-left: 3px solid var(--team); }
+.team-buttons button.active { border-color: var(--team); background: rgba(255, 255, 255, 0.1); }
+.host label.check { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--text); }
 .host { margin: 4px 0 14px; padding: 12px; border: 1px dashed rgba(255, 255, 255, 0.16); border-radius: 4px; }
 .host label { margin-bottom: 10px; }
 button.secondary { width: 100%; padding: 8px; font-size: 13px; color: var(--text); background: rgba(255, 255, 255, 0.08);

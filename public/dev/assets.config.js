@@ -4,6 +4,7 @@
 // Every weapon is baked into the same frame: barrel along -Z, top up +Y, origin at the top of the
 // pistol grip (where the trigger hand sits), real-world length in meters.
 // grip / muzzle: [fraction from the back, fraction from the bottom] of the visible model's bounding box.
+// rotateZ levels a model that was posed tilted (applied before rotateY). cuts: see applyCuts in build.html.
 export const WEAPONS = {
   rifle: {
     src: 'weapons/ak-74m_assault_rifle.glb', length: 0.94,
@@ -28,6 +29,27 @@ export const WEAPONS = {
   smg: {
     src: 'weapons/mp5k.glb', length: 0.33,
     grip: [0.17, 0.52], muzzle: [1, 0.84],
+  },
+  carbine: {
+    src: 'weapons/ar-15.glb', length: 0.86, rotateY: 90, rotateZ: 15, // posed muzzle-down 15°
+    grip: [0.27, 0.62], muzzle: [1, 0.77],
+    // Staged for a picture: a spare magazine top sits on the rail (dropped), and the magazine lies
+    // beside the gun. It's moved into the magazine well; the matrix was worked out once from its shape
+    // (long axis up, floorplate down, curve forward, 30% inside the well).
+    cuts: [
+      { mesh: /^Object_4$/, box: [[0.2, 0.7, -0.12], [0.72, 1.1, 0.19]], any: true },
+      { mesh: /^Object_4$/, box: [[-9, -9, 0.19], [9, 9, 9]], any: true, name: 'Magazine',
+        matrix: [-0.9145, 0.4004, -0.058, 0, 0.3802, 0.8014, -0.4617, 0, -0.1384, -0.4443, -0.8851, 0, -0.2784, -0.3384, 0.5244, 1] },
+    ],
+  },
+  scar: {
+    src: 'weapons/fn_scar.glb', length: 0.99, rotateY: 90,
+    hide: /foregrip/, // the vertical foregrip would sit in the support hand
+    grip: [0.25, 0.52], muzzle: [1, 0.69],
+  },
+  revolver: {
+    src: 'weapons/gameready_colt_python_revolver.glb', length: 0.29,
+    grip: [0.24, 0.68], muzzle: [1, 0.82],
   },
 };
 

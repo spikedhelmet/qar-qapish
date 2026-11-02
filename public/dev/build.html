@@ -80,7 +80,7 @@
         if (!o.isMesh) return;
         let shown = true;
         for (let p = o; p; p = p.parent) if (!p.visible) shown = false;
-        if (shown) box.expandByObject(o);
+        if (shown) box.expandByObject(o, true); // exact: a tilted model's rough box comes out too big
       });
       return box;
     }
@@ -99,6 +99,56 @@
         }
       });
       return min <= max ? (min + max) / 2 : null;
+    }
+
+    // Copy of a geometry with only these triangles, and only the vertices they use.
+    function subGeometry(g, tris) {
+      const remap = new Map(), order = [];
+      const index = tris.map(i => {
+        if (!remap.has(i)) { remap.set(i, order.length); order.push(i); }
+        return remap.get(i);
+      });
+      const out = new THREE.BufferGeometry();
+      for (const [name, attr] of Object.entries(g.attributes)) {
+        const n = attr.itemSize, src = attr.array, dst = new src.constructor(order.length * n);
+        order.forEach((v, k) => { for (let j = 0; j < n; j++) dst[k * n + j] = src[v * n + j]; });
+        out.setAttribute(name, new THREE.BufferAttribute(dst, n, attr.normalized));
+      }
+      out.setIndex(index);
+      return out;
+    }
+
+    // Some downloads come staged for a picture: a magazine lying beside the gun, spare parts.
+    // Each cut takes the triangles of the matching meshes inside `box` (model space): all three corners
+    // inside, or any corner with `any`. Without `name` they're dropped; with `name` they become their own
+    // mesh, moved by `matrix` (model space, column-major), so a magazine can go back into the gun.
+    function applyCuts(model, cuts = []) {
+      model.updateMatrixWorld(true);
+      const v = new THREE.Vector3();
+      for (const cut of cuts) {
+        const box = new THREE.Box3(new THREE.Vector3(...cut.box[0]), new THREE.Vector3(...cut.box[1]));
+        const meshes = [];
+        model.traverse(o => { if (o.isMesh && (!cut.mesh || cut.mesh.test(o.name))) meshes.push(o); });
+        for (const o of meshes) {
+          const g = o.geometry, pos = g.attributes.position;
+          const idx = g.index ? [...g.index.array] : [...Array(pos.count).keys()];
+          const inside = new Uint8Array(pos.count);
+          for (let i = 0; i < pos.count; i++) inside[i] = box.containsPoint(v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld)) ? 1 : 0;
+          const keep = [], take = [];
+          for (let i = 0; i < idx.length; i += 3) {
+            const n = inside[idx[i]] + inside[idx[i + 1]] + inside[idx[i + 2]];
+            (cut.any ? n > 0 : n === 3) ? take.push(idx[i], idx[i + 1], idx[i + 2]) : keep.push(idx[i], idx[i + 1], idx[i + 2]);
+          }
+          if (!take.length) continue;
+          o.geometry = subGeometry(g, keep);
+          if (!cut.name) continue;
+          const part = new THREE.Mesh(subGeometry(g, take), o.material);
+          part.name = `${cut.name}_${o.name}`;
+          part.geometry.applyMatrix4(o.matrixWorld);
+          if (cut.matrix) part.geometry.applyMatrix4(new THREE.Matrix4().fromArray(cut.matrix));
+          model.add(part);
+        }
+      }
     }
 
     // Older Sketchfab models use the spec-gloss material extension, which three.js no longer reads:
@@ -131,10 +181,12 @@
       await convertSpecGloss(gltf);
       const model = gltf.scene;
       if (cfg.hide) model.traverse(o => { if (o.isMesh && cfg.hide.test(o.name)) o.visible = false; });
+      applyCuts(model, cfg.cuts);
 
-      // root (exported) → wrap (scale + grip offset) → turn (fix facing) → model
+      // root (exported) → wrap (scale + grip offset) → turn (fix facing: rotateZ levels a tilted model,
+      // then rotateY points the barrel down -Z) → model
       const turn = new THREE.Group();
-      turn.rotation.y = THREE.MathUtils.degToRad(cfg.rotateY || 0);
+      turn.rotation.set(0, THREE.MathUtils.degToRad(cfg.rotateY || 0), THREE.MathUtils.degToRad(cfg.rotateZ || 0));
       turn.add(model);
       const wrap = new THREE.Group();
       wrap.add(turn);
@@ -290,7 +342,8 @@
     }
 
     // only: rebuild just these sections ('weapons', 'grenades', 'arms', 'props', 'characters', 'animations') and keep the rest.
-    async function buildAll({ only } = {}) {
+    // kinds: within those sections, only these weapons (e.g. ['carbine']).
+    async function buildAll({ only, kinds } = {}) {
       const t0 = performance.now();
       const want = section => !only || only.includes(section);
       let manifest = { version: 1, weapons: {}, props: {}, characters: {}, animations: null };
@@ -301,7 +354,7 @@
       manifest.built = new Date().toISOString();
       if (want('weapons')) {
         log('Weapons');
-        for (const [kind, cfg] of Object.entries(WEAPONS)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
+        for (const [kind, cfg] of Object.entries(WEAPONS)) if (!kinds || kinds.includes(kind)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
       }
       if (want('grenades')) {
         log('Grenades');
@@ -337,7 +390,7 @@
       btn.disabled = false;
     };
     window.buildAll = buildAll;
-    window.builder = { buildWeapon, buildCharacter, buildAnimations, WEAPONS, CHARACTERS };
+    window.builder = { buildAll, buildWeapon, buildCharacter, buildAnimations, WEAPONS, CHARACTERS };
   </script>
 </body>
 </html>

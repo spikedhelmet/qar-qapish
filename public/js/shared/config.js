@@ -31,6 +31,9 @@ export const PLAYER = {
   friction: 11,
   gravity: 22,
   jumpSpeed: 7.2,
+  jumpMaxSpeed: 5.4,    // horizontal speed cap when jumping and in the air (sprint and slide jumps too)
+  landRecover: 0.45,    // seconds after landing with slower movement and a lower jump…
+  landSlow: 0.45,       // …starting this much slower, so chained jumps lose speed instead of keeping it
   stepHeight: 0.45,
   respawnTime: 3,       // seconds
   spawnProtection: 2,   // seconds, ends early when the player fires
@@ -76,14 +79,16 @@ export const CLASSES = {
   marksman: { name: 'Marksman', primary: 'sniper',  grenade: 'smoke', speed: 0.96, desc: 'Scoped bolt-action. One shot, one kill.' },
   breacher: { name: 'Breacher', primary: 'shotgun', grenade: 'flash', speed: 1.0,  desc: 'Pump shotgun. Owns close quarters.' },
   runner:   { name: 'Runner',   primary: 'smg',     grenade: 'smoke', speed: 1.08, desc: 'SMG. Fastest on foot, accurate on the move.' },
+  operator: { name: 'Operator', primary: 'carbine', grenade: 'flash', speed: 1.02, desc: 'Carbine. Quick-firing and light, loses punch at long range.' },
+  vanguard: { name: 'Vanguard', primary: 'scar', secondary: 'revolver', grenade: 'frag', speed: 0.95, desc: 'Battle rifle: three hits kill, but it kicks. Carries a revolver.' },
 };
-export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner'];
+export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner', 'operator', 'vanguard'];
 export const DEFAULT_CLASS = 'assault';
 
-// [primary, pistol, knife, grenade]
+// [primary, sidearm, knife, grenade]
 export function loadoutFor(cls) {
   const c = CLASSES[cls] || CLASSES[DEFAULT_CLASS];
-  return [c.primary, 'pistol', 'knife', c.grenade];
+  return [c.primary, c.secondary || 'pistol', 'knife', c.grenade];
 }
 
 // Grenades: thrown with left click (far) or right click (short lob), one per life.
@@ -152,6 +157,34 @@ export const WEAPONS = {
     spread: { base: 0.006, move: 0.018, air: 0.08, crouch: 0.7, perShot: 0.006, max: 0.05, recover: 0.2 },
     recoil: { pitch: 0.008, yaw: 0.005, recover: 8 },
     ads: { fov: 0.82, spread: 0.5, speed: 0.85, time: 0.14 },
+    speedMult: 1.0,
+  },
+  carbine: {
+    name: 'Carbine', slot: 1, auto: true, pellets: 1,
+    damage: 26, headMult: 4, legMult: 0.75, range: 220,
+    falloff: { start: 25, end: 60, min: 0.8 },
+    fireInterval: 0.08, mag: 30, reserve: 90, reload: 2.2, draw: 0.45,
+    spread: { base: 0.003, move: 0.035, air: 0.12, crouch: 0.6, perShot: 0.006, max: 0.05, recover: 0.17 },
+    recoil: { pitch: 0.009, yaw: 0.004, recover: 7 },
+    ads: { fov: 0.7, spread: 0.3, speed: 0.72, time: 0.16 },
+    speedMult: 0.97,
+  },
+  scar: {
+    name: 'Battle Rifle', slot: 1, auto: true, pellets: 1,
+    damage: 40, headMult: 3.5, legMult: 0.75, range: 280,
+    fireInterval: 0.14, mag: 20, reserve: 60, reload: 2.6, draw: 0.55,
+    spread: { base: 0.002, move: 0.05, air: 0.14, crouch: 0.55, perShot: 0.011, max: 0.07, recover: 0.14 },
+    recoil: { pitch: 0.02, yaw: 0.007, recover: 5 },
+    ads: { fov: 0.66, spread: 0.3, speed: 0.65, time: 0.2 },
+    speedMult: 0.91,
+  },
+  revolver: {
+    name: 'Revolver', slot: 2, auto: false, pellets: 1,
+    damage: 45, headMult: 3, legMult: 0.75, range: 150,
+    fireInterval: 0.4, mag: 6, reserve: 30, reload: 2.8, draw: 0.45,
+    spread: { base: 0.004, move: 0.03, air: 0.1, crouch: 0.7, perShot: 0.03, max: 0.06, recover: 0.25 },
+    recoil: { pitch: 0.04, yaw: 0.008, recover: 5 },
+    ads: { fov: 0.85, spread: 0.5, speed: 0.8, time: 0.14 },
     speedMult: 1.0,
   },
   frag: { name: 'Frag', slot: 4, grenade: true, mag: 1, reserve: 0, draw: 0.35, fireInterval: 0.8, speedMult: 1.0 },

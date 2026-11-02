@@ -1,25 +1,42 @@
 // Short-lived visual effects: tracers, muzzle flashes, impact sparks, bullet holes and blood.
 import * as THREE from 'three';
 
+// Muzzle flashes: four irregular bursts in a 2×2 atlas (one picked per shot), each a hot white core
+// with a few uneven petals, the way a real flash looks from behind the gun.
 function flashTexture() {
   const c = document.createElement('canvas');
-  c.width = c.height = 128;
+  c.width = c.height = 256;
   const g = c.getContext('2d');
-  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,250,220,1)');
-  grad.addColorStop(0.25, 'rgba(255,200,90,0.9)');
-  grad.addColorStop(1, 'rgba(255,120,20,0)');
-  g.fillStyle = grad;
-  g.beginPath();
-  for (let i = 0; i < 16; i++) { // star-shaped flash
-    const a = (i / 16) * Math.PI * 2, r = i % 2 ? 22 : 64;
-    g.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let cell = 0; cell < 4; cell++) {
+    const cx = (cell % 2) * 128 + 64, cy = Math.floor(cell / 2) * 128 + 64;
+    const petals = 4 + Math.floor(rnd() * 3), turn = rnd() * Math.PI;
+    for (let i = 0; i < petals; i++) {
+      const a = turn + (i / petals) * Math.PI * 2 + (rnd() - 0.5) * 0.5;
+      const len = 30 + rnd() * 30, wide = 5 + rnd() * 5;
+      g.save();
+      g.translate(cx, cy); g.rotate(a);
+      const grad = g.createLinearGradient(0, 0, len, 0);
+      grad.addColorStop(0, 'rgba(255,225,150,0.9)');
+      grad.addColorStop(1, 'rgba(255,120,30,0)');
+      g.fillStyle = grad;
+      g.beginPath(); g.moveTo(0, -wide); g.quadraticCurveTo(len * 0.6, 0, len, 0); g.quadraticCurveTo(len * 0.6, 0, 0, wide); g.fill();
+      g.restore();
+    }
+    const core = g.createRadialGradient(cx, cy, 0, cx, cy, 26);
+    core.addColorStop(0, 'rgba(255,255,240,1)');
+    core.addColorStop(0.35, 'rgba(255,215,130,0.85)');
+    core.addColorStop(1, 'rgba(255,140,40,0)');
+    g.fillStyle = core;
+    g.fillRect(cx - 32, cy - 32, 64, 64);
   }
-  g.fill();
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.repeat.set(0.5, 0.5);
   return t;
 }
+const pickFlash = map => map.offset.set(Math.random() < 0.5 ? 0 : 0.5, Math.random() < 0.5 ? 0 : 0.5);
 
 // Soft round dot so particles read as puffs and sparks rather than squares.
 function dotTexture() {
@@ -63,7 +80,7 @@ export class Effects {
     this.lightT = 0;
 
     // First-person muzzle flash lives in the viewmodel scene so it draws over the world.
-    this.viewFlash = new THREE.Sprite(this.flashMat);
+    this.viewFlash = new THREE.Sprite(new THREE.SpriteMaterial({ map: flashTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     this.viewFlash.visible = false;
     viewScene.add(this.viewFlash);
     this.viewFlashT = 0;
@@ -91,22 +108,39 @@ export class Effects {
     });
   }
 
-  muzzleFlash(worldPos, viewPos) {
+  // size: 1 for rifles; bigger for the shotgun and sniper, smaller for the pistol and SMG.
+  muzzleFlash(worldPos, viewPos, size = 1) {
     this.light.position.copy(worldPos);
-    this.light.intensity = 30;
-    this.lightT = 0.05;
+    this.light.intensity = 18 * size;
+    this.lightT = 0.04;
     if (viewPos) {
+      const m = this.viewFlash.material;
       this.viewFlash.position.copy(viewPos);
-      this.viewFlash.scale.setScalar(0.18 + Math.random() * 0.08);
-      this.viewFlash.material.rotation = Math.random() * Math.PI;
+      this.viewFlash.scale.setScalar((0.09 + Math.random() * 0.05) * size);
+      m.rotation = Math.random() * Math.PI * 2;
+      pickFlash(m.map);
       this.viewFlash.visible = true;
-      this.viewFlashT = 0.045;
+      this.viewFlashT = 0.03; // about two frames
     } else {
       const s = new THREE.Sprite(this.flashMat);
       s.position.copy(worldPos);
-      s.scale.setScalar(0.45);
-      this.add(s, 0.05);
+      s.scale.setScalar(0.3 * size);
+      this.add(s, 0.04);
     }
+    this.muzzleSmoke(worldPos, size);
+  }
+
+  // A faint wisp of smoke that drifts up from the muzzle and fades.
+  muzzleSmoke(pos, size = 1) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.dotTex, color: 0xa8a8a4, transparent: true, opacity: 0, depthWrite: false }));
+    s.position.copy(pos);
+    const drift = new THREE.Vector3((Math.random() - 0.5) * 0.15, 0.25 + Math.random() * 0.15, (Math.random() - 0.5) * 0.15);
+    this.add(s, 0.9, (it, dt) => {
+      const k = it.age / it.life;
+      s.position.addScaledVector(drift, dt);
+      s.scale.setScalar((0.08 + k * 0.35) * size);
+      s.material.opacity = 0.22 * Math.min(1, k * 8) * (1 - k);
+    });
   }
 
   particles(pos, normal, color, count, speed, life, size, gravity = 9) {
