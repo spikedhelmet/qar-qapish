@@ -43,7 +43,7 @@ PORT=3001 npm start
 |---|---|
 | WASD | Move |
 | Mouse / left click | Aim / fire |
-| Right click (hold) | Aim down sights: zoom, tighter spread, slower movement |
+| Right click (hold) | Sniper: look through the scope (other guns don't aim down sights for now) |
 | Space | Jump. Sprint jumps carry less speed, and jumping again right after landing is lower and slower (no bunny hopping) |
 | Shift (hold, moving forward) | Sprint. You can't fire while sprinting |
 | Alt / Option | Walk quietly (no footsteps) |
@@ -54,7 +54,7 @@ PORT=3001 npm start
 | 4, then left / right click | Grenade: throw far / lob short |
 | G | Quick-throw your grenade |
 | Tab | Scoreboard |
-| B | Choose class (then 1–5) |
+| B | Choose class (then 1–4) |
 | M | Switch team (also in the Esc menu). By default only if it keeps teams even; the host can allow uneven teams |
 | Esc | Menu (sensitivity, field of view, volume, graphics) |
 
@@ -77,7 +77,7 @@ These are the default keys. To change one, open **Controls** in the menu, click 
 | Marksman | Scoped sniper | Smoke | One-shot body kill, drops out of scope after each shot, moves a bit slower |
 | Breacher | Pump shotgun | Flashbang | 8 pellets, full damage to 12 m, then dropping off to 40 m |
 | Runner | SMG | Smoke | Moves 8% faster, accurate on the move |
-| Vanguard | Battle rifle (VSK-94) | Frag | Three hits kill but it kicks; 20-round magazine; carries a **Makarov** (8 rounds, weaker than the pistol) instead of the pistol |
+| Vanguard *(hidden for now)* | Battle rifle (VSK-94) | Frag | Three hits kill but it kicks; 20-round magazine; carries a **Makarov** (8 rounds, weaker than the pistol) instead of the pistol |
 
 **Grenades** (one per life): bounce off walls and roll. **Frag** explodes after 2.2 s, damage falls off over 7 m and walls block it (it can hurt you, not teammates). **Smoke** makes a 5 m cloud for 16 s. **Flashbang** whites out anyone who can see it, worst if they're looking at it; walls and smoke block it.
 

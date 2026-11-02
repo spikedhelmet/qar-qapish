@@ -81,7 +81,9 @@ export const CLASSES = {
   runner:   { name: 'Runner',   primary: 'smg',     grenade: 'smoke', speed: 1.08, desc: 'SMG. Fastest on foot, accurate on the move.' },
   vanguard: { name: 'Vanguard', primary: 'vsk', secondary: 'makarov', grenade: 'frag', speed: 0.95, desc: 'Battle rifle: three hits kill, but it kicks. Carries a Makarov.' },
 };
-export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner', 'vanguard'];
+// Vanguard is hidden for now (its VSK set doesn't match the others); add it back here to offer it.
+export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner'];
+export const classOffered = cls => CLASS_ORDER.includes(cls);
 export const DEFAULT_CLASS = 'assault';
 
 // [primary, sidearm, knife, grenade]
@@ -186,6 +188,9 @@ export const WEAPONS = {
     speedMult: 1.08,
   },
 };
+
+// Aiming down sights is off for now except through a scope: delete this line to bring it back.
+for (const w of Object.values(WEAPONS)) if (w.ads && !w.ads.scope) delete w.ads;
 
 export function damageFor(weapon, zone, dist = 0) {
   const w = WEAPONS[weapon];

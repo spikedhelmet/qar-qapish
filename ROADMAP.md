@@ -37,6 +37,10 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Milestone 5, part 12: Vanguard hidden, scope-only aiming (`feature/milestone-5`)
+- **Vanguard is hidden for now.** Its VSK set doesn't match the other guns. The class is kept in `config.js` but left out of `CLASS_ORDER`, and the server refuses it.
+- **Aiming down sights is off except through the sniper's scope.** One line in `config.js` drops the `ads` settings of non-scoped guns; deleting it brings aiming back. For the other guns, right click does nothing for now.
+
 ### 2026-11-02 · Milestone 5, part 11: animated first-person guns (`feature/milestone-5`)
 - **Every gun now has arms and its creator's own animations.** They're "FPS … animations" sets by Cransh (CC-BY), covering the rifle (AK-74m), sniper, pistol (Springfield XD), SMG (MPA 30 SST), shotgun (Remington 870), Makarov and battle rifle (VSK-94).
   - Each gun plays idle, walk, fire and reload, plus run and draw where the set has them, and a separate reload when the magazine is empty.

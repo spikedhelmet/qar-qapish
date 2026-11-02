@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { MAP, MAPS, setMap } from './public/js/shared/map.js';
-import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
+import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, classOffered, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
 import { stepGrenade } from './public/js/shared/grenade.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
 
@@ -201,7 +201,7 @@ function spawn(p) {
 
 // Class changes apply right away during freeze time or just after spawning, otherwise at the next spawn.
 function changeClass(p, cls) {
-  if (!CLASSES[cls] || cls === p.cls) return;
+  if (!classOffered(cls) || cls === p.cls) return;
   p.cls = cls;
   const fresh = p.alive && !p.firedSinceSpawn &&
     (match.phase === 'freeze' || (cfg().respawn && now() - p.spawnedAt < 5));
@@ -563,7 +563,7 @@ wss.on('connection', (ws, req) => {
       if (msg.t !== 'join') return;
       const name = String(msg.name || '').replace(/[^\p{L}\p{N} _\-.]/gu, '').trim().slice(0, 16) || `Player${nextId}`;
       const team = teamCount('A') <= teamCount('B') ? 'A' : 'B';
-      const cls = CLASSES[msg.cls] ? msg.cls : DEFAULT_CLASS;
+      const cls = classOffered(msg.cls) ? msg.cls : DEFAULT_CLASS;
       p = { id: nextId++, ws, name, team, cls, host: isLocal(req.socket.remoteAddress),
         pos: [0, 0, 0], yaw: 0, pitch: 0, crouch: false, weapon: loadoutFor(cls)[0],
         hp: 0, alive: false, life: 0, kills: 0, deaths: 0, respawnAt: 0, protectedUntil: 0, history: [], lastFire: {} };

@@ -1,7 +1,7 @@
 // Client entry point: renderer, menu, network messages and the frame loop.
 import * as THREE from 'three';
 import { MAP, MAPS, MAP_ORDER, setMap } from './shared/map.js';
-import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_ORDER, DEFAULT_CLASS, GRENADES, THROW, loadoutFor } from './shared/config.js';
+import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_ORDER, DEFAULT_CLASS, classOffered, GRENADES, THROW, loadoutFor } from './shared/config.js';
 import { throwVelocity } from './shared/grenade.js';
 import { GrenadeView } from './grenades.js';
 import { buildWorld, showMap } from './world.js';
@@ -27,7 +27,7 @@ function loadSettings() {
   catch { return { ...DEFAULTS }; }
 }
 const settings = loadSettings();
-if (!CLASSES[settings.cls]) settings.cls = DEFAULT_CLASS;
+if (!classOffered(settings.cls)) settings.cls = DEFAULT_CLASS;
 settings.keys = setBindings(settings.keys);
 function saveSettings() {
   try { localStorage.setItem('qapishma.settings', JSON.stringify(settings)); } catch { /* private mode */ }
