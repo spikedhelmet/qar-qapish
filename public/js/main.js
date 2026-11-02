@@ -811,19 +811,37 @@ function renderClassButtons() {
 }
 renderClassButtons();
 
-// Host controls (only for whoever plays on the Mac running the server)
+// Host controls, for whoever plays on the Mac running the server. They work from the menu before
+// joining too: the changes go over HTTP and the server checks they come from this Mac.
+const ON_HOST = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 const hostPanel = document.getElementById('host-panel');
 const hostMode = document.getElementById('host-mode');
 hostMode.innerHTML = MODE_ORDER.map(m => `<option value="${m}">${MODES[m].name}</option>`).join('');
-hostMode.addEventListener('change', () => net.send({ t: 'host', mode: hostMode.value }));
 const hostEven = document.getElementById('host-even');
-hostEven.addEventListener('change', () => net.send({ t: 'host', even: hostEven.checked }));
 const hostMap = document.getElementById('host-map');
 hostMap.innerHTML = MAP_ORDER.map(m => `<option value="${m}">${MAPS[m].name}</option>`).join('');
-hostMap.addEventListener('change', () => net.send({ t: 'host', map: hostMap.value }));
-document.getElementById('host-restart').addEventListener('click', () => net.send({ t: 'host', restart: true }));
+async function hostChange(change) {
+  try {
+    const res = await fetch('/api/host', { method: 'POST', body: JSON.stringify(change) });
+    if (res.ok) applyMatchSettings(await res.json());
+  } catch { /* server unreachable: the panel shows what's really on below */ }
+  updateHostPanel();
+}
+hostMode.addEventListener('change', () => hostChange({ mode: hostMode.value }));
+hostEven.addEventListener('change', () => hostChange({ even: hostEven.checked }));
+hostMap.addEventListener('change', () => hostChange({ map: hostMap.value }));
+document.getElementById('host-restart').addEventListener('click', () => hostChange({ restart: true }));
+
+// What's on (mode, map, team rule), so the menu shows it before joining.
+function applyMatchSettings(m) {
+  if (MODES[m.mode]) game.mode = m.mode;
+  if (m.map) changeMap(m.map);
+  game.even = m.even !== false;
+}
+fetch('/api/match').then(r => r.json()).then(m => { applyMatchSettings(m); updateHostPanel(); }).catch(() => {});
+
 function updateHostPanel() {
-  hostPanel.classList.toggle('hidden', !game.host);
+  hostPanel.classList.toggle('hidden', !(game.host || ON_HOST));
   hostMode.value = game.mode;
   hostMap.value = MAP.id;
   hostEven.checked = game.even !== false;

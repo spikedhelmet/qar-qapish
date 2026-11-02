@@ -36,6 +36,22 @@ const server = http.createServer((req, res) => {
   try { url = decodeURIComponent(new URL(req.url, 'http://host').pathname); } catch { url = '/'; }
   const local = isLocal(req.socket.remoteAddress);
   if (url.startsWith('/assets-src/') && !local) { res.writeHead(403).end(); return; }
+  if (url === '/api/match') { // what's on, for the menu before joining
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+    res.end(JSON.stringify(matchSettings()));
+    return;
+  }
+  if (url === '/api/host' && req.method === 'POST') { // host controls from the menu, before or after joining
+    if (!local) { res.writeHead(403).end(); return; }
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      try { applyHost(JSON.parse(body)); } catch { /* ignore a malformed request */ }
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify(matchSettings()));
+    });
+    return;
+  }
   if (url === '/api/dev/save' && req.method === 'POST') { // asset build tool writes optimized files here
     const rel = new URL(req.url, 'http://host').searchParams.get('path') || '';
     if (!local || !/^game\/[\w\-./]+\.(glb|json)$/.test(rel) || rel.includes('..')) { res.writeHead(403).end(); return; }
@@ -518,7 +534,13 @@ function switchTeam(p) {
 }
 
 function handleHost(p, msg) {
-  if (!p.host) return;
+  if (p.host) applyHost(msg);
+}
+
+const matchSettings = () => ({ mode: match.mode, map: match.map, even: match.evenTeams });
+
+// Host changes, from the in-game panel (WebSocket) or the menu (POST /api/host, this Mac only).
+function applyHost(msg) {
   if (typeof msg.even === 'boolean' && msg.even !== match.evenTeams) {
     match.evenTeams = msg.even;
     broadcast({ t: 'notice', text: msg.even ? 'Teams must stay even' : 'Anyone can switch teams' });

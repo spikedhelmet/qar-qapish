@@ -25,7 +25,7 @@ Qapishma server running.
 - If macOS asks whether to allow incoming connections for `node`, click **Allow**, otherwise friends can't connect.
 - Stop the server with `Ctrl+C`.
 
-**Choosing the mode and map.** The player on the host Mac sees **Host controls** in the Esc menu: switch between Team Deathmatch, Elimination and Objective, pick the map (Yard, Depot or Plaza), or restart the match. Switching either one restarts the match for everyone. To start the server straight into a mode (`elim` or `obj`):
+**Choosing the mode and map.** On the host Mac, the menu shows **Host controls**, before you join as well as in game (Esc): switch between Team Deathmatch, Elimination and Objective, pick the map (Yard, Depot or Plaza), or restart the match. Switching either one restarts the match for everyone. To start the server straight into a mode (`elim` or `obj`):
 
 ```bash
 npm start -- --mode=obj

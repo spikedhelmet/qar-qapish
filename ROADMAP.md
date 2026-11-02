@@ -37,6 +37,12 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Host controls before joining (`feature/milestone-5`)
+- On the host Mac, the menu shows the mode, map and team-rule controls before you join.
+  - The changes go to the server over HTTP (`POST /api/host`), and it only accepts them from the host Mac.
+  - The menu reads what's on (`GET /api/match`), so the tagline and the background map are right before anyone joins.
+- Why Plaza wouldn't stick: the server running at the time was started before Plaza existed, so it ignored the switch and the picker snapped back. After a server restart it works, before joining and in game.
+
 ### 2026-11-02 · Milestone 5, part 14: Plaza map (`feature/milestone-5`)
 - **New map "Plaza", built from the team's sketch** and mirrored north/south as asked. It's 80 × 56 m.
   - Middle: a walled plaza with a fountain, crates and low walls. It opens at both ends into roofed pavilions on pillars, which hold the objective sites A and B.
