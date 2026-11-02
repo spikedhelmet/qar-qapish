@@ -348,11 +348,13 @@ const rndSpin = () => (Math.random() * 2 - 1) * 25;
 
 // How the real first-person hands hold each weapon, in the gun's frame (barrel -Z, up +Y).
 // fingers: where the fingers point; across: pinky knuckle → index knuckle; off: nudge from the
-// stand-in hand position to the palm; curl: how tightly the fingers close (0 open … 1 fist).
+// stand-in hand position to the palm; curl: how tightly the fingers close (0 open … 1 fist);
+// thumb: where the thumb points (optional).
 // Right hand on a pistol grip: wrist→knuckles runs forward along the grip, palm on its right side,
 // fingers curling round the front.
-const GRIP_RIGHT = { fingers: [0, 0.2, -1], across: [0, 1, 0.2], off: [0.03, -0.01, 0.025], curl: 0.85, trigger: 0.55 };
-const SUPPORT = { fingers: [1, 0.65, 0], across: [0, 0, -1], off: [-0.01, -0.025, 0], curl: 0.7 };
+const GRIP_RIGHT = { fingers: [0, 0.2, -1], across: [0, 1, 0.2], thumb: [-0.4, 0.1, -1], off: [0.03, -0.01, 0.025], curl: 0.85, trigger: 0.55 };
+// Support hand under the handguard: fingers wrap up its right side, thumb runs forward along its left.
+const SUPPORT = { fingers: [1, 0.65, 0], across: [0, 0, -1], thumb: [0.1, 0.25, -1], off: [-0.01, -0.025, 0], curl: 0.7 };
 const HAND_POSES = {
   rifle: { right: GRIP_RIGHT, left: SUPPORT },
   smg: { right: GRIP_RIGHT, left: SUPPORT },
@@ -367,7 +369,7 @@ HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
 // Where the arms' shoulders sit relative to the eye. The soldier's sit a little ahead of the eye
 // (its arms are shorter) — its chest stays below the bottom of the view.
 const ARMS_PLACE = {
-  arms: new THREE.Vector3(0, -0.36, -0.12),
+  arms: new THREE.Vector3(0, -0.47, -0.2),
   soldier: new THREE.Vector3(0, -0.42, -0.14),
 };
 // Slightly long arms so the support hand reaches a rifle's handguard.
@@ -474,7 +476,8 @@ export class ViewModel {
     body.scale.setScalar(ARMS_SCALE[kind]);
     const shoulders = ARMS_PLACE[kind];
     this.armsRig = new FpArms(body, rig);
-    body.position.copy(shoulders).sub(this.armsRig.shoulderMid());
+    const mid = this.armsRig.shoulderMid(); // measure before moving the body
+    body.position.copy(shoulders).sub(mid);
     this.group.add(body);
   }
 
@@ -647,6 +650,7 @@ export class ViewModel {
       palm: marker.localToWorld(new THREE.Vector3()).add(new THREE.Vector3(...p.off).applyQuaternion(q)),
       fingers: new THREE.Vector3(...p.fingers).applyQuaternion(q),
       across: new THREE.Vector3(...p.across).applyQuaternion(q),
+      thumb: p.thumb && new THREE.Vector3(...p.thumb).applyQuaternion(q),
       curl: p.curl, trigger: p.trigger,
     };
     this.armsRig.update(target(this.handR, pose.right), target(this.support, pose.left));

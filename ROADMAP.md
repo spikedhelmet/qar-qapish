@@ -36,6 +36,12 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Milestone 5, part 6: arms fixed (`feature/milestone-5`)
+- Playtest: the left arm looked cut off at the elbow, and the pistol hand looked broken.
+- Cause of the elbow: an order-of-operations bug placed the shoulders at eye level instead of below the view. It also affected the soldier arms in part 3. With the shoulders below the view, the whole arms are kept. The forearms rise from the bottom edge, and the elbows stay out of sight.
+- Cause of the pistol hand: the thumb stuck straight out of the palm. The thumb is now aimed along the gun: down the left side of the frame on grips, forward along the handguard for the support hand. Finger-curl axes are worked out from the hand's own shape. The hands are scaled to 0.8× so they fit the guns.
+- New dev page `/dev/arms.html` shows the arms on every weapon, from the eye or with an orbit camera, with team, reload and ADS toggles.
+
 ### 2026-11-02 · Milestone 5, part 5: PSX arms (`feature/milestone-5`)
 - First person now uses "PSX First Person Arms" by Drillimpact (CC0, itch.io) with its gloves skin: a proper first-person rig with every finger bone, low-poly by design (1,176 triangles, 512 px textures, 0.1 MB built).
 - Hand IK generalised again: the hand's own directions are measured from its knuckles, since this rig hangs fingers off palm bones. Upper arms are cut out (forearms and hands only), arms scaled 1.15× so the support hand reaches, fingers curl around −X on both hands.

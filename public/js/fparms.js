@@ -19,15 +19,16 @@ export const RIGS = {
     control: null,
     finger: (f, i, s) => `mixamorig${s}Hand${cap(f)}${i}`, thumb: (i, s) => `mixamorig${s}HandThumb${i}`,
     keep: /(Left|Right)(ForeArm|Hand)/, // upper arms would fill the corner of the screen
-    curlAxis: { right: [1, 0, 0], left: [-1, 0, 0] }, // Mixamo mirrors the left hand's axes
   },
   psx: {
     sides: { right: 'R', left: 'L' },
     upper: s => `upper_arm${s}`, lower: s => `forearm${s}`, hand: s => `hand${s}`,
     control: null,
     finger: (f, i, s) => `f_${f}0${i}${s}`, thumb: (i, s) => `thumb0${i}${s}`,
-    keep: /^(forearm|hand|palm|f_|thumb)/, // upper arms would fill the corner of the screen
-    curlAxis: { right: [-1, 0, 0], left: [-1, 0, 0] },
+    // Whole arms, shoulders placed below the view: elbows point down and back so the forearms rise
+    // from the bottom edge of the screen and the upper arms never show.
+    pole: { right: [0.4, -1, 0.2], left: [-0.15, -1, 0.3] },
+    handScale: 0.8, // its hands are oversized next to the guns; the arms keep their reach
   },
   sketchfab: {
     sides: { right: 'r', left: 'l' },
@@ -70,6 +71,28 @@ function trimToBones(mesh, keep) {
   return tris.length / 3;
 }
 
+// Works out, for every finger joint, the local axis that bends it toward the palm: fingers curl around
+// the line across the knuckles; the palm is on the side of the hand the thumb sits on.
+function curlAxes(side, p) {
+  side.hand.updateMatrixWorld(true);
+  const handQ = side.hand.getWorldQuaternion(new THREE.Quaternion());
+  const across = side.across.clone().applyQuaternion(handQ);
+  const toFingers = side.toFingers.clone().applyQuaternion(handQ);
+  const palmN = new THREE.Vector3().crossVectors(toFingers, across).normalize();
+  const thumbSide = p(side.thumb[1] || side.thumb[0]).sub(p(side.hand));
+  if (thumbSide.dot(palmN) < 0) palmN.negate();
+  const axes = new Map();
+  for (const b of [...side.fingers.flat(), ...side.thumb]) {
+    if (!b) continue;
+    // Rotating about +k moves the bone's tip by k × dir: pick ±across so that goes toward the palm.
+    const dir = UP.clone().applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion()));
+    const k = across.clone();
+    if (new THREE.Vector3().crossVectors(k, dir).dot(palmN) < 0) k.negate();
+    axes.set(b, k.applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize());
+  }
+  return axes;
+}
+
 // Turn a bone (from its rest pose) so its +Y axis — the direction it points — aims at `target`.
 function aim(bone, rest, target) {
   bone.quaternion.copy(rest);
@@ -92,6 +115,7 @@ export class FpArms {
       model.traverse(o => { if (o.isSkinnedMesh) meshes.push(o); });
       for (const m of meshes) if (trimToBones(m, rig.keep) === 0) m.visible = false;
     }
+    if (rig.handScale) for (const s of Object.values(rig.sides)) find(model, rig.hand(s)).scale.setScalar(rig.handScale);
     model.updateMatrixWorld(true);
     const rest = new Map();
     model.traverse(o => { if (o.isBone) rest.set(o, o.quaternion.clone()); });
@@ -104,7 +128,8 @@ export class FpArms {
         fingers: FINGERS.map(f => [1, 2, 3].map(i => find(model, rig.finger(f, i, s)))),
         thumb: [1, 2, 3].map(i => find(model, rig.thumb(i, s))),
         sign: key === 'right' ? 1 : -1,
-        curlAxis: rig.curlAxis?.[key] || [1, 0, 0],
+        // Which way the elbow points (camera space). Default: down and outward.
+        pole: new THREE.Vector3(...(rig.pole?.[key] || (key === 'right' ? [0.55, -1, 0.25] : [-0.25, -1, 0.35]))),
         rest,
       };
       side.L1 = p(side.upper).distanceTo(p(side.lower));
@@ -115,6 +140,10 @@ export class FpArms {
       side.toFingers = inHand(side.fingers[1][0]).normalize();
       const across = inHand(side.fingers[0][0]).sub(inHand(side.fingers[3][0]));
       side.across = across.addScaledVector(side.toFingers, -across.dot(side.toFingers)).normalize();
+      side.curlAxes = curlAxes(side, p);
+      // Which side of the hand the palm is on (the thumb's side), in the hand's own frame.
+      side.palmN = new THREE.Vector3().crossVectors(side.toFingers, side.across);
+      if (inHand(side.thumb[1] || side.thumb[0]).dot(side.palmN) < 0) side.palmN.negate();
       side.palm = p(side.hand).distanceTo(p(side.fingers[1][0])) * 0.55; // wrist → middle of the palm, meters
       this.sides[key] = side;
     }
@@ -128,8 +157,9 @@ export class FpArms {
     return r.add(l).multiplyScalar(0.5);
   }
 
-  // target: { palm, fingers, across, curl, trigger } in the arms' parent space (camera space), or null
-  // to drop that arm out of view. fingers / across are directions: wrist→knuckles and pinky→index.
+  // target: { palm, fingers, across, thumb, curl, trigger } in the arms' parent space (camera space), or
+  // null to drop that arm out of view. fingers / across / thumb are directions: wrist→knuckles,
+  // pinky→index, and where the thumb points (default: forward along the fingers, a little toward the palm).
   update(right, left) {
     this.solve(this.sides.right, right);
     this.solve(this.sides.left, left);
@@ -160,8 +190,7 @@ export class FpArms {
     const along = (side.L1 * side.L1 - L2 * L2 + dd * dd) / (2 * dd);
     const up = Math.sqrt(Math.max(0, side.L1 * side.L1 - along * along));
     const dir = wrist.clone().sub(sh).normalize();
-    // Elbows down and out; the left one tucked lower so the forearm enters from the bottom of the view.
-    const pole = side.sign > 0 ? new THREE.Vector3(0.55, -1, 0.25) : new THREE.Vector3(-0.25, -1, 0.35);
+    const pole = side.pole.clone();
     pole.addScaledVector(dir, -pole.dot(dir)).normalize();
     const elbow = sh.clone().addScaledVector(dir, along).addScaledVector(pole, up);
     aim(side.upper, side.rest.get(side.upper), elbow);
@@ -179,13 +208,20 @@ export class FpArms {
     side.hand.quaternion.copy(side.hand.parent.getWorldQuaternion(_q).invert().multiply(worldQ));
     side.hand.updateMatrixWorld(true);
 
-    // Fingers wrap the grip; the thumb closes a little.
-    const curl = t.curl ?? 0.8, axis = side.curlAxis;
+    // Fingers wrap the grip (index looser: it rests on the trigger).
+    const curl = t.curl ?? 0.8;
     side.fingers.forEach((joints, i) => joints.forEach((b, j) => {
       if (!b) return;
-      const angle = curl * [1.0, 1.25, 0.9][j] * (i === 0 ? (t.trigger ?? 1) : 1);
-      b.quaternion.copy(side.rest.get(b)).multiply(_q.setFromAxisAngle(_a.fromArray(axis), angle));
+      const angle = curl * [0.9, 1.2, 0.8][j] * (i === 0 ? (t.trigger ?? 1) : 1);
+      b.quaternion.copy(side.rest.get(b)).multiply(_q.setFromAxisAngle(side.curlAxes.get(b), angle));
     }));
-    side.thumb.forEach(b => b && b.quaternion.copy(side.rest.get(b)).multiply(_q.setFromAxisAngle(_a.fromArray(axis), curl * 0.35)));
+    // The thumb lies along the grip: each joint is aimed rather than curled (it bends on its own axis).
+    const palmN = side.palmN.clone().transformDirection(side.hand.matrixWorld);
+    const thumb = t.thumb ? t.thumb.clone().normalize() : F.clone().addScaledVector(palmN, 0.5).addScaledVector(A, 0.2).normalize();
+    for (const b of side.thumb) {
+      if (!b) continue;
+      b.updateMatrixWorld(true);
+      aim(b, side.rest.get(b), b.getWorldPosition(new THREE.Vector3()).add(thumb));
+    }
   }
 }

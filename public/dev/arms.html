@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arms Viewer</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #2a2e34; color: #eee; font: 13px Helvetica, Arial, sans-serif; overflow: hidden; }
+    canvas { display: block; }
+    #ui { position: fixed; top: 10px; left: 10px; padding: 10px; background: rgba(0, 0, 0, 0.55); border-radius: 4px; }
+    #ui button { margin: 2px; }
+    #ui button.on { background: #f0c040; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js", "three/addons/": "/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <!-- Dev tool: the first-person arms holding each weapon, seen from the eye or orbiting around. Open /dev/arms.html -->
+  <div id="ui">
+    <div id="weapons"></div>
+    <div>
+      <button id="eye" class="on">Eye view</button><button id="orbit">Orbit</button>
+      <button id="team">Team A</button><button id="reload">Reload</button><button id="ads">ADS</button>
+    </div>
+  </div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { loadAssets } from '../js/assets.js';
+    import { ViewModel } from '../js/models.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.9;
+    renderer.setClearColor(0x8a9bb0);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xdde8f5, 0x4a443c, 0.9));
+    const sun = new THREE.DirectionalLight(0xfff1dd, 1.6);
+    sun.position.set(0.4, 1, 0.3);
+    scene.add(sun);
+    // The eye sits at the origin looking down -Z, like the game's view camera.
+    const eye = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.01, 10);
+    const free = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.01, 10);
+    free.position.set(-0.6, 0.1, -0.5);
+    const controls = new OrbitControls(free, renderer.domElement);
+    controls.target.set(0.1, -0.2, -0.35);
+    controls.update();
+    // Marks the eye in orbit view.
+    const eyeMark = new THREE.Mesh(new THREE.SphereGeometry(0.015), new THREE.MeshBasicMaterial({ color: 0xff3030 }));
+    scene.add(eyeMark);
+
+    const state = { kind: 'rifle', team: 'A', orbit: false, ads: false, reloadAt: -1 };
+    let vm = null;
+
+    function build() {
+      if (vm) scene.remove(vm.group);
+      vm = new ViewModel(state.team);
+      vm.setWeapon(state.kind);
+      scene.add(vm.group);
+      window.dev.vm = vm;
+    }
+
+    const clock = new THREE.Clock();
+    function frame() {
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.elapsedTime;
+      if (vm) {
+        let reloadT = state.reloadAt >= 0 ? (t - state.reloadAt) / 2.5 : -1;
+        if (reloadT > 1) { state.reloadAt = reloadT = -1; vm.endReload(); }
+        vm.update(dt, { speed: 0, onGround: true, drawT: 5, reloadT, lookDX: 0, lookDY: 0, adsT: state.ads ? 1 : 0 });
+      }
+      eyeMark.visible = state.orbit;
+      renderer.render(scene, state.orbit ? free : eye);
+    }
+    renderer.setAnimationLoop(frame);
+
+    addEventListener('resize', () => {
+      eye.aspect = free.aspect = innerWidth / innerHeight;
+      eye.updateProjectionMatrix(); free.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    const $ = id => document.getElementById(id);
+    const kinds = ['rifle', 'smg', 'shotgun', 'sniper', 'pistol', 'knife', 'frag', 'smoke', 'flash'];
+    for (const k of kinds) {
+      const b = document.createElement('button');
+      b.textContent = k;
+      b.onclick = () => { state.kind = k; vm.setWeapon(k); for (const x of $('weapons').children) x.classList.toggle('on', x === b); };
+      if (k === state.kind) b.classList.add('on');
+      $('weapons').appendChild(b);
+    }
+    $('eye').onclick = () => { state.orbit = false; $('eye').classList.add('on'); $('orbit').classList.remove('on'); };
+    $('orbit').onclick = () => { state.orbit = true; $('orbit').classList.add('on'); $('eye').classList.remove('on'); };
+    $('team').onclick = () => { state.team = state.team === 'A' ? 'B' : 'A'; $('team').textContent = `Team ${state.team}`; build(); };
+    $('reload').onclick = () => { vm.startReload(); state.reloadAt = clock.elapsedTime; };
+    $('ads').onclick = () => { state.ads = !state.ads; $('ads').classList.toggle('on', state.ads); };
+
+    window.dev = { THREE, scene, eye, free, controls, state, frame, build };
+    await loadAssets();
+    build();
+  </script>
+</body>
+</html>
