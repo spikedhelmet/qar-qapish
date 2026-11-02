@@ -44,7 +44,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
   - The middle is a paved courtyard with a well. Market stalls block the east–west alleys in the middle, so there's no straight line from yard to yard.
   - Each team spawns in a walled yard with four ways out: two alleys, a low covered passage and a house door.
   - Mirrored east/west. The objective sites are in the hall and the north house on the defenders' half.
-- **New check script for maps:** spawn clearance, spawn-to-spawn sightlines, and a ground flood fill showing every walkable spot is reachable. Old Town: no open spawn lines, all 6,610 ground cells reachable.
+- **New check script for maps** (`node scripts/check-map.mjs <map>`): spawn clearance, spawn-to-spawn sightlines, and a ground flood fill showing every walkable spot is reachable. Old Town: no open spawn lines, all 6,610 ground cells reachable.
 
 ### 2026-11-02 · Plaza: firing spots and more doorways (`feature/milestone-5`)
 - The band between the spawn wall and the wall in front of it was a dead end. Now:
