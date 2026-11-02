@@ -30,6 +30,7 @@ export class Arsenal {
 
   select(kind) {
     if (kind === this.current || !this.loadout.includes(kind)) return false;
+    if (WEAPONS[kind].grenade && !(this.ammo[kind]?.mag > 0)) return false; // already thrown
     this.previous = this.current;
     this.current = kind;
     this.drawT = 0;
@@ -39,10 +40,17 @@ export class Arsenal {
     return true;
   }
 
+  // Next / previous weapon, skipping a grenade that's already been thrown.
   cycle(step) {
     const l = this.loadout, i = l.indexOf(this.current);
-    return this.select(l[(i + step + l.length) % l.length]);
+    for (let k = 1; k < l.length; k++) {
+      if (this.select(l[(i + step * k + l.length * k) % l.length])) return true;
+    }
+    return false;
   }
+
+  get grenade() { return this.loadout[3]; }
+  get grenadesLeft() { return this.ammo[this.grenade]?.mag || 0; }
 
   startReload() {
     const a = this.ammo[this.current];

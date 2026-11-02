@@ -174,6 +174,93 @@
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
     "source": "https://sketchfab.com/3d-models/mp5k-b47fa4053c1e4cfabe91b0046689f8c9"
    }
+  },
+  "frag": {
+   "fp": "game/weapons/frag_fp.glb",
+   "tp": "game/weapons/frag_tp.glb",
+   "length": 0.067,
+   "muzzle": [
+    0,
+    0.057,
+    0
+   ],
+   "sightY": 0.057,
+   "bounds": [
+    [
+     -0.031,
+     -0.038,
+     -0.034
+    ],
+    [
+     0.031,
+     0.057,
+     0.034
+    ]
+   ],
+   "credit": {
+    "title": "M67 Fragmentation Grenade",
+    "author": "FJH (https://sketchfab.com/FJH)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/m67-fragmentation-grenade-26eda181849f4d188f69105302fd7b65"
+   }
+  },
+  "smoke": {
+   "fp": "game/weapons/smoke_fp.glb",
+   "tp": "game/weapons/smoke_tp.glb",
+   "length": 0.063,
+   "muzzle": [
+    0,
+    0.087,
+    0
+   ],
+   "sightY": 0.087,
+   "bounds": [
+    [
+     -0.032,
+     -0.058,
+     -0.031
+    ],
+    [
+     0.032,
+     0.087,
+     0.031
+    ]
+   ],
+   "credit": {
+    "title": "M18 Smoke Grenade",
+    "author": "Vanillatography (https://sketchfab.com/vanillatography)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/m18-smoke-grenade-46343925ad0e47cf927e66da7953c372"
+   }
+  },
+  "flash": {
+   "fp": "game/weapons/flash_fp.glb",
+   "tp": "game/weapons/flash_tp.glb",
+   "length": 0.053,
+   "muzzle": [
+    0,
+    0.081,
+    0
+   ],
+   "sightY": 0.081,
+   "bounds": [
+    [
+     -0.022,
+     -0.054,
+     -0.026
+    ],
+    [
+     0.022,
+     0.081,
+     0.026
+    ]
+   ],
+   "credit": {
+    "title": "M84 Stun Grenade \"Flashbang\"",
+    "author": "Vanillatography (https://sketchfab.com/vanillatography)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/m84-stun-grenade-flashbang-3dbda8fe68ff4efdbf59f7d414c5619c"
+   }
   }
  },
  "props": {
@@ -270,5 +357,5 @@
    "kneel_idle"
   ]
  },
- "built": "2026-11-02T06:43:05.582Z"
+ "built": "2026-11-02T06:53:09.438Z"
 }

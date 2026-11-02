@@ -51,12 +51,14 @@ PORT=3001 npm start
 | R | Reload |
 | E (hold) | Objective mode: plant the charge in a site / defuse it |
 | 1 / 2 / 3, Q, mouse wheel | Primary / pistol / knife, last weapon, cycle |
+| 4, then left / right click | Grenade: throw far / lob short |
+| G | Quick-throw your grenade |
 | Tab | Scoreboard |
 | B | Choose class (then 1–4) |
 | M | Switch team (only if it keeps teams balanced) |
 | Esc | Menu (sensitivity, field of view, volume) |
 
-## Current state: milestone 3
+## Current state: milestone 4
 
 **Modes**
 - **Team Deathmatch:** first team to 50 kills (15-minute limit). Respawn after 3 s with 2 s of spawn protection.
@@ -65,12 +67,14 @@ PORT=3001 npm start
 
 **Classes** (pick in the menu, or press B in game; also pistol + knife each)
 
-| Class | Primary | Notes |
-|---|---|---|
-| Assault | Rifle | All-rounder |
-| Marksman | Scoped sniper | One-shot body kill, drops out of scope after each shot, moves a bit slower |
-| Breacher | Pump shotgun | 8 pellets, damage drops off with distance |
-| Runner | SMG | Moves 8% faster, accurate on the move |
+| Class | Primary | Grenade | Notes |
+|---|---|---|---|
+| Assault | Rifle | Frag | All-rounder |
+| Marksman | Scoped sniper | Smoke | One-shot body kill, drops out of scope after each shot, moves a bit slower |
+| Breacher | Pump shotgun | Flashbang | 8 pellets, damage drops off with distance |
+| Runner | SMG | Smoke | Moves 8% faster, accurate on the move |
+
+**Grenades** (one per life): bounce off walls and roll. **Frag** explodes after 2.2 s, damage falls off over 7 m and walls block it (it can hurt you, not teammates). **Smoke** makes a 5 m cloud for 16 s. **Flashbang** whites out anyone who can see it, worst if they're looking at it; walls and smoke block it.
 
 Class changes apply instantly during freeze time or right after spawning, otherwise on your next spawn.
 

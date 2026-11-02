@@ -31,6 +31,14 @@ export const WEAPONS = {
   },
 };
 
+// Grenades: held upright, sized by `height` instead of length, origin at the middle of the body.
+// Each download contains extra copies (pin pulled, exploded views) that are hidden.
+export const GRENADES = {
+  frag: { src: 'weapons/m67_fragmentation_grenade.glb', height: 0.095, hide: /lowTris001/, grip: [0.5, 0.4], muzzle: [0.5, 1] },
+  smoke: { src: 'weapons/m18_smoke_grenade.glb', height: 0.145, hide: /PainterExport00[12]/, grip: [0.5, 0.4], muzzle: [0.5, 1] },
+  flash: { src: 'weapons/m84_stun_grenade_flashbang.glb', height: 0.135, hide: /_low00[23]_/, grip: [0.5, 0.4], muzzle: [0.5, 1] },
+};
+
 // World objects (not held in first person): same frame as weapons, one 1K file each.
 export const PROPS = {
   charge: { src: 'weapons/ied.glb', length: 0.24, grip: [0.5, 0], muzzle: [1, 0.5] }, // origin: center of its base

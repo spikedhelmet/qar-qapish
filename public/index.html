@@ -13,6 +13,7 @@
   <canvas id="game"></canvas>
 
   <div id="hud" class="hidden">
+    <div id="smoke-screen"></div>
     <div id="scope" class="hidden"></div>
     <div id="scorebar">
       <div class="team a"><span class="pips"></span><span class="tname"></span><span class="tscore">0</span></div>
@@ -31,11 +32,12 @@
     <div id="notices"></div>
     <div id="vitals">
       <div id="hp"><span class="label">HP</span><span id="hp-val">100</span></div>
-      <div id="ammo"><span id="weapon-name">Rifle</span><span id="ammo-val">30<small>/ 90</small></span></div>
+      <div id="ammo"><span id="weapon-name">Rifle</span><span id="ammo-val">30<small>/ 90</small></span><span id="nade"></span></div>
     </div>
     <div id="scoreboard" class="hidden"></div>
     <div id="class-picker" class="hidden"></div>
   </div>
+  <div id="flashbang"></div>
 
   <div id="menu" class="overlay">
     <div class="panel">
@@ -74,6 +76,7 @@
           <dt>R</dt><dd>Reload</dd>
           <dt>E (hold)</dt><dd>Plant / defuse the charge</dd>
           <dt>1 / 2 / 3, Q, wheel</dt><dd>Switch weapon</dd>
+          <dt>4 / G</dt><dd>Grenade / quick-throw · left click far, right click lob</dd>
           <dt>Tab</dt><dd>Scoreboard</dd>
           <dt>B</dt><dd>Choose class</dd>
           <dt>M</dt><dd>Switch team</dd>

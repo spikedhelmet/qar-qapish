@@ -1,7 +1,7 @@
 // Stand-in models built from primitives: a jointed soldier and simple guns.
 // They expose the same small interface the real Mixamo / Sketchfab models will use later.
 import * as THREE from 'three';
-import { TEAMS } from './shared/config.js';
+import { TEAMS, WEAPONS } from './shared/config.js';
 import { weaponModel, weaponInfo } from './assets.js';
 
 const mat = (color, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -132,6 +132,13 @@ export function buildGun(kind) {
     blade.position.z = -0.045;
     g.add(blade);
     muzzle.position.set(0, 0, -0.24);
+  } else if (WEAPONS[kind]?.grenade) {
+    const color = { frag: 0x3c4630, smoke: 0x5a5d58, flash: 0x30343a }[kind];
+    const body = kind === 'frag' ? mesh(new THREE.SphereGeometry(0.032, 14, 10), mat(color, 0.7))
+      : mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.11, 14), mat(color, 0.6));
+    g.add(body);
+    g.add(box(0.012, 0.03, 0.012, MATS.metal, 0, 0.06, 0)); // fuse
+    muzzle.position.set(0, 0.08, 0);
   }
   g.add(muzzle);
   g.userData.muzzle = muzzle;
@@ -152,6 +159,9 @@ const GRIPS = {
   smg: { mount: [0.08, -0.18, -0.36], right: [0.08, -0.23, -0.33], left: [0.08, -0.25, -0.5] },
   pistol: { mount: [0.03, -0.12, -0.5], right: [0.03, -0.16, -0.48], left: [0.0, -0.17, -0.46] },
   knife: { mount: [0.2, -0.3, -0.36], right: [0.2, -0.3, -0.34], left: [-0.26, -0.5, -0.05] },
+  frag: { mount: [0.2, -0.25, -0.36], right: [0.2, -0.27, -0.34], left: [-0.26, -0.5, -0.05] },
+  smoke: { mount: [0.2, -0.25, -0.36], right: [0.2, -0.27, -0.34], left: [-0.26, -0.5, -0.05] },
+  flash: { mount: [0.2, -0.25, -0.36], right: [0.2, -0.27, -0.34], left: [-0.26, -0.5, -0.05] },
 };
 
 // Two-bone IK: point the arm at the target and bend the elbow so the hand lands on it.
@@ -370,6 +380,9 @@ const REAL_VIEW = {
   smg:     { hip: [0.13, -0.16, -0.29], adsZ: -0.15, adsY: 0.012 }, // look through the rear drum, not over it
   pistol:  { hip: [0.11, -0.13, -0.31], adsZ: -0.34 },
   knife:   { hip: [0.17, -0.19, -0.29] },
+  frag:    { hip: [0.15, -0.15, -0.28] },
+  smoke:   { hip: [0.15, -0.15, -0.28] },
+  flash:   { hip: [0.15, -0.15, -0.28] },
 };
 
 export class ViewModel {
@@ -394,6 +407,7 @@ export class ViewModel {
     this.kind = kind;
     this.pumpArm = null;
     this.cycle = 0;
+    this.throwT = -1;
     this.holder.clear();
     this.gun = weaponModel(kind, 'fp') || buildGun(kind); // real model once built, stand-in otherwise
     this.holder.add(this.gun);
@@ -440,6 +454,11 @@ export class ViewModel {
       arm(-0.03, -0.05, 0.03, -1.05, -0.45);
       this.base = new THREE.Vector3(0.14, -0.17, -0.42);
       this.adsPos = new THREE.Vector3(0, -0.081, -0.32);
+    } else if (WEAPONS[kind]?.grenade) {
+      arm(0, -0.03, 0.03, -1.0, 0.35);
+      this.base = new THREE.Vector3(0.15, -0.15, -0.28);
+      this.adsPos = this.base;
+      this.gun.rotation.set(-0.15, 0.3, 0.15);
     } else {
       arm(0, 0, 0.03, -1.0, 0.35);
       this.base = new THREE.Vector3(0.2, -0.22, -0.36);
@@ -489,6 +508,21 @@ export class ViewModel {
       p.y -= k * 0.08;
       rx -= k * 0.35;
       rz += k * 0.5;
+    }
+    // Grenade throw: draw back over the shoulder during the wind-up, then fling forward and let go.
+    if (this.throwT >= 0) {
+      this.throwT += dt;
+      const w = this.throwWindup;
+      if (this.throwT < w) {
+        const k = Math.sin((this.throwT / w) * Math.PI / 2);
+        p.x += k * 0.05; p.y += k * 0.12; p.z += k * 0.12;
+        rx += k * 0.9; rz -= k * 0.3;
+      } else {
+        const k = Math.min(1, (this.throwT - w) / 0.25);
+        p.y += 0.12 - k * 0.3; p.z += 0.12 - k * 0.35;
+        rx += 0.9 - k * 1.8;
+        this.gun.visible = false;
+      }
     }
     if (this.swing > 0) {
       const s = Math.sin((1 - this.swing) * Math.PI);
@@ -557,5 +591,6 @@ export class ViewModel {
     s.mesh.material.dispose();
   }
   slash() { this.swing = 1; }
+  throwGrenade(windup) { this.throwT = 0; this.throwWindup = windup; this.gun.visible = true; }
   muzzleWorld(target) { return this.gun.userData.muzzle.getWorldPosition(target); }
 }

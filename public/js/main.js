@@ -1,7 +1,9 @@
 // Client entry point: renderer, menu, network messages and the frame loop.
 import * as THREE from 'three';
 import { MAP } from './shared/map.js';
-import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_ORDER, DEFAULT_CLASS, loadoutFor } from './shared/config.js';
+import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_ORDER, DEFAULT_CLASS, GRENADES, THROW, loadoutFor } from './shared/config.js';
+import { throwVelocity } from './shared/grenade.js';
+import { GrenadeView } from './grenades.js';
 import { buildWorld } from './world.js';
 import { Input, LocalPlayer } from './player.js';
 import { Arsenal } from './weapons.js';
@@ -69,6 +71,7 @@ const arsenal = new Arsenal();
 const remotes = new Remotes(scene);
 const effects = new Effects(scene, viewScene);
 let objective = null; // created once models have loaded (it uses the charge model)
+const grenadeView = new GrenadeView(scene, effects);
 const hud = new Hud();
 let viewModel = null;
 
@@ -101,6 +104,10 @@ const game = {
   ob: null,             // objective-mode state from the server
   roundReason: null,    // why the last round ended
   usingE: false,        // E held state last sent to the server
+  throwing: null,       // grenade throw in progress: { far, t, released }
+  quickThrow: false,    // G pressed: throw as soon as the grenade is out
+  prevRight: false,
+  blind: null,          // flashbang: { amount, at, seconds }
 };
 const modeCfg = () => MODES[game.mode];
 
@@ -139,6 +146,8 @@ function onMessage(msg) {
       equip(msg.cls);
       game.deathInfo = null;
       game.specId = null;
+      game.throwing = null;
+      game.quickThrow = false;
       break;
     case 'loadout':
       equip(msg.cls);
@@ -204,6 +213,21 @@ function onMessage(msg) {
       break;
     case 'notice': hud.notice(msg.text); break;
     case 'obj': onObjective(msg); break;
+    case 'gren':
+      grenadeView.thrown(msg);
+      if (msg.owner !== game.myId) remotes.players.get(msg.owner)?.soldier.fireKick?.();
+      break;
+    case 'gdet': {
+      const fx = grenadeView.detonated(msg, camera, me.alive);
+      if (fx.shake && viewModel) viewModel.shake.kick(fx.shake, (Math.random() - 0.5) * fx.shake, (Math.random() - 0.5) * fx.shake);
+      if (fx.blind > 0.05) {
+        const seconds = GRENADES.flash.maxBlind * fx.blind + 0.3;
+        game.blind = { amount: fx.blind, at: performance.now(), seconds };
+        audio.playEarRing(fx.blind, seconds);
+      }
+      break;
+    }
+    case 'gclear': grenadeView.clear(); break;
   }
 }
 
@@ -407,7 +431,8 @@ function frame(now) {
     }
 
     if (arsenal.update(dt, trigger, aimHeld) === 'reloaded') audio.playClick('reload');
-    if (canAct && arsenal.canFire(trigger, me.sprintRecover > 0)) shoot();
+    if (canAct && !arsenal.def.grenade && arsenal.canFire(trigger, me.sprintRecover > 0)) shoot();
+    updateThrow(dt, canAct);
 
     game.sendTimer -= dt;
     if (me.alive && game.sendTimer <= 0) {
@@ -424,10 +449,12 @@ function frame(now) {
 
   remotes.update(dt);
   objective?.update(dt, game.ob);
+  grenadeView.update(dt);
   effects.update(dt);
   audio.updateListener(camera);
   if (game.joined) updateHud();
   game.prevMouse = input.mouseDown;
+  game.prevRight = input.rightDown;
   input.endFrame();
 
   renderer.clear();
@@ -469,10 +496,16 @@ function chooseClass(cls) {
 
 function handleWeaponKeys() {
   let changed = false;
-  const [primary, secondary, melee] = arsenal.loadout;
+  if (game.throwing) return; // mid-throw: finish it first
+  const [primary, secondary, melee, nade] = arsenal.loadout;
   if (input.hit('Digit1')) changed = arsenal.select(primary);
   if (input.hit('Digit2')) changed = arsenal.select(secondary);
   if (input.hit('Digit3')) changed = arsenal.select(melee);
+  if (input.hit('Digit4')) changed = arsenal.select(nade);
+  if (input.hit('KeyG') && arsenal.grenadesLeft > 0) { // quick-throw: pull it out and throw far
+    changed = arsenal.select(nade) || changed;
+    game.quickThrow = true;
+  }
   if (input.hit('KeyQ')) changed = arsenal.select(arsenal.previous);
   if (input.wheel) changed = arsenal.cycle(input.wheel > 0 ? 1 : -1);
   if (changed) viewModel.setWeapon(arsenal.current);
@@ -489,6 +522,42 @@ function spectateTarget(playing) {
   if (i < 0 || clicked) i = (i + 1) % pool.length;
   game.specId = pool[i].id;
   return pool[i];
+}
+
+// Grenade throw: click → wind-up → release (server takes over the flight) → back to the previous weapon.
+const _fwd = new THREE.Vector3(), _side = new THREE.Vector3(), _upv = new THREE.Vector3();
+function updateThrow(dt, canAct) {
+  const def = arsenal.def;
+  if (!game.throwing) {
+    if (!canAct || !def.grenade || arsenal.drawT < def.draw || arsenal.grenadesLeft <= 0) return;
+    const far = (input.mouseDown && !game.prevMouse) || game.quickThrow;
+    const lob = input.rightDown && !game.prevRight;
+    if (!far && !lob) return;
+    game.throwing = { far: far, t: 0, released: false };
+    game.quickThrow = false;
+    viewModel.throwGrenade(THROW.windup);
+    audio.playThrow();
+    return;
+  }
+  const th = game.throwing;
+  th.t += dt;
+  if (!th.released && th.t >= THROW.windup) {
+    th.released = true;
+    if (!me.alive) { game.throwing = null; return; }
+    camera.getWorldDirection(_fwd);
+    _side.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    _upv.set(0, 1, 0).applyQuaternion(camera.quaternion);
+    const eye = new THREE.Vector3().fromArray(me.eye());
+    const o = eye.addScaledVector(_fwd, 0.35).addScaledVector(_side, 0.12).addScaledVector(_upv, -0.06);
+    const r = v => Math.round(v * 1000) / 1000;
+    net.send({ t: 'throw', kind: arsenal.current, o: o.toArray().map(r), v: throwVelocity(_fwd.toArray(), th.far, me.vel).map(r) });
+    arsenal.ammo[arsenal.current].mag--;
+  }
+  if (th.released && th.t >= THROW.windup + 0.45) {
+    game.throwing = null;
+    const back = WEAPONS[arsenal.previous]?.grenade ? arsenal.loadout[0] : arsenal.previous;
+    if (arsenal.select(back) || arsenal.select(arsenal.loadout[0])) viewModel.setWeapon(arsenal.current);
+  }
 }
 
 function updateCamera(dt, playing) {
@@ -541,6 +610,16 @@ function updateHud() {
   hud.scoreboard(input.down('Tab') || game.phase === 'over', game.players, game.myId, game.score);
   hud.classPicker(game.picker, settings.cls);
   updateObjectiveHud();
+  const nadeLeft = arsenal.grenadesLeft;
+  hud.grenade(nadeLeft && !arsenal.def.grenade ? `${WEAPONS[arsenal.grenade].name} ×${nadeLeft} · G` : '');
+  let blind = 0;
+  if (game.blind) {
+    const t = (performance.now() - game.blind.at) / 1000, { amount, seconds } = game.blind;
+    blind = t < seconds * 0.35 ? amount : amount * Math.max(0, 1 - (t - seconds * 0.35) / (seconds * 0.65));
+    if (t > seconds) game.blind = null;
+  }
+  hud.flash(blind);
+  hud.smoke(game.joined ? grenadeView.smokeAt(camera.position) : 0);
 
   let msg = '';
   const color = team => TEAMS[team].css;
@@ -726,4 +805,4 @@ function renderCredits(manifest) {
 }
 
 // Handy for poking at the game from the browser console.
-window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, get viewModel() { return viewModel; }, get objective() { return objective; } };
+window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, get viewModel() { return viewModel; }, get objective() { return objective; }, grenadeView };

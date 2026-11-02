@@ -214,5 +214,8 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Shotgun: "Remington 870 Police Magnum 12 Gauge Shotgun" by 8sianDude, CC-BY 4.0
 - SMG: "MP5K" by Shorty_Digitan, CC-BY 4.0
 - Charge (objective mode): "IED" by davidthe19th, CC-BY 4.0
-- Downloaded but not used yet: "M67 Fragmentation Grenade" (FJH), "M18 Smoke Grenade" and "M84 Stun Grenade" (Vanillatography), "FREE FPS Arms with glove" (Alexander_Ovelar), all CC-BY 4.0
+- Frag: "M67 Fragmentation Grenade" by FJH, CC-BY 4.0
+- Smoke: "M18 Smoke Grenade" by Vanillatography, CC-BY 4.0
+- Flashbang: "M84 Stun Grenade "Flashbang"" by Vanillatography, CC-BY 4.0
+- Downloaded but not used yet: "FREE FPS Arms with glove" (Alexander_Ovelar), CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required

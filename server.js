@@ -6,7 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { MAP } from './public/js/shared/map.js';
-import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
+import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
+import { stepGrenade } from './public/js/shared/grenade.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -107,7 +108,13 @@ function setPhase(phase, seconds) {
   match.phaseEnds = now() + seconds;
 }
 
+function clearGrenades() {
+  grenades.clear();
+  broadcast({ t: 'gclear' });
+}
+
 function startMatch() {
+  clearGrenades();
   match.score = { A: 0, B: 0 };
   match.winner = null;
   match.round = 0;
@@ -124,6 +131,7 @@ function startMatch() {
 }
 
 function startRound() {
+  clearGrenades();
   match.round++;
   setPhase('freeze', cfg().freezeTime);
   match.teamsAtStart = { A: teamCount('A'), B: teamCount('B') };
@@ -185,6 +193,7 @@ function spawn(p) {
   p.protectedUntil = cfg().respawn ? now() + PLAYER.spawnProtection : 0;
   p.history = [];
   p.lastFire = {};
+  p.grenades = THROW.perLife;
   send(p, { t: 'spawn', life: p.life, pos: p.pos, yaw: p.yaw, cls: p.cls });
 }
 
@@ -341,6 +350,78 @@ function recentPositions(p) {
   return [{ pos: p.pos, crouch: p.crouch }, ...p.history.filter(h => h.t >= cutoff)];
 }
 
+// ---------------------------------------------------------------- grenades
+
+const grenades = new Map(); // id → { id, kind, owner, team, pos, vel, born, resting }
+let nextGrenadeId = 1;
+
+// The client sends where it released the grenade and how fast; the server checks it was
+// possible (alive, has one, from its own hand, not absurdly fast) and then owns the flight.
+function handleThrow(p, msg) {
+  const kind = loadoutFor(p.cls)[3];
+  if (!p.alive || match.phase !== 'live' || msg.kind !== kind || !(p.grenades > 0)) return;
+  const o = Array.isArray(msg.o) ? msg.o.map(Number) : [], v = Array.isArray(msg.v) ? msg.v.map(Number) : [];
+  if (o.length !== 3 || v.length !== 3 || ![...o, ...v].every(Number.isFinite)) return;
+  const eye = eyeOf(p);
+  if (Math.hypot(o[0] - eye[0], o[1] - eye[1], o[2] - eye[2]) > 1.5) return;
+  if (Math.hypot(v[0], v[1], v[2]) > THROW.far + 10) return;
+  p.grenades--;
+  p.weapon = kind;
+  p.protectedUntil = 0;
+  p.firedSinceSpawn = true;
+  if (match.charge?.act?.id === p.id) match.charge.act = null;
+  const g = { id: nextGrenadeId++, kind, owner: p.id, team: p.team, pos: o, vel: v, born: now(), resting: false };
+  grenades.set(g.id, g);
+  broadcast({ t: 'gren', id: g.id, kind, owner: p.id, pos: o, vel: v });
+}
+
+function updateGrenades(dt) {
+  const t = now();
+  for (const g of grenades.values()) {
+    stepGrenade(MAP, g, dt);
+    if (t - g.born >= GRENADES[g.kind].fuse) {
+      grenades.delete(g.id);
+      detonateGrenade(g);
+    }
+  }
+}
+
+// Smoke and flash only need everyone to see them go off (each client works out its own blindness);
+// frags hurt enemies (and the thrower) within the radius, unless a wall is in between.
+function detonateGrenade(g) {
+  broadcast({ t: 'gdet', id: g.id, kind: g.kind, pos: g.pos.map(v => Math.round(v * 100) / 100), owner: g.owner });
+  if (g.kind !== 'frag') return;
+  const { damage, radius } = GRENADES.frag;
+  const owner = players.get(g.owner) || null;
+  const from = [g.pos[0], g.pos[1] + 0.15, g.pos[2]];
+  for (const p of players.values()) {
+    if (!p.alive || (p.team === g.team && p.id !== g.owner) || p.protectedUntil > now()) continue;
+    // Damage by distance to the nearest point of the body, so a frag at someone's feet hits full force;
+    // it only counts if the body or head is in sight of the blast.
+    const top = p.crouch ? PLAYER.crouchHeight : PLAYER.height, r = PLAYER.radius;
+    const near = [
+      Math.max(p.pos[0] - r, Math.min(from[0], p.pos[0] + r)),
+      Math.max(p.pos[1], Math.min(from[1], p.pos[1] + top)),
+      Math.max(p.pos[2] - r, Math.min(from[2], p.pos[2] + r)),
+    ];
+    const dist = Math.hypot(near[0] - from[0], near[1] - from[1], near[2] - from[2]);
+    if (dist >= radius) continue;
+    const visible = [0.5, 0.9].some(f => {
+      const to = [p.pos[0], p.pos[1] + top * f, p.pos[2]];
+      const d = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+      return d < 0.3 || raycastMap(MAP, from, to.map((v, i) => (v - from[i]) / d), d).t >= d - 0.25;
+    });
+    if (!visible) continue;
+    const dmg = Math.round(damage * (1 - dist / radius));
+    if (dmg <= 0) continue;
+    p.hp -= dmg;
+    send(p, { t: 'hurt', hp: Math.max(0, p.hp), from: g.pos });
+    const killed = p.hp <= 0;
+    if (owner && owner !== p) send(owner, { t: 'hitok', hs: false, kill: killed });
+    if (killed) kill(p, owner && owner !== p ? owner : null, 'frag', false);
+  }
+}
+
 function eyeOf(p) {
   return [p.pos[0], p.pos[1] + (p.crouch ? PLAYER.crouchEye : PLAYER.eye), p.pos[2]];
 }
@@ -364,7 +445,7 @@ function hitIsPlausible(shooter, target, weapon, zone) {
 
 function handleFire(p, msg) {
   const w = WEAPONS[msg.w];
-  if (!p.alive || !w || match.phase !== 'live' || !loadoutFor(p.cls).includes(msg.w)) return;
+  if (!p.alive || !w || w.grenade || match.phase !== 'live' || !loadoutFor(p.cls).includes(msg.w)) return;
   const t = now();
   if (t - (p.lastFire[msg.w] || 0) < w.fireInterval * 0.75) return;
   p.lastFire[msg.w] = t;
@@ -487,6 +568,7 @@ wss.on('connection', (ws, req) => {
       case 'class': changeClass(p, msg.cls); break;
       case 'host': handleHost(p, msg); break;
       case 'use': p.use = !!msg.on; break;
+      case 'throw': handleThrow(p, msg); break;
       case 'ping': send(p, { t: 'pong', c: msg.c }); break;
     }
   });
@@ -501,6 +583,7 @@ wss.on('connection', (ws, req) => {
 
 function tick() {
   const t = now(), c = cfg();
+  updateGrenades(1 / TICK_RATE);
   switch (match.phase) {
     case 'live':
       if (c.respawn) {

@@ -144,6 +144,57 @@ export class Effects {
     if (this.holes.length > 150) this.scene.remove(this.holes.shift());
   }
 
+  fragBlast(pos) {
+    const flash = new THREE.Sprite(this.flashMat.clone());
+    flash.position.copy(pos).add(new THREE.Vector3(0, 0.4, 0));
+    this.add(flash, 0.3, it => {
+      const k = it.age / it.life;
+      flash.scale.setScalar(2 + k * 4);
+      flash.material.opacity = 1 - k;
+    });
+    const light = new THREE.PointLight(0xffa040, 250, 25, 2);
+    light.position.copy(flash.position);
+    this.add(light, 0.3, it => { light.intensity = 250 * (1 - it.age / it.life); });
+    this.particles(pos, new THREE.Vector3(0, 1, 0), 0xffb050, 35, 10, 0.5, 0.18, 4);
+    this.particles(pos, new THREE.Vector3(0, 1, 0), 0x3a352f, 30, 8, 1.0, 0.12, 12);
+    this.particles(pos, new THREE.Vector3(0, 1.5, 0), 0x77736d, 25, 2, 2.2, 0.7, -0.5);
+  }
+
+  flashBurst(pos) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.dotTex, color: 0xffffff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    s.position.copy(pos).add(new THREE.Vector3(0, 0.2, 0));
+    this.add(s, 0.25, it => { s.scale.setScalar(3 + it.age * 20); s.material.opacity = 1 - it.age / it.life; });
+    const light = new THREE.PointLight(0xffffff, 900, 30, 2);
+    light.position.copy(s.position);
+    this.add(light, 0.18, it => { light.intensity = 900 * (1 - it.age / it.life); });
+    this.particles(pos, new THREE.Vector3(0, 1, 0), 0xffffff, 20, 6, 0.3, 0.08, 3);
+  }
+
+  // A smoke screen: soft grey puffs that billow out, hang, then thin away.
+  // Returns { pos, radius, until } so the game can grey the screen for anyone standing inside.
+  smokeCloud(pos, radius, duration) {
+    const cloud = { pos: pos.clone(), radius, until: performance.now() + duration * 1000 };
+    const puffs = 46;
+    for (let i = 0; i < puffs; i++) {
+      const mat = new THREE.SpriteMaterial({ map: this.dotTex, color: 0x9c9b97, transparent: true, depthWrite: false, opacity: 0 });
+      const s = new THREE.Sprite(mat);
+      const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * radius * 0.8;
+      const target = new THREE.Vector3(pos.x + Math.cos(a) * r, 0.4 + Math.random() * 2.6, pos.z + Math.sin(a) * r);
+      const size = 2.6 + Math.random() * 2.2;
+      const drift = new THREE.Vector3((Math.random() - 0.5) * 0.08, 0.02, (Math.random() - 0.5) * 0.08);
+      s.position.copy(pos);
+      const grow = 1.4 + Math.random() * 0.6, fadeOut = 3.5;
+      this.add(s, duration, it => {
+        const k = Math.min(1, it.age / grow), e = 1 - Math.pow(1 - k, 3);
+        s.position.lerpVectors(pos, target, e).addScaledVector(drift, it.age);
+        s.scale.setScalar(size * (0.3 + 0.7 * e));
+        const out = Math.max(0, (it.age - (it.life - fadeOut)) / fadeOut);
+        mat.opacity = 0.62 * Math.min(1, it.age / 0.4) * (1 - out);
+      });
+    }
+    return cloud;
+  }
+
   explosion(pos) {
     const flash = new THREE.Sprite(this.flashMat.clone());
     flash.position.copy(pos).add(new THREE.Vector3(0, 1, 0));

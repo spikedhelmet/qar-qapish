@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { assets, weaponModel } from './assets.js';
 
-const PISTOL_HOLD = new Set(['pistol', 'knife']);
+const PISTOL_HOLD = new Set(['pistol', 'knife', 'frag', 'smoke', 'flash']);
 const DIRS = ['f', 'fr', 'r', 'br', 'b', 'bl', 'l', 'fl']; // 45° sectors, clockwise from forward
 // Ground speed (m/s) each moving clip was animated at, so playback matches how fast the player moves.
 const CLIP_SPEED = { walk: 1.92, run: 4.8, sprint: 7.2, crouch: 2.04, pistol_walk_f: 2.55, pistol_walk_b: 1.41,

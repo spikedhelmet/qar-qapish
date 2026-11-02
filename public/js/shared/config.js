@@ -80,9 +80,27 @@ export const CLASSES = {
 export const CLASS_ORDER = ['assault', 'marksman', 'breacher', 'runner'];
 export const DEFAULT_CLASS = 'assault';
 
+// [primary, pistol, knife, grenade]
 export function loadoutFor(cls) {
-  return [(CLASSES[cls] || CLASSES[DEFAULT_CLASS]).primary, 'pistol', 'knife'];
+  const c = CLASSES[cls] || CLASSES[DEFAULT_CLASS];
+  return [c.primary, 'pistol', 'knife', c.grenade];
 }
+
+// Grenades: thrown with left click (far) or right click (short lob), one per life.
+// fuse = seconds from the throw. Frag: damage falls off to 0 at `radius`, walls block it.
+// Smoke: cloud of `radius` meters for `duration` seconds. Flash: blinds anyone who can see it within `radius`.
+export const GRENADES = {
+  frag: { name: 'Frag', fuse: 2.2, damage: 110, radius: 7 },
+  smoke: { name: 'Smoke', fuse: 1.6, duration: 16, radius: 4.8 },
+  flash: { name: 'Flashbang', fuse: 1.4, radius: 28, maxBlind: 3.5 },
+};
+export const THROW = {
+  far: 17, near: 7,     // throw speeds, m/s
+  lift: 0.18,           // extra upward aim so throws arc
+  gravity: 16, bounce: 0.42, friction: 0.7, radius: 0.06,
+  perLife: 1,
+  windup: 0.22,         // seconds from click to release
+};
 
 // Spread values are radians of random cone; recoil values are radians of view kick per shot.
 // ads: right-click aim. fov = zoom multiplier, spread/speed = multipliers while aiming,
@@ -136,6 +154,9 @@ export const WEAPONS = {
     ads: { fov: 0.82, spread: 0.5, speed: 0.85, time: 0.14 },
     speedMult: 1.0,
   },
+  frag: { name: 'Frag', slot: 4, grenade: true, mag: 1, reserve: 0, draw: 0.35, fireInterval: 0.8, speedMult: 1.0 },
+  smoke: { name: 'Smoke', slot: 4, grenade: true, mag: 1, reserve: 0, draw: 0.35, fireInterval: 0.8, speedMult: 1.0 },
+  flash: { name: 'Flashbang', slot: 4, grenade: true, mag: 1, reserve: 0, draw: 0.35, fireInterval: 0.8, speedMult: 1.0 },
   knife: {
     name: 'Knife', slot: 3, melee: true, auto: true, pellets: 1,
     damage: 55, headMult: 1, legMult: 1, range: 2.2,

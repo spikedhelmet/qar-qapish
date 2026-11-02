@@ -107,6 +107,11 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 #hp-val.low { color: var(--danger); }
 #ammo-val small { font-size: 16px; font-weight: 600; color: var(--muted); margin-left: 4px; }
 #ammo-val.empty { color: var(--danger); }
+#ammo { position: relative; }
+#nade { position: absolute; right: 12px; top: -20px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+#nade.ready { color: var(--text); }
+#smoke-screen { position: absolute; inset: 0; background: #8f8e8a; opacity: 0; }
+#flashbang { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 5; }
 
 #scoreboard { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(680px, calc(100vw - 32px));
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

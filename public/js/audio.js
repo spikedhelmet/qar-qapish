@@ -128,6 +128,68 @@ export function playExplosion(pos) {
   thump(out, { freq: 70, dur: 1.2, gain: 1.6 });
 }
 
+// ---------------------------------------------------------------- grenades
+
+export function playThrow() {
+  if (!ctx) return;
+  burst(master, { dur: 0.25, freq: 1200, q: 1.5, type: 'bandpass', gain: 0.3, attack: 0.08, sweep: 0.5 });
+}
+
+export function playClink(pos, strength = 1) {
+  if (!ctx) return;
+  const t = ctx.currentTime, out = output(pos);
+  for (const f of [2900, 4300]) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = f * (0.95 + Math.random() * 0.1);
+    g.gain.setValueAtTime(0.12 * strength, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g).connect(out);
+    o.start(t); o.stop(t + 0.13);
+  }
+}
+
+export function playFrag(pos) {
+  if (!ctx) return;
+  const out = output(pos);
+  burst(out, { dur: 1.2, freq: 1100, q: 0.4, gain: 1.3, attack: 0.003, sweep: 0.1 });
+  burst(out, { dur: 0.25, freq: 3500, q: 0.3, gain: 0.8, sweep: 0.2 });
+  thump(out, { freq: 85, dur: 0.6, gain: 1.3 });
+}
+
+export function playSmoke(pos, duration) {
+  if (!ctx) return;
+  const out = output(pos);
+  burst(out, { dur: 0.15, freq: 900, q: 1, gain: 0.5 });                                  // pop
+  const t = ctx.currentTime, src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  src.buffer = noise; src.loop = true;
+  f.type = 'highpass'; f.frequency.value = 2500;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.18, t + 0.3);
+  g.gain.setValueAtTime(0.18, t + duration * 0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.6);                     // hiss fades as it empties
+  src.connect(f).connect(g).connect(out);
+  src.start(t); src.stop(t + duration * 0.6 + 0.1);
+}
+
+export function playFlashBang(pos) {
+  if (!ctx) return;
+  const out = output(pos);
+  burst(out, { dur: 0.5, freq: 4000, q: 0.3, gain: 1.4, attack: 0.002, sweep: 0.3 });
+  thump(out, { freq: 140, dur: 0.3, gain: 1.0 });
+}
+
+// High-pitched ringing after being flashed; amount 0..1.
+export function playEarRing(amount, seconds) {
+  if (!ctx || amount <= 0) return;
+  const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.value = 3800;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.12 * amount, t + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
+  o.connect(g).connect(master);
+  o.start(t); o.stop(t + seconds + 0.05);
+}
+
 export function playSlide(pos) {
   if (!ctx) return;
   burst(output(pos), { dur: 0.7, freq: 900, q: 0.7, gain: 0.3, attack: 0.04, sweep: 0.35 });

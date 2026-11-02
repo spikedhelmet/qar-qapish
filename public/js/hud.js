@@ -41,6 +41,7 @@ export class Hud {
     const ammo = WEAPONS[weapon].melee ? '—' : `${mag}|${reserve}`;
     this.set('ammo', ammo, () => {
       if (WEAPONS[weapon].melee) { this.ammo.textContent = '—'; this.ammo.classList.remove('empty'); return; }
+      if (WEAPONS[weapon].grenade) { this.ammo.textContent = mag; this.ammo.classList.toggle('empty', mag === 0); return; }
       this.ammo.innerHTML = `${mag}<small>/ ${reserve}</small>`;
       this.ammo.classList.toggle('empty', mag === 0);
     });
@@ -97,6 +98,17 @@ export class Hud {
     this.set('progLabel', label, v => { el.classList.toggle('hidden', !v); el.querySelector('span').textContent = v || ''; });
     if (label) el.querySelector('i').style.width = `${Math.round(p * 100)}%`;
   }
+
+  // Grenade still in hand, e.g. "Frag ×1"; empty string when thrown.
+  grenade(text) {
+    this.set('nade', text, v => { const el = $('nade'); el.textContent = v; el.classList.toggle('ready', !!v); });
+  }
+
+  // 0..1 white-out from a flashbang (covers the whole page, menu included).
+  flash(amount) { this.set('flash', Math.round(amount * 100), v => { $('flashbang').style.opacity = v / 100; }); }
+
+  // 0..1 grey haze while standing inside smoke.
+  smoke(amount) { this.set('smoke', Math.round(amount * 100), v => { $('smoke-screen').style.opacity = (v / 100) * 0.92; }); }
 
   scope(on) { this.set('scope', on, v => document.getElementById('scope').classList.toggle('hidden', !v)); }
 

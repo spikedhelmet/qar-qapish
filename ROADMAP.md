@@ -17,16 +17,10 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | – | Real assets: animated SWAT soldiers, real guns, asset build pipeline | ✅ Done, playtested |
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
-| 4 | Grenades: frag, smoke, flashbang | ⏭ Next |
-| 5 | Polish: real sounds, map textures, first-person arms, more maps, settings | Planned |
+| 4 | Grenades: frag, smoke, flashbang | ✅ Done, needs a playtest |
+| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | ⏭ Next |
 
-### Milestone 4: grenades (next)
-- Frag (damage with falloff, blocked by walls), smoke (blocks vision), flashbang (whites out the screen of anyone looking at it).
-- Throwing physics with bounces; one grenade per class, as set in the class table.
-- Models already downloaded (M67, M18, M84); the throw animation is in place.
-- **Needs from you:** grenade sounds (see ASSETS.md §4).
-
-### Milestone 5: polish
+### Milestone 5: polish (next)
 - **Per-weapon reload animations** (first person): magazine out / new magazine in / charging handle for the rifle, SMG and pistol, shell-by-shell for the shotgun, bolt + magazine for the sniper. Done in code by moving the gun's own magazine part (the models keep it as a separate piece), timed to each gun's reload length and to reload sounds. Better once real first-person arms are in, so the two go together.
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - Photo textures for the map (ambientCG / Poly Haven, CC0).
@@ -41,6 +35,16 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 4: grenades (`feature/milestone-4`)
+- Each class carries one grenade per life: Assault frag, Marksman smoke, Breacher flashbang, Runner smoke. Key 4 then left click (far) / right click (lob), or G to quick-throw. Wind-up and throw animation, then back to your previous weapon.
+- Shared physics (server and client trace the same path): gravity, bounces off map boxes, rolling to a stop. The server owns the flight and the detonation.
+- Frag: 2.2 s fuse, 110 damage at the body falling to 0 at 7 m, blocked by walls; hurts enemies and the thrower, not teammates; kills credited to the thrower.
+- Smoke: 1.6 s fuse, billowing 5 m cloud for 16 s; grey screen when you stand inside; blocks flashbangs.
+- Flashbang: 1.4 s fuse, white-out up to 3.5 s depending on whether you're looking at it and how close; walls block it; ear-ringing tone.
+- Real models (M67, M18, M84) built from the downloads with their extra copies hidden; synthesized throw / clink / blast / hiss / bang sounds.
+- Fixed while testing: frag damage was measured to the middle of the body, so a frag at someone's feet couldn't kill; it now measures to the nearest point of the body.
+- Verified with bots (12 server checks: wrong type, throw from far away, one per life, fuse, damage, self-damage, teammates safe, wall blocking, smoke, kill credit) and in the browser (in-hand model, throw animation, server-confirmed flight, smoke cloud inside/outside, flash white-out). **Not yet:** a real match.
 
 ### 2026-11-02 · Milestone 3: objective mode (`feature/milestone-3`)
 - New mode "Objective" (host menu or `npm start -- --mode=obj`). Attackers start west, defenders east; sides swap after round 6; first to 7.

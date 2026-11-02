@@ -32,7 +32,7 @@
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
     import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
     import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-    import { WEAPONS, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
+    import { WEAPONS, GRENADES, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
 
     const logEl = document.getElementById('log');
     const log = (msg, cls) => {
@@ -147,11 +147,12 @@
       // stick out on one side and would push the gun off the line of sight.
       // Props have no barrel (and rigged meshes keep vertices in bind space): use the box center.
       const boxX = (box.min.x + box.max.x) / 2;
-      const boreX = views.includes('fp') ? frontCenterX(root, box.min.z + size.z * 0.04) ?? boxX : boxX;
+      const centered = views.includes('fp') && !cfg.height;
+      const boreX = centered ? frontCenterX(root, box.min.z + size.z * 0.04) ?? boxX : boxX;
       const at = ([fromBack, fromBottom]) => new THREE.Vector3(
         boreX, box.min.y + fromBottom * size.y, box.max.z - fromBack * size.z);
       const grip = at(cfg.grip), muzzle = at(cfg.muzzle);
-      const s = cfg.length / size.z;
+      const s = cfg.height ? cfg.height / size.y : cfg.length / size.z;
       wrap.scale.setScalar(s);
       wrap.position.copy(grip).multiplyScalar(-s);
       const toGame = p => p.clone().sub(grip).multiplyScalar(s).toArray().map(r3);
@@ -166,7 +167,7 @@
       log(`  ${kind.padEnd(8)} ${sizes.join(' · ')} · from ${cfg.src.split('/').pop()}`);
       return {
         ...files,
-        length: cfg.length, muzzle: toGame(muzzle),
+        length: r3(size.z * s), muzzle: toGame(muzzle),
         sightY: r3((box.max.y - grip.y) * s),       // top of the gun above the grip, for aiming down sights
         bounds: [toGame(box.min), toGame(box.max)],
         credit: { title: extras.title, author: extras.author, license: extras.license, source: extras.source },
@@ -257,7 +258,7 @@
       return { file: 'game/animations.glb', clips: clips.map(c => c.name) };
     }
 
-    // only: rebuild just these sections ('weapons', 'props', 'characters', 'animations') and keep the rest.
+    // only: rebuild just these sections ('weapons', 'grenades', 'props', 'characters', 'animations') and keep the rest.
     async function buildAll({ only } = {}) {
       const t0 = performance.now();
       const want = section => !only || only.includes(section);
@@ -270,6 +271,10 @@
       if (want('weapons')) {
         log('Weapons');
         for (const [kind, cfg] of Object.entries(WEAPONS)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
+      }
+      if (want('grenades')) {
+        log('Grenades');
+        for (const [kind, cfg] of Object.entries(GRENADES)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
       }
       if (want('props')) {
         log('Props');
