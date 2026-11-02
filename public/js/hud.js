@@ -111,6 +111,9 @@ export class Hud {
   // 0..1 grey haze while standing inside smoke.
   smoke(amount) { this.set('smoke', Math.round(amount * 100), v => { $('smoke-screen').style.opacity = (v / 100) * 0.92; }); }
 
+  // Red-dot / holographic reticle at the screen center (where shots go) while aiming an optic.
+  reticle(on) { this.set('reticle', on, v => document.getElementById('reticle').classList.toggle('hidden', !v)); }
+
   scope(on) { this.set('scope', on, v => document.getElementById('scope').classList.toggle('hidden', !v)); }
 
   announce(text) {

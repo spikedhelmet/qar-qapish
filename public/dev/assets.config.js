@@ -46,6 +46,8 @@ export const WEAPONS = {
     src: 'weapons/fn_scar.glb', length: 0.99, rotateY: 90,
     hide: /foregrip/, // the vertical foregrip would sit in the support hand
     grip: [0.25, 0.52], muzzle: [1, 0.69],
+    // The sight's own reticle (one small plane between the glass panes): the game draws its own.
+    cuts: [{ mesh: /Scope/, box: [[0.035, 0.588, -0.05], [0.058, 0.616, -0.01]] }],
   },
   revolver: {
     src: 'weapons/gameready_colt_python_revolver.glb', length: 0.29,

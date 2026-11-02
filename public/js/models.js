@@ -346,6 +346,8 @@ const KICK = {
   revolver: { back: 0.035, up: 0.012, pitch: 0.14, yaw: 0.015, roll: 0.025, shake: 0.006, flash: 1.0 },
 };
 export const flashSize = kind => KICK[kind]?.flash ?? 1;
+// Does this weapon aim through an optic (so the HUD draws a reticle when aiming)?
+export const hasOptic = kind => !!REAL_VIEW[kind]?.optic && !!weaponInfo(kind);
 // The bolt or slide cycles on every shot of a self-loading gun: back in a blink, then home.
 const SHOT_CYCLE = 0.07; // seconds
 
@@ -385,6 +387,10 @@ HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
 HAND_POSES.scar = HAND_POSES.rifle;
 HAND_POSES.carbine = { right: GRIP_RIGHT, left: { ...SUPPORT, curl: 0.55 } }; // slim handguard: fingers stay below the sight line
 HAND_POSES.revolver = HAND_POSES.pistol;
+
+// First-person hands are off for now: the guns float on their own. Set to true to bring back the
+// rigged arms (or the stand-in sleeves when no arms model is built).
+const SHOW_HANDS = false;
 
 // How far forward of the grip the support hand holds the handguard (rifle-shaped guns).
 const SUPPORT_Z = { rifle: -0.27, carbine: -0.27, scar: -0.3 };
@@ -452,14 +458,19 @@ class Spring {
 
 // Real gun models: where the grip sits at the hip, and how far in front of the eye the gun
 // sits when aiming (adsZ; the rear sight ends up roughly a hand's width from the eye).
-// adsY nudges the sight line when the gun's highest point isn't its sight.
+// Iron sights: the top of the gun lines up with the eye; adsY nudges that when the highest point
+// isn't the sight. optic: guns with a red dot / holographic sight. `y` is the middle of its window
+// (gun frame, meters above the grip, found by casting rays through the sight of the built model;
+// re-measure after rebuilding with a different grip), lined up with the eye so the game's own
+// reticle, drawn at the screen center where shots go, sits in the window. Built-in reticles are cut
+// out of the models (assets.config.js) so they can't disagree with it.
 const REAL_VIEW = {
   rifle:   { hip: [0.15, -0.18, -0.33], adsZ: 0.05 },
   sniper:  { hip: [0.15, -0.19, -0.36], adsZ: -0.1 },
   shotgun: { hip: [0.15, -0.19, -0.31], adsZ: -0.24 },
   smg:     { hip: [0.13, -0.16, -0.29], adsZ: -0.15, adsY: 0.012 }, // look through the rear drum, not over it
-  carbine: { hip: [0.15, -0.18, -0.33], adsZ: -0.07, adsY: 0.023 }, // through the holographic sight's window
-  scar:    { hip: [0.15, -0.18, -0.35], adsZ: -0.09, adsY: 0.025 },  // through the red dot
+  carbine: { hip: [0.15, -0.18, -0.33], adsZ: -0.07, optic: { y: 0.094 } },
+  scar:    { hip: [0.15, -0.18, -0.35], adsZ: -0.09, optic: { y: 0.146 } },
   revolver: { hip: [0.12, -0.14, -0.42], adsZ: -0.42 },
   pistol:  { hip: [0.12, -0.14, -0.42], adsZ: -0.42 }, // far enough out that both hands fit on screen
   knife:   { hip: [0.17, -0.19, -0.29] },
@@ -500,6 +511,8 @@ export class ViewModel {
     this.team = team;
     if (this.armsBody) this.group.remove(this.armsBody);
     this.armsRig = null;
+    this.armsBody = null;
+    if (!SHOW_HANDS) return;
     let body = armsModel(), rig = RIGS.psx, kind = 'arms';
     if (!body) { body = characterModel(team); rig = RIGS.mixamo; kind = 'soldier'; }
     this.armsBody = body;
@@ -534,7 +547,7 @@ export class ViewModel {
       a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
       this.holder.add(a);
       if (!this.handR) this.handR = a;
-      if (this.armsRig) a.children.forEach(c => { c.visible = false; });
+      if (this.armsRig || !SHOW_HANDS) a.children.forEach(c => { c.visible = false; });
       return a;
     };
     if (kind === 'rifle' || kind === 'carbine' || kind === 'scar') {
@@ -559,7 +572,7 @@ export class ViewModel {
       a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
       this.pumpArm.add(a);
       this.support = a;
-      if (this.armsRig) a.children.forEach(c => { c.visible = false; });
+      if (this.armsRig || !SHOW_HANDS) a.children.forEach(c => { c.visible = false; });
       this.base = new THREE.Vector3(0.19, -0.24, -0.46);
       this.adsPos = new THREE.Vector3(0, -0.068, -0.34);
     } else if (kind === 'smg') {
@@ -599,8 +612,8 @@ export class ViewModel {
     if (info) {
       const v = REAL_VIEW[kind];
       this.base = new THREE.Vector3(...v.hip);
-      this.adsPos = v.adsZ === undefined ? this.base
-        : new THREE.Vector3(0, -info.sightY - 0.002 + (v.adsY || 0), v.adsZ);
+      const sightLine = v.optic ? v.optic.y : info.sightY + 0.002 - (v.adsY || 0);
+      this.adsPos = v.adsZ === undefined ? this.base : new THREE.Vector3(0, -sightLine, v.adsZ);
     }
   }
 

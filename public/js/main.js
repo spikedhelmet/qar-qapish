@@ -9,7 +9,7 @@ import { photoTextures } from './textures.js';
 import { Input, LocalPlayer } from './player.js';
 import { Arsenal } from './weapons.js';
 import { Remotes } from './remote.js';
-import { ViewModel, flashSize } from './models.js';
+import { ViewModel, flashSize, hasOptic } from './models.js';
 import { Effects } from './effects.js';
 import { Hud } from './hud.js';
 import { Net } from './net.js';
@@ -655,6 +655,7 @@ function updateHud() {
   const px = (spread / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * (innerHeight / 2);
   hud.crosshair(px, me.alive && !WEAPONS[arsenal.current].melee && arsenal.adsT < 0.3 && !me.sprinting);
   hud.scope(me.alive && !!arsenal.def.ads?.scope && arsenal.adsT > 0.9);
+  hud.reticle(me.alive && hasOptic(arsenal.current) && arsenal.adsT > 0.85 && arsenal.reloadT < 0);
   hud.scoreboard(input.down('Tab') || game.phase === 'over', game.players, game.myId, game.score);
   hud.classPicker(game.picker, settings.cls);
   updateObjectiveHud();

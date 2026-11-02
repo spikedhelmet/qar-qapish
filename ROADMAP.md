@@ -22,7 +22,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ### Milestone 5: polish (in progress)
 - ~~**Per-weapon reload animations**~~ done (see log).
-- ~~**First-person arms**~~ done (see log).
+- ~~**First-person arms**~~ built, then switched off for now (part 10): no version looked right yet.
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - ~~**Photo textures for the maps**~~ done (see log).
 - ~~**Other players' animations**~~ done: recoil and reload were already in, the grenade toss is now added.
@@ -36,6 +36,14 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 10: optics, hands off (`feature/milestone-5`)
+- **Optic sights:** the carbine's holographic sight had no reticle, and the battle rifle shot low.
+  - The cause: I had lined each optic up by eye, so the rifle's built-in ring sat about 4 mm above the eye line. That's 1.2° high: 60 cm at 30 m.
+  - The fix: each sight window's height is measured by casting rays through the built model (carbine 9.4 cm above the grip, battle rifle 14.6 cm), and aiming puts that point exactly on the eye line.
+  - The game draws its own red ring-and-dot reticle at the screen center, which is exactly where shots go, whenever you aim an optic. Like a real holographic sight, it stays on the aim point when the gun kicks.
+  - The battle rifle's built-in reticle (one small plane inside the sight) is cut out in the build, so there's only ever one reticle.
+- **First-person hands are off:** they weren't convincing, and the guns float on their own now. `SHOW_HANDS` in `models.js` brings them back; the rigged-arms code stays.
 
 ### 2026-11-02 · Milestone 5, part 9: new guns, firing feel, movement (`feature/milestone-5`)
 - **Two new classes and three new guns**, all CC-BY 4.0 from Sketchfab:
