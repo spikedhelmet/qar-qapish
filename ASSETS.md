@@ -175,16 +175,24 @@ Save into `public/assets/sounds/sfx/` as `.mp3`, `.ogg` or `.wav`. Good free sou
 
 ## 5. Textures and sky (Claude can fetch with your OK; CC0, no credit)
 
-From https://ambientcg.com (download the **2K-JPG** zip: Color, NormalGL, Roughness) → `public/assets/textures/`
+**Done:** the map textures come from https://ambientcg.com (CC0).
+- The **1K-JPG** zips are unzipped in `assets-src/textures/<AssetId>/`.
+- `bash scripts/build-textures.sh` recompresses each surface's Color, NormalGL and Roughness maps into `public/assets/game/textures/` (5 MB). It uses macOS's built-in `sips`.
+- Tile size, tint and per-surface tweaks live in `PHOTO` in `public/js/textures.js`.
+- If the folder is missing, the game falls back to its painted stand-ins.
 
-| Surface | What to look for | Priority |
+| Surface | ambientCG asset | Notes |
 |---|---|---|
-| Outer walls, decks | Concrete (cast / board-formed) | P1 |
-| Ground | Asphalt | P1 |
-| Lane dividers | Bricks | P1 |
-| Crates | Wood planks | P1 |
-| Containers | Corrugated or painted metal | P1 |
-| Trims, doors | Metal plates / rusted metal | P3 |
+| Outer walls, decks, hall roof | Concrete036 | Darkened, contrast flattened (it looked like marble close up) |
+| Ground | Road012A | |
+| Lane dividers, hall | Bricks085 | |
+| Crates | Planks020 | A corner of the photo, with a painted frame and brace on top |
+| Containers | CorrugatedSteel005 | One grey steel, tinted red / blue / green |
+| Trims, doors | Metal plates / rusted metal | P3, not yet |
+
+To swap a texture:
+1. Download another asset's 1K-JPG zip into `assets-src/textures/<AssetId>/` and unzip it.
+2. Change its id in `scripts/build-textures.sh` and run the script.
 
 From https://polyhaven.com (CC0):
 - **Sky:** an outdoor HDRI ("clear sky", "overcast", or a sunset for night maps). P2.
@@ -221,3 +229,4 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Downloaded, not wired in yet: "Ar-15" (3DYAROSLAV2), "FN SCAR" (nghiakua06), "GameReady: Colt Python Revolver" (HYQQM), all CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005), CC0

@@ -5,6 +5,7 @@ import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_OR
 import { throwVelocity } from './shared/grenade.js';
 import { GrenadeView } from './grenades.js';
 import { buildWorld, showMap } from './world.js';
+import { photoTextures } from './textures.js';
 import { Input, LocalPlayer } from './player.js';
 import { Arsenal } from './weapons.js';
 import { Remotes } from './remote.js';
@@ -882,6 +883,11 @@ function renderCredits(manifest) {
   });
   rows.push('<li><b>Characters and animations</b>: Mixamo (Adobe)</li>');
   list.innerHTML = rows.join('');
+  photoTextures.then(t => {
+    if (!t) return;
+    const ids = Object.values(t).map(x => `<a href="${escapeHtml(x.source)}" target="_blank" rel="noopener">${escapeHtml(x.id)}</a>`);
+    list.insertAdjacentHTML('beforeend', `<li><b>Map textures</b>: ambientCG (${ids.join(', ')}) · CC0</li>`);
+  });
 }
 
 // Handy for poking at the game from the browser console.

@@ -1,4 +1,5 @@
-// Procedurally painted stand-in textures. Real photo textures (ambientCG / Poly Haven) can replace these later.
+// Map surfaces: procedurally painted stand-ins, replaced by photo textures (ambientCG, CC0) once those
+// load from public/assets/game/textures/ (built by scripts/build-textures.sh).
 import * as THREE from 'three';
 
 function rng(seed) {
@@ -126,12 +127,18 @@ function brick(size) {
   return c;
 }
 
-function crate(size) {
+// photo: plank image to build the crate from (a corner of it, about six planks); painted if absent.
+function crate(size, photo) {
   const c = canvas(size), ctx = c.getContext('2d');
-  paintNoise(ctx, size, [150, 112, 70], fbm(size, 31, [[2, 0.3], [32, 0.4], [128, 0.3]]), 0.4, 0.05, 17);
+  if (photo) {
+    const crop = photo.width * 0.3;
+    ctx.drawImage(photo, 0, 0, crop, crop, 0, 0, size, size);
+  } else {
+    paintNoise(ctx, size, [150, 112, 70], fbm(size, 31, [[2, 0.3], [32, 0.4], [128, 0.3]]), 0.4, 0.05, 17);
+  }
   // grain streaks
   const r = rng(19);
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < (photo ? 0 : 220); i++) {
     ctx.strokeStyle = `rgba(70,45,20,${0.05 + r() * 0.12})`;
     ctx.lineWidth = 1 + r() * 2;
     const y = r() * size;
@@ -140,10 +147,10 @@ function crate(size) {
   // plank seams
   ctx.strokeStyle = 'rgba(45,28,12,0.7)';
   ctx.lineWidth = 3;
-  for (let i = 1; i < 5; i++) { ctx.beginPath(); ctx.moveTo(0, i * size / 5); ctx.lineTo(size, i * size / 5); ctx.stroke(); }
-  // frame and diagonal brace
+  for (let i = 1; i < (photo ? 0 : 5); i++) { ctx.beginPath(); ctx.moveTo(0, i * size / 5); ctx.lineTo(size, i * size / 5); ctx.stroke(); }
+  // frame and diagonal brace (a lighter board over the planks)
   const f = size * 0.1;
-  ctx.fillStyle = 'rgba(115,82,48,1)';
+  ctx.fillStyle = photo ? 'rgba(140,104,66,1)' : 'rgba(115,82,48,1)';
   ctx.fillRect(0, 0, size, f); ctx.fillRect(0, size - f, size, f); ctx.fillRect(0, 0, f, size); ctx.fillRect(size - f, 0, f, size);
   ctx.save();
   ctx.translate(size / 2, size / 2); ctx.rotate(Math.PI / 4);
@@ -193,13 +200,15 @@ export function siteDecal(letter) {
 }
 
 // Material settings per map surface. `scale` is meters covered by one texture tile (0 = stretch per face).
+// Box UVs are in meters (see world.js); each texture's repeat turns that into tiles.
 export function createSurfaces(renderer) {
   const size = 512;
-  const make = (canvasEl, scale, roughness, metalness = 0) => ({
-    scale,
-    material: new THREE.MeshStandardMaterial({ map: toTexture(canvasEl, renderer), roughness, metalness }),
-  });
-  return {
+  const make = (canvasEl, scale, roughness, metalness = 0) => {
+    const map = toTexture(canvasEl, renderer);
+    if (scale) map.repeat.set(1 / scale, 1 / scale);
+    return { scale, material: new THREE.MeshStandardMaterial({ map, roughness, metalness }) };
+  };
+  const surfaces = {
     concrete: make(concrete(size), 3, 0.92),
     asphalt: make(asphalt(size), 6, 0.95),
     brick: make(brick(size), 2.2, 0.9),
@@ -208,4 +217,88 @@ export function createSurfaces(renderer) {
     container_blue: make(container(size, [45, 78, 120], 43), 2.6, 0.55, 0.45),
     container_green: make(container(size, [60, 98, 64], 47), 2.6, 0.55, 0.45),
   };
+  loadPhotos(surfaces, renderer);
+  return surfaces;
+}
+
+// Photo version of each surface: which texture, tile size in meters [across, up], a color tint
+// (linear; the containers share one grey steel painted three colors), and `rough`: a flat roughness
+// instead of the photo's map (under the open sky the stone maps are glossy enough to look like marble),
+// `bump`: how strongly the normal map shows, and `contrast` (0..1) to flatten a blotchy photo:
+// close up, the concrete's light and dark clouds read as marble.
+const PHOTO = {
+  concrete: { tex: 'concrete', tile: [4, 4], tint: [0.68, 0.68, 0.66], rough: 0.95, bump: 0.4, contrast: 0.4 }, // the photo is pale
+  asphalt: { tex: 'asphalt', tile: [4, 4], rough: 0.95 },
+  brick: { tex: 'brick', tile: [2.6, 1.3], rough: 0.92 },
+  container_red: { tex: 'steel', tile: [3, 3], tint: [0.62, 0.13, 0.08], metalness: 0.3 },
+  container_blue: { tex: 'steel', tile: [3, 3], tint: [0.1, 0.2, 0.42], metalness: 0.3 },
+  container_green: { tex: 'steel', tile: [3, 3], tint: [0.14, 0.3, 0.14], metalness: 0.3 },
+};
+const PHOTO_DIR = '/assets/game/textures/';
+
+// Resolves to the list of photo textures in use ({ name: { id, source } }), or null without them.
+let resolvePhotos;
+export const photoTextures = new Promise(r => { resolvePhotos = r; });
+
+// Copy of a texture with its contrast scaled toward the average color.
+function flatten(texture, k, renderer) {
+  const img = texture.image, c = canvas(img.width), ctx = c.getContext('2d');
+  c.height = img.height;
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, c.width, c.height), d = data.data, n = d.length / 4;
+  const mean = [0, 0, 0];
+  for (let i = 0; i < d.length; i += 4) for (let j = 0; j < 3; j++) mean[j] += d[i + j] / n;
+  for (let i = 0; i < d.length; i += 4) for (let j = 0; j < 3; j++) d[i + j] = mean[j] + (d[i + j] - mean[j]) * k;
+  ctx.putImageData(data, 0, 0);
+  return toTexture(c, renderer);
+}
+
+async function loadPhotos(surfaces, renderer) {
+  let list = null;
+  try {
+    const res = await fetch(PHOTO_DIR + 'textures.json', { cache: 'no-cache' });
+    if (res.ok) list = await res.json();
+  } catch { /* not built: keep the painted ones */ }
+  resolvePhotos(list);
+  if (!list) return;
+
+  const loader = new THREE.TextureLoader();
+  const cache = new Map();
+  const load = (file, srgb) => {
+    if (!cache.has(file)) {
+      cache.set(file, loader.loadAsync(PHOTO_DIR + file).then(t => {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }));
+    }
+    // Each surface gets its own copy (sharing the image) so it can have its own tiling.
+    return cache.get(file).then(t => t.clone());
+  };
+  const tiled = (t, [x, y]) => { t.repeat.set(1 / x, 1 / y); t.needsUpdate = true; return t; };
+
+  await Promise.all(Object.entries(PHOTO).filter(([, p]) => list[p.tex]).map(async ([name, p]) => {
+    const [map, normalMap, roughnessMap] = await Promise.all([
+      load(`${p.tex}_color.jpg`, true), load(`${p.tex}_normal.jpg`), p.rough ? null : load(`${p.tex}_rough.jpg`)]);
+    const m = surfaces[name].material;
+    m.map.dispose();
+    Object.assign(m, { map: tiled(p.contrast ? flatten(map, p.contrast, renderer) : map, p.tile), normalMap: tiled(normalMap, p.tile) });
+    if (p.bump !== undefined) m.normalScale.setScalar(p.bump);
+    if (p.rough) m.roughness = p.rough;
+    else Object.assign(m, { roughnessMap: tiled(roughnessMap, p.tile), roughness: 1 });
+    if (p.tint) m.color.setRGB(...p.tint);
+    if (p.metalness !== undefined) m.metalness = p.metalness;
+    m.needsUpdate = true;
+  }));
+
+  // Crates: a square of the plank photo with the painted frame and brace on top.
+  if (list.wood) {
+    const img = (await load('wood_color.jpg', true)).image;
+    const m = surfaces.crate.material;
+    const c = crate(512, img);
+    m.map.dispose();
+    m.map = toTexture(c, renderer);
+    m.needsUpdate = true;
+  }
 }

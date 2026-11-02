@@ -90,7 +90,7 @@ Class changes apply instantly during freeze time or right after spawning, otherw
   - **Yard:** three long lanes with containers, crates and raised decks.
   - **Depot:** smaller and closer. A roofed hall in the middle, a raised loading dock to the north, and a rail yard of parked wagons to the south.
   - Both have plant sites A and B for objective mode.
-- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; realistic first-person guns. Map textures and sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
+- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; realistic first-person guns, photo textures on the maps (ambientCG). Sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 
 ### Roadmap
 

@@ -18,13 +18,13 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
 | 4 | Grenades: frag, smoke, flashbang | ✅ Done, needs a playtest |
-| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms, 2nd map, settings done) |
+| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms, 2nd map, settings, map textures done) |
 
 ### Milestone 5: polish (in progress)
 - ~~**Per-weapon reload animations**~~ done (see log).
 - ~~**First-person arms**~~ done (see log).
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
-- Photo textures for the map (ambientCG / Poly Haven, CC0).
+- ~~**Photo textures for the maps**~~ done (see log).
 - ~~**Other players' animations**~~ done: recoil and reload were already in, the grenade toss is now added.
 - ~~**Second map, key rebinding, graphics quality**~~ done (see log).
 - Your recorded announcer lines (ASSETS.md §3).
@@ -35,6 +35,23 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 8: photo textures (`feature/milestone-5`)
+- Both maps now use CC0 photo textures from ambientCG:
+  - concrete (Concrete036)
+  - asphalt (Road012A)
+  - brick (Bricks085)
+  - wood planks (Planks020)
+  - corrugated steel (CorrugatedSteel005)
+- Each surface has a color, a normal and a roughness map, 5 MB in all.
+- `scripts/build-textures.sh` turns the downloads into the web copies.
+- The painted textures stay as the fallback and show until the photos load.
+- Tuning:
+  - The concrete is darkened and its contrast halved; close up it looked like marble.
+  - The stone surfaces use a flat matte roughness instead of the photo maps, which were glossy enough to mirror the sky.
+  - The containers share one grey steel, tinted per color.
+  - Crates use a corner of the plank photo, with the painted frame and brace drawn on top.
+- Box UVs are now in meters, and each texture's repeat sets its tile size.
 
 ### 2026-11-02 · Milestone 5, part 7: Depot map, settings (`feature/milestone-5`)
 - **New map "Depot"**, an original design, smaller than Yard (64 × 52 m vs 80 × 60 m).

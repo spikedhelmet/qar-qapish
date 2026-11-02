@@ -4,8 +4,9 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createSurfaces, siteDecal } from './textures.js';
 
-// Box geometry in world space with UVs projected from world coordinates,
-// so textures keep the same density and line up across neighbouring boxes.
+// Box geometry in world space with UVs in meters projected from world coordinates (each texture's
+// repeat sets its tile size), so textures keep the same density and line up across neighbouring boxes.
+// scale 0: the texture is stretched over each face instead.
 function boxGeometry(b, scale) {
   const sx = b.max[0] - b.min[0], sy = b.max[1] - b.min[1], sz = b.max[2] - b.min[2];
   const g = new THREE.BoxGeometry(sx, sy, sz);
@@ -15,9 +16,9 @@ function boxGeometry(b, scale) {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
       const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i));
-      if (nx > 0.5) uv.setXY(i, z / scale, y / scale);
-      else if (ny > 0.5) uv.setXY(i, x / scale, z / scale);
-      else uv.setXY(i, x / scale, y / scale);
+      if (nx > 0.5) uv.setXY(i, z, y);
+      else if (ny > 0.5) uv.setXY(i, x, z);
+      else uv.setXY(i, x, y);
     }
   }
   return g;
