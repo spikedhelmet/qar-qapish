@@ -31,9 +31,7 @@ export async function loadAssets(onProgress = () => {}) {
   const add = (file, use) => jobs.push({ file, use });
   for (const [team, c] of Object.entries(manifest.characters)) add(c.file, g => { assets.characters[team] = g.scene; });
   add(manifest.animations.file, g => { for (const clip of g.animations) assets.clips[clip.name] = clip; });
-  // The separate arms model is only a fallback: first person normally uses the team's own soldier.
-  const haveSoldiers = Object.keys(manifest.characters || {}).length > 0;
-  if (manifest.arms && !haveSoldiers) add(manifest.arms.file, g => { assets.arms = g.scene; });
+  if (manifest.arms) add(manifest.arms.file, g => { assets.arms = g.scene; });
   for (const [kind, prop] of Object.entries(manifest.props || {})) add(prop.tp, g => { assets.props[kind] = g.scene; });
   for (const [kind, w] of Object.entries(manifest.weapons)) {
     add(w.fp, g => { assets.weapons.fp[kind] = g.scene; });

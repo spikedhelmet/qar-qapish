@@ -217,5 +217,7 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Frag: "M67 Fragmentation Grenade" by FJH, CC-BY 4.0
 - Smoke: "M18 Smoke Grenade" by Vanillatography, CC-BY 4.0
 - Flashbang: "M84 Stun Grenade "Flashbang"" by Vanillatography, CC-BY 4.0
-- Fallback first-person arms (only used if the soldier models are missing): "FREE FPS Arms with glove" by Alexander_Ovelar, CC-BY 4.0
+- First-person arms: "PSX First Person Arms" by Drillimpact, CC0 (credit optional) — https://drillimpact.itch.io/psx-first-person-arms-free
+- Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
+- Downloaded, not wired in yet: "Ar-15" (3DYAROSLAV2), "FN SCAR" (nghiakua06), "GameReady: Colt Python Revolver" (HYQQM), all CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required

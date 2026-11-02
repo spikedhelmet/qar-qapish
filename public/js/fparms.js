@@ -21,6 +21,14 @@ export const RIGS = {
     keep: /(Left|Right)(ForeArm|Hand)/, // upper arms would fill the corner of the screen
     curlAxis: { right: [1, 0, 0], left: [-1, 0, 0] }, // Mixamo mirrors the left hand's axes
   },
+  psx: {
+    sides: { right: 'R', left: 'L' },
+    upper: s => `upper_arm${s}`, lower: s => `forearm${s}`, hand: s => `hand${s}`,
+    control: null,
+    finger: (f, i, s) => `f_${f}0${i}${s}`, thumb: (i, s) => `thumb0${i}${s}`,
+    keep: /^(forearm|hand|palm|f_|thumb)/, // upper arms would fill the corner of the screen
+    curlAxis: { right: [-1, 0, 0], left: [-1, 0, 0] },
+  },
   sketchfab: {
     sides: { right: 'r', left: 'l' },
     upper: s => `upperarm_${s}_`, lower: s => `lowerarm_${s}_`, hand: s => `hand_${s}_`,
@@ -29,11 +37,16 @@ export const RIGS = {
   },
 };
 
-function find(root, prefix) {
-  let hit = null;
-  const p = prefix.toLowerCase();
-  root.traverse(o => { if (!hit && o.isBone && o.name.toLowerCase().startsWith(p)) hit = o; });
-  return hit;
+function find(root, name) {
+  let exact = null, prefix = null;
+  const p = name.toLowerCase();
+  root.traverse(o => {
+    if (!o.isBone) return;
+    const n = o.name.toLowerCase();
+    if (!exact && n === p) exact = o;
+    if (!prefix && n.startsWith(p)) prefix = o;
+  });
+  return exact || prefix;
 }
 
 // Keep only the triangles of a skinned mesh whose vertices mostly follow the given bones.
@@ -96,10 +109,12 @@ export class FpArms {
       };
       side.L1 = p(side.upper).distanceTo(p(side.lower));
       side.L2 = p(side.lower).distanceTo(p(side.hand));
-      // The hand's own axes: +Y toward the fingers; "across" from pinky knuckle to index knuckle.
-      const across = side.fingers[0][0].position.clone().sub(side.fingers[3][0].position);
-      across.y = 0;
-      side.across = across.normalize();
+      // The hand's own axes, measured from its knuckles (finger bones may hang off palm bones):
+      // toward the middle knuckle, and across from the pinky knuckle to the index knuckle.
+      const inHand = b => side.hand.worldToLocal(p(b));
+      side.toFingers = inHand(side.fingers[1][0]).normalize();
+      const across = inHand(side.fingers[0][0]).sub(inHand(side.fingers[3][0]));
+      side.across = across.addScaledVector(side.toFingers, -across.dot(side.toFingers)).normalize();
       side.palm = p(side.hand).distanceTo(p(side.fingers[1][0])) * 0.55; // wrist → middle of the palm, meters
       this.sides[key] = side;
     }
@@ -158,7 +173,7 @@ export class FpArms {
       ctrl.position.copy(ctrl.parent.worldToLocal(wrist.clone()));
       ctrl.updateMatrixWorld(true);
     }
-    const local = _m.makeBasis(side.across, UP, _a.crossVectors(side.across, UP).normalize());
+    const local = _m.makeBasis(side.across, side.toFingers, _a.crossVectors(side.across, side.toFingers).normalize());
     const want = _m2.makeBasis(A, F, _b.crossVectors(A, F).normalize());
     const worldQ = new THREE.Quaternion().setFromRotationMatrix(want.multiply(local.transpose()));
     side.hand.quaternion.copy(side.hand.parent.getWorldQuaternion(_q).invert().multiply(worldQ));

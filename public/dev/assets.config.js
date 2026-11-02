@@ -40,7 +40,13 @@ export const GRENADES = {
 };
 
 // First-person arms (rigged). Scaled to meters, turned to face -Z, origin between the shoulders.
-export const ARMS = { src: 'weapons/free_fps_arms_with_glove.glb', scale: 0.3, shoulders: ['upperarm_l_2', 'upperarm_r_5'] };
+// texture: swap in another skin from the same pack. credit: for models without licence data inside.
+export const ARMS = {
+  src: 'arms/psx-first-person-arms-free-game-assets/arms_rig.glb', scale: 1, rotateY: 180,
+  shoulders: ['upper_armL', 'upper_armR'],
+  texture: 'arms/psx-first-person-arms-free-game-assets/arms_gloves_01.png',
+  credit: { title: 'PSX First Person Arms', author: 'Drillimpact', license: 'CC0 1.0', source: 'https://drillimpact.itch.io/psx-first-person-arms-free' },
+};
 
 // World objects (not held in first person): same frame as weapons, one 1K file each.
 export const PROPS = {

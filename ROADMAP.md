@@ -36,6 +36,12 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Milestone 5, part 5: PSX arms (`feature/milestone-5`)
+- First person now uses "PSX First Person Arms" by Drillimpact (CC0, itch.io) with its gloves skin: a proper first-person rig with every finger bone, low-poly by design (1,176 triangles, 512 px textures, 0.1 MB built).
+- Hand IK generalised again: the hand's own directions are measured from its knuckles, since this rig hangs fingers off palm bones. Upper arms are cut out (forearms and hands only), arms scaled 1.15× so the support hand reaches, fingers curl around −X on both hands.
+- Order of preference: PSX arms → team soldier's arms → stand-in sleeves. Checked: rifle, SMG, shotgun, sniper, pistol, knife, frag.
+- Also reviewed and set aside: "Fps Arms Rigged" (TALL DOOR, untextured) and "Fps arms" (DJMaesen, not rigged).
+
 ### 2026-11-02 · Milestone 5, part 4: smaller left arm (`feature/milestone-5`)
 - Playtest feedback: the left arm took up too much of the screen. Measured with an arms-only render: 22.7% of the screen (18.2% in the left half).
 - First person now shows forearms and hands only (upper arms cut out), shoulders sit lower, the left elbow tucks down so the forearm comes up from the bottom-left corner, and the support hand grips a little further back (rifle / sniper handguard, shotgun pump). Now about 8% of the screen (≈3% in the left half); pistol 5%.

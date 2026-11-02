@@ -176,16 +176,23 @@
 
     async function buildArms(cfg) {
       const gltf = await gltfLoader.loadAsync(srcUrl(cfg.src));
-      const extras = gltf.parser.json.asset?.extras || {};
+      const extras = cfg.credit || gltf.parser.json.asset?.extras || {};
       const model = gltf.scene;
+      if (cfg.texture) {
+        const tex = await new THREE.TextureLoader().loadAsync(srcUrl(cfg.texture));
+        tex.flipY = false;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        model.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.map = tex; } });
+      }
       model.updateMatrixWorld(true);
       const [l, r] = cfg.shoulders.map(n => model.getObjectByName(n).getWorldPosition(new THREE.Vector3()));
       const mid = l.clone().add(r).multiplyScalar(0.5);
       // root → wrap (turn to face -Z, scale to meters, shoulders' midpoint at the origin) → model
+      const turn = THREE.MathUtils.degToRad(cfg.rotateY ?? 180);
       const wrap = new THREE.Group();
-      wrap.rotation.y = Math.PI;
+      wrap.rotation.y = turn;
       wrap.scale.setScalar(cfg.scale);
-      wrap.position.copy(mid).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI).multiplyScalar(-cfg.scale);
+      wrap.position.copy(mid).applyAxisAngle(new THREE.Vector3(0, 1, 0), turn).multiplyScalar(-cfg.scale);
       wrap.add(model);
       const root = new THREE.Group();
       root.name = 'arms';

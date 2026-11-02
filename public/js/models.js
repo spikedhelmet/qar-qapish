@@ -358,7 +358,7 @@ const HAND_POSES = {
   smg: { right: GRIP_RIGHT, left: SUPPORT },
   sniper: { right: GRIP_RIGHT, left: SUPPORT },
   shotgun: { right: GRIP_RIGHT, left: { ...SUPPORT, curl: 0.8 } },
-  pistol: { right: GRIP_RIGHT, left: null }, // one-handed: a two-handed cup reads badly at this distance
+  pistol: { right: { ...GRIP_RIGHT, curl: 1.1, trigger: 0.5 }, left: null }, // one-handed; tighter fist on the small grip
   knife: { right: { fingers: [-1, -0.3, 0], across: [0, 0.2, -1], off: [0.02, 0, 0], curl: 1 }, left: null },
   frag: { right: { fingers: [-0.7, 0.4, -0.5], across: [0, 1, 0.2], off: [0.035, -0.01, 0.01], curl: 0.75 }, left: null },
 };
@@ -367,10 +367,11 @@ HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
 // Where the arms' shoulders sit relative to the eye. The soldier's sit a little ahead of the eye
 // (its arms are shorter) — its chest stays below the bottom of the view.
 const ARMS_PLACE = {
+  arms: new THREE.Vector3(0, -0.36, -0.12),
   soldier: new THREE.Vector3(0, -0.42, -0.14),
-  arms: new THREE.Vector3(0, -0.3, -0.05),
 };
-const SOLDIER_ARMS_SCALE = 1.1; // slightly long arms so the support hand reaches a rifle's forend
+// Slightly long arms so the support hand reaches a rifle's handguard.
+const ARMS_SCALE = { arms: 1.15, soldier: 1.1 };
 
 // Moving parts inside the real gun models (matched by mesh name): the magazine that comes out
 // on a reload, and the bolt / slide that gets racked afterwards.
@@ -460,18 +461,18 @@ export class ViewModel {
     }
   }
 
-  // Real arms: your team's own soldier (head and legs hidden, so sleeves and gloves match what others
-  // see), else the separate arms model, else the stand-in sleeves. With real arms the stand-in
-  // sleeves only mark where the hands go.
+  // Real arms: the PSX first-person arms when built, else your team's own soldier cut down to its
+  // arms, else the stand-in sleeves. With real arms the stand-in sleeves only mark where the hands go.
   buildArms(team) {
     this.team = team;
     if (this.armsBody) this.group.remove(this.armsBody);
     this.armsRig = null;
-    let body = characterModel(team), rig = RIGS.mixamo, shoulders = ARMS_PLACE.soldier;
-    if (body) body.scale.setScalar(SOLDIER_ARMS_SCALE);
-    else { body = armsModel(); rig = RIGS.sketchfab; shoulders = ARMS_PLACE.arms; }
+    let body = armsModel(), rig = RIGS.psx, kind = 'arms';
+    if (!body) { body = characterModel(team); rig = RIGS.mixamo; kind = 'soldier'; }
     this.armsBody = body;
     if (!body) return;
+    body.scale.setScalar(ARMS_SCALE[kind]);
+    const shoulders = ARMS_PLACE[kind];
     this.armsRig = new FpArms(body, rig);
     body.position.copy(shoulders).sub(this.armsRig.shoulderMid());
     this.group.add(body);
