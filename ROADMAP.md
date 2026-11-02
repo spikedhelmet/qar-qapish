@@ -18,10 +18,10 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
 | 4 | Grenades: frag, smoke, flashbang | ✅ Done, needs a playtest |
-| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | ⏭ Next |
+| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads done) |
 
-### Milestone 5: polish (next)
-- **Per-weapon reload animations** (first person): magazine out / new magazine in / charging handle for the rifle, SMG and pistol, shell-by-shell for the shotgun, bolt + magazine for the sniper. Done in code by moving the gun's own magazine part (the models keep it as a separate piece), timed to each gun's reload length and to reload sounds. Better once real first-person arms are in, so the two go together.
+### Milestone 5: polish (in progress)
+- ~~**Per-weapon reload animations**~~ done (see log).
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - Photo textures for the map (ambientCG / Poly Haven, CC0).
 - First-person arms (model downloaded: "FREE FPS Arms with glove").
@@ -35,6 +35,11 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 1: stronger flashbang, per-weapon reloads (`feature/milestone-5`)
+- Playtest feedback: the flashbang felt weak. Now up to 5 s (was 3.5 s), fully white for the first half, reaches 34 m, turning away only halves it, and game sound drops away while you're flashed (ear ring stays on top). Looking at one from 6 m: 3.2 s → 5.3 s.
+- Reloads per weapon, using each model's own parts: the gun turns its magazine well toward you, the magazine drops out, the support hand fetches a new one, it seats, then the bolt / slide racks (rifle charging handle and pistol slide actually move; sniper and SMG get a flick). The shotgun rolls and feeds red shells one at a time, as many as are missing, then pumps. Clicks for magazine out / in, rack and shell.
+- Other players now show a reload on their soldier (upper body only, legs keep running), timed to the weapon.
 
 ### 2026-11-02 · Milestone 4: grenades (`feature/milestone-4`)
 - Each class carries one grenade per life: Assault frag, Marksman smoke, Breacher flashbang, Runner smoke. Key 4 then left click (far) / right click (lob), or G to quick-throw. Wind-up and throw animation, then back to your previous weapon.

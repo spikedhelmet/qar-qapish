@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { TEAMS, WEAPONS } from './shared/config.js';
 import { weaponModel, weaponInfo } from './assets.js';
+import { playMech } from './audio.js';
 
 const mat = (color, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
@@ -344,6 +345,28 @@ const EJECT = {
 
 const rndSpin = () => (Math.random() * 2 - 1) * 25;
 
+// Moving parts inside the real gun models (matched by mesh name): the magazine that comes out
+// on a reload, and the bolt / slide that gets racked afterwards.
+const PARTS = {
+  rifle:  { mag: /^Magazine_/, bolt: /^Shutter_/, rack: 0.07 },
+  pistol: { mag: /^(Magazine|MagFollower)_/, bolt: /^Shutter_/, rack: 0.035 },
+  sniper: { mag: /^Cube054_/ },
+  smg:    { mag: /^Object_5$/ },
+};
+
+// Returns a function that offsets `part` by (dx, dy, dz) meters in the gun's own frame,
+// whatever scaling and rotation sit between the gun and that part.
+function partMover(gun, part) {
+  gun.updateMatrixWorld(true);
+  const toParent = gun.matrixWorld.clone().invert().multiply(part.parent.matrixWorld).invert();
+  const origin = new THREE.Vector3().applyMatrix4(toParent);
+  const base = part.position.clone();
+  const v = new THREE.Vector3();
+  return (dx, dy, dz) => part.position.copy(base).add(v.set(dx, dy, dz).applyMatrix4(toParent).sub(origin));
+}
+
+const smooth = (a, b, t) => { const k = Math.min(1, Math.max(0, (t - a) / (b - a))); return k * k * (3 - 2 * k); };
+
 // Damped spring on three axes: kicked with a velocity, it snaps back with a small overshoot.
 class Spring {
   constructor(stiffness, damping) {
@@ -406,8 +429,10 @@ export class ViewModel {
   setWeapon(kind) {
     this.kind = kind;
     this.pumpArm = null;
+    this.support = null;
     this.cycle = 0;
     this.throwT = -1;
+    this.reload = null;
     this.holder.clear();
     this.gun = weaponModel(kind, 'fp') || buildGun(kind); // real model once built, stand-in otherwise
     this.holder.add(this.gun);
@@ -420,15 +445,16 @@ export class ViewModel {
       a.add(limb(0.042, len, this.sleeve));
       a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
       this.holder.add(a);
+      return a;
     };
     if (kind === 'rifle') {
       arm(0, -0.05, 0.03, -1.0, 0.35);
-      arm(-0.01, -0.03, -0.36, -0.95, -0.75, 0.55);
+      this.support = arm(-0.01, -0.03, -0.36, -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.23, -0.48);
       this.adsPos = new THREE.Vector3(0, -0.105, -0.3); // iron sights on the crosshair
     } else if (kind === 'sniper') {
       arm(0, -0.05, 0.05, -1.0, 0.35);
-      arm(-0.01, -0.02, -0.36, -0.95, -0.75, 0.55);
+      this.support = arm(-0.01, -0.02, -0.36, -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.24, -0.5);
       this.adsPos = new THREE.Vector3(0, -0.115, -0.25); // hidden behind the scope overlay anyway
     } else if (kind === 'shotgun') {
@@ -446,12 +472,12 @@ export class ViewModel {
       this.adsPos = new THREE.Vector3(0, -0.068, -0.34);
     } else if (kind === 'smg') {
       arm(0, -0.05, 0.03, -1.0, 0.35);
-      arm(-0.01, -0.04, -0.24, -0.95, -0.6, 0.48);
+      this.support = arm(-0.01, -0.04, -0.24, -0.95, -0.6, 0.48);
       this.base = new THREE.Vector3(0.17, -0.21, -0.42);
       this.adsPos = new THREE.Vector3(0, -0.097, -0.3);
     } else if (kind === 'pistol') {
       arm(0, -0.04, 0.02, -1.05, 0.3);
-      arm(-0.03, -0.05, 0.03, -1.05, -0.45);
+      this.support = arm(-0.03, -0.05, 0.03, -1.05, -0.45);
       this.base = new THREE.Vector3(0.14, -0.17, -0.42);
       this.adsPos = new THREE.Vector3(0, -0.081, -0.32);
     } else if (WEAPONS[kind]?.grenade) {
@@ -468,6 +494,16 @@ export class ViewModel {
     this.gun.traverse(o => { o.castShadow = false; o.receiveShadow = false; });
     // Real models: line the top of the gun (its sights) up with the screen center when aiming.
     const info = weaponInfo(kind);
+    this.mag = []; this.bolt = [];
+    const parts = info && PARTS[kind];
+    if (parts) {
+      this.gun.traverse(o => {
+        if (!o.isMesh) return;
+        if (parts.mag?.test(o.name)) this.mag.push(partMover(this.gun, o));
+        if (parts.bolt?.test(o.name)) this.bolt.push(partMover(this.gun, o));
+      });
+    }
+    if (this.support) this.supportBase = this.support.position.clone();
     if (info) {
       const v = REAL_VIEW[kind];
       this.base = new THREE.Vector3(...v.hip);
@@ -504,10 +540,10 @@ export class ViewModel {
     p.y -= lower * 0.25;
     rx -= lower * 0.6;
     if (reloadT >= 0) {
-      const k = Math.sin(Math.min(1, reloadT) * Math.PI);
-      p.y -= k * 0.08;
-      rx -= k * 0.35;
-      rz += k * 0.5;
+      const r = this.animateReload(Math.min(1, reloadT));
+      p.add(r.pos); rx += r.rx; rz += r.rz;
+    } else if (this.reload) {
+      this.endReload();
     }
     // Grenade throw: draw back over the shoulder during the wind-up, then fling forward and let go.
     if (this.throwT >= 0) {
@@ -591,6 +627,74 @@ export class ViewModel {
     s.mesh.material.dispose();
   }
   slash() { this.swing = 1; }
+
+  // Called when a reload starts. shells: how many the shotgun has to load one by one.
+  startReload(shells = 0) {
+    this.reload = { last: 0, shells: Math.max(1, shells), shellMesh: null };
+  }
+
+  endReload() {
+    for (const m of this.mag) m(0, 0, 0);
+    for (const b of this.bolt) b(0, 0, 0);
+    if (this.support) this.support.position.copy(this.supportBase);
+    if (this.reload?.shellMesh) this.holder.remove(this.reload.shellMesh);
+    this.reload = null;
+  }
+
+  // t: 0→1 through the reload. Returns how much to move / tilt the whole gun this frame,
+  // and moves the magazine, bolt and support hand. Plays a click at each step.
+  animateReload(t) {
+    const r = this.reload || (this.reload = { last: 0, shells: 1, shellMesh: null });
+    const crossed = at => r.last < at && t >= at;
+    const out = { pos: new THREE.Vector3(), rx: 0, rz: 0 };
+    // Turn the underside (magazine well) toward you and lift the gun into view.
+    const tilt = smooth(0, 0.12, t) * (1 - smooth(0.85, 1, t));
+    out.rz = -tilt * 0.55; out.rx = tilt * 0.3; out.pos.set(-tilt * 0.05, tilt * 0.04, tilt * 0.02);
+
+    if (this.kind === 'shotgun') {
+      // Roll the loading port toward you and push shells in one at a time, then pump.
+      out.rz = tilt * 0.75; out.pos.x = -tilt * 0.04;
+      const n = r.shells, span = 0.78 / n;
+      const i = Math.min(n - 1, Math.floor((t - 0.1) / span));
+      const k = (t - 0.1 - i * span) / span;
+      if (t > 0.1 && t < 0.88) {
+        if (!r.shellMesh) {
+          r.shellMesh = mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.05, 10), mat(0x9a2a22, 0.5, 0.2));
+          r.shellMesh.rotation.x = Math.PI / 2;
+          this.holder.add(r.shellMesh);
+        }
+        r.shellMesh.visible = k < 0.8;
+        r.shellMesh.position.set(0.015, -0.12 + smooth(0, 0.7, k) * 0.09, -0.12 - smooth(0.4, 0.8, k) * 0.05);
+        if (this.support) this.support.position.copy(this.supportBase).add(new THREE.Vector3(0.02, -0.08 + smooth(0, 0.7, k) * 0.06, 0.2));
+        for (let j = 0; j < n; j++) if (crossed(0.1 + j * span + span * 0.7)) playMech('shell');
+      } else if (r.shellMesh) {
+        this.holder.remove(r.shellMesh); r.shellMesh = null;
+        if (this.support) this.support.position.copy(this.supportBase);
+      }
+      if (crossed(0.9)) { this.cycle = 0.45; playMech('rack'); }
+      r.last = t;
+      return out;
+    }
+
+    // Magazine weapons: old magazine drops away, a new one comes up and seats, then rack the bolt.
+    const out1 = smooth(0.15, 0.32, t), in1 = smooth(0.4, 0.6, t);
+    const magY = t < 0.36 ? -0.2 * out1 : -0.2 * (1 - in1);
+    for (const m of this.mag) m(0, magY, t < 0.36 ? 0.02 * out1 : 0);
+    if (crossed(0.18)) playMech('magOut');
+    if (crossed(0.58)) { playMech('magIn'); out.pos.y += 0.01; }
+    // Support hand goes down for the fresh magazine and brings it up.
+    if (this.support) {
+      const reach = smooth(0.25, 0.38, t) * (1 - smooth(0.55, 0.7, t));
+      this.support.position.copy(this.supportBase).add(new THREE.Vector3(0.03 * reach, -0.13 * reach, 0.06 * reach));
+    }
+    const rack = PARTS[this.kind]?.rack || 0;
+    const pull = smooth(0.7, 0.78, t) * (1 - smooth(0.8, 0.86, t));
+    for (const b of this.bolt) b(0, 0, rack * pull);
+    if (crossed(0.72)) playMech('rack');
+    if (!this.bolt.length && this.mag.length) out.rz -= pull * 0.25; // sniper / SMG: a flick instead
+    r.last = t;
+    return out;
+  }
   throwGrenade(windup) { this.throwT = 0; this.throwWindup = windup; this.gun.visible = true; }
   muzzleWorld(target) { return this.gun.userData.muzzle.getWorldPosition(target); }
 }

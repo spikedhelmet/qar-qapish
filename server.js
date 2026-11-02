@@ -569,6 +569,7 @@ wss.on('connection', (ws, req) => {
       case 'host': handleHost(p, msg); break;
       case 'use': p.use = !!msg.on; break;
       case 'throw': handleThrow(p, msg); break;
+      case 'reload': if (p.alive) broadcast({ t: 'rl', id: p.id }, p); break; // others play the reload animation
       case 'ping': send(p, { t: 'pong', c: msg.c }); break;
     }
   });

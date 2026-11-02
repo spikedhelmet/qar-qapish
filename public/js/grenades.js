@@ -61,8 +61,8 @@ export class GrenadeView {
     if (this.smokes.some(c => segmentHitsSphere(from, [eye.x, eye.y, eye.z], c))) return 0;
     const look = camera.getWorldDirection(new THREE.Vector3());
     const facing = -(look.x * dir[0] + look.y * dir[1] + look.z * dir[2]); // 1 = looking straight at it
-    const turn = facing > 0.5 ? 1 : facing > 0 ? 0.6 + facing * 0.8 : 0.3;
-    return Math.min(1, turn * (1 - (d / radius) * 0.75));
+    const turn = facing > 0.4 ? 1 : facing > -0.2 ? 0.75 + (facing + 0.2) * 0.4 : 0.45;
+    return Math.min(1, turn * (1.15 - (d / radius) * 0.6));
   }
 
   update(dt) {

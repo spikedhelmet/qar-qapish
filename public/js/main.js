@@ -224,10 +224,12 @@ function onMessage(msg) {
         const seconds = GRENADES.flash.maxBlind * fx.blind + 0.3;
         game.blind = { amount: fx.blind, at: performance.now(), seconds };
         audio.playEarRing(fx.blind, seconds);
+        audio.deafen(fx.blind, seconds);
       }
       break;
     }
     case 'gclear': grenadeView.clear(); break;
+    case 'rl': remotes.players.get(msg.id)?.soldier.playReload?.(); break;
   }
 }
 
@@ -367,7 +369,7 @@ function shoot() {
   const kind = arsenal.current, def = WEAPONS[kind];
   if (out.empty) {
     audio.playClick('empty');
-    if (arsenal.startReload()) audio.playClick('reload');
+    beginReload();
     return;
   }
 
@@ -394,7 +396,15 @@ function shoot() {
     e: out.results.map(r => r.point.toArray().map(v => Math.round(v * 100) / 100)),
     hits: out.results.filter(r => r.player).map(r => ({ id: r.player.id, zone: r.player.zone })),
   });
-  if (!def.melee && arsenal.ammo[kind].mag === 0 && arsenal.startReload()) audio.playClick('reload');
+  if (!def.melee && arsenal.ammo[kind].mag === 0) beginReload();
+}
+
+// Starts a reload if one is possible: first-person animation, and other players see it too.
+function beginReload() {
+  const kind = arsenal.current, mag = arsenal.ammo[kind]?.mag ?? 0;
+  if (!arsenal.startReload()) return;
+  viewModel?.startReload(WEAPONS[kind].mag - mag);
+  net.send({ t: 'reload' });
 }
 
 // ---------------------------------------------------------------- frame loop
@@ -509,7 +519,7 @@ function handleWeaponKeys() {
   if (input.hit('KeyQ')) changed = arsenal.select(arsenal.previous);
   if (input.wheel) changed = arsenal.cycle(input.wheel > 0 ? 1 : -1);
   if (changed) viewModel.setWeapon(arsenal.current);
-  if (input.hit('KeyR') && arsenal.startReload()) audio.playClick('reload');
+  if (input.hit('KeyR')) beginReload();
 }
 
 // Alive teammates to watch after dying in Elimination (anyone alive if the team is wiped).
@@ -615,7 +625,9 @@ function updateHud() {
   let blind = 0;
   if (game.blind) {
     const t = (performance.now() - game.blind.at) / 1000, { amount, seconds } = game.blind;
-    blind = t < seconds * 0.35 ? amount : amount * Math.max(0, 1 - (t - seconds * 0.35) / (seconds * 0.65));
+    // Fully white for the first half, then clears; a strong flash stays opaque even below 1.
+    const hold = seconds * 0.5;
+    blind = Math.min(1, amount * 1.3) * (t < hold ? 1 : Math.max(0, 1 - (t - hold) / (seconds - hold)));
     if (t > seconds) game.blind = null;
   }
   hud.flash(blind);

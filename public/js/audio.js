@@ -178,16 +178,39 @@ export function playFlashBang(pos) {
   thump(out, { freq: 140, dur: 0.3, gain: 1.0 });
 }
 
+// Flashbang deafness: game sound drops away, then slowly returns. The ear ring plays on top.
+export function deafen(amount, seconds) {
+  if (!ctx) return;
+  const t = ctx.currentTime, g = master.gain, normal = g.value;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(normal, t);
+  g.linearRampToValueAtTime(normal * (1 - 0.85 * amount), t + 0.05);
+  g.setValueAtTime(normal * (1 - 0.85 * amount), t + seconds * 0.5);
+  g.linearRampToValueAtTime(normal, t + seconds);
+}
+
 // High-pitched ringing after being flashed; amount 0..1.
 export function playEarRing(amount, seconds) {
   if (!ctx || amount <= 0) return;
   const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
   o.frequency.value = 3800;
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.12 * amount, t + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.12 * amount * master.gain.value + 0.0001, t + 0.05);
   g.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
-  o.connect(g).connect(master);
+  o.connect(g).connect(ctx.destination); // bypasses the deafened master volume
   o.start(t); o.stop(t + seconds + 0.05);
+}
+
+// Reload steps: magazine out / in, bolt or slide rack, shotgun shell.
+export function playMech(kind) {
+  if (!ctx) return;
+  const presets = {
+    magOut: [{ dur: 0.06, freq: 1800, q: 3, type: 'bandpass', gain: 0.35 }, { dur: 0.12, freq: 600, q: 1, gain: 0.2 }],
+    magIn:  [{ dur: 0.05, freq: 2600, q: 4, type: 'bandpass', gain: 0.45 }, { dur: 0.08, freq: 900, q: 1, gain: 0.3 }],
+    rack:   [{ dur: 0.07, freq: 2200, q: 3, type: 'bandpass', gain: 0.45 }, { dur: 0.06, freq: 3400, q: 5, type: 'bandpass', gain: 0.35, attack: 0.09 }],
+    shell:  [{ dur: 0.05, freq: 1400, q: 3, type: 'bandpass', gain: 0.35 }],
+  }[kind];
+  for (const p of presets || []) burst(master, p);
 }
 
 export function playSlide(pos) {

@@ -92,7 +92,7 @@ export function loadoutFor(cls) {
 export const GRENADES = {
   frag: { name: 'Frag', fuse: 2.2, damage: 110, radius: 7 },
   smoke: { name: 'Smoke', fuse: 1.6, duration: 16, radius: 4.8 },
-  flash: { name: 'Flashbang', fuse: 1.4, radius: 28, maxBlind: 3.5 },
+  flash: { name: 'Flashbang', fuse: 1.4, radius: 34, maxBlind: 5 },
 };
 export const THROW = {
   far: 17, near: 7,     // throw speeds, m/s

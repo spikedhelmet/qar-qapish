@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { assets, weaponModel } from './assets.js';
+import { WEAPONS } from './shared/config.js';
 
 const PISTOL_HOLD = new Set(['pistol', 'knife', 'frag', 'smoke', 'flash']);
 const DIRS = ['f', 'fr', 'r', 'br', 'b', 'bl', 'l', 'fl']; // 45° sectors, clockwise from forward
@@ -22,6 +23,18 @@ function clipsFor(team, boneNames) {
     clipCache.set(team, out);
   }
   return clipCache.get(team);
+}
+
+// Copy of a clip with only the spine, head, arm and hand tracks, cached per team.
+const UPPER = /Spine|Neck|Head|Shoulder|Arm|Hand/;
+const upperCache = new Map();
+function upperBody(team, clip) {
+  if (!clip) return null;
+  const key = team + clip.name;
+  if (!upperCache.has(key)) {
+    upperCache.set(key, new THREE.AnimationClip(clip.name + '_upper', clip.duration, clip.tracks.filter(t => UPPER.test(t.name.split('.')[0]))));
+  }
+  return upperCache.get(key);
 }
 
 const _m = new THREE.Matrix4(), _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _axis = new THREE.Vector3();
@@ -92,6 +105,17 @@ export class AnimatedSoldier {
   }
 
   fireKick() { this.kick = 1; }
+
+  // Reload on the upper body only, on top of whatever the legs are doing, timed to the weapon.
+  playReload() {
+    const clip = upperBody(this.team, this.clips.rifle_reload);
+    if (!clip) return;
+    const a = this.mixer.clipAction(clip);
+    a.setLoop(THREE.LoopOnce, 1);
+    a.clampWhenFinished = false;
+    a.timeScale = clip.duration / (WEAPONS[this.weaponKind]?.reload || clip.duration);
+    a.reset().setEffectiveWeight(3).play(); // weight 3 vs the walk/run's 1: the arms mostly follow the reload
+  }
 
   // Picks the clip for how the player is moving: s = { yaw, pitch, crouch, sliding, kneel, alive, vx, vy, vz }
   chooseClip(s) {
