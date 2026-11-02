@@ -18,7 +18,7 @@ export const RIGS = {
     upper: s => `mixamorig${s}Arm`, lower: s => `mixamorig${s}ForeArm`, hand: s => `mixamorig${s}Hand`,
     control: null,
     finger: (f, i, s) => `mixamorig${s}Hand${cap(f)}${i}`, thumb: (i, s) => `mixamorig${s}HandThumb${i}`,
-    keep: /(Left|Right)(Arm|ForeArm|Hand)/,
+    keep: /(Left|Right)(ForeArm|Hand)/, // upper arms would fill the corner of the screen
     curlAxis: { right: [1, 0, 0], left: [-1, 0, 0] }, // Mixamo mirrors the left hand's axes
   },
   sketchfab: {
@@ -145,7 +145,8 @@ export class FpArms {
     const along = (side.L1 * side.L1 - L2 * L2 + dd * dd) / (2 * dd);
     const up = Math.sqrt(Math.max(0, side.L1 * side.L1 - along * along));
     const dir = wrist.clone().sub(sh).normalize();
-    const pole = new THREE.Vector3(0.55 * side.sign, -1, 0.25);
+    // Elbows down and out; the left one tucked lower so the forearm enters from the bottom of the view.
+    const pole = side.sign > 0 ? new THREE.Vector3(0.55, -1, 0.25) : new THREE.Vector3(-0.25, -1, 0.35);
     pole.addScaledVector(dir, -pole.dot(dir)).normalize();
     const elbow = sh.clone().addScaledVector(dir, along).addScaledVector(pole, up);
     aim(side.upper, side.rest.get(side.upper), elbow);

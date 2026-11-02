@@ -36,6 +36,10 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Milestone 5, part 4: smaller left arm (`feature/milestone-5`)
+- Playtest feedback: the left arm took up too much of the screen. Measured with an arms-only render: 22.7% of the screen (18.2% in the left half).
+- First person now shows forearms and hands only (upper arms cut out), shoulders sit lower, the left elbow tucks down so the forearm comes up from the bottom-left corner, and the support hand grips a little further back (rifle / sniper handguard, shotgun pump). Now about 8% of the screen (≈3% in the left half); pistol 5%.
+
 ### 2026-11-02 · Milestone 5, part 3: team-matched arms (`feature/milestone-5`)
 - Playtest feedback: the Sketchfab arms (bare forearms, fingerless gloves) didn't fit the SWAT look.
 - First person now uses your own team's soldier: a copy cut down to just the triangles skinned to the arm and hand bones (head, body and legs removed; the third-person soldiers are untouched), so the sleeves and gloves match what others see — blue sleeves for the Falcons, black for the Jackals — and switch with your team.

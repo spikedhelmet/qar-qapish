@@ -367,7 +367,7 @@ HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
 // Where the arms' shoulders sit relative to the eye. The soldier's sit a little ahead of the eye
 // (its arms are shorter) — its chest stays below the bottom of the view.
 const ARMS_PLACE = {
-  soldier: new THREE.Vector3(0, -0.37, -0.14),
+  soldier: new THREE.Vector3(0, -0.42, -0.14),
   arms: new THREE.Vector3(0, -0.3, -0.05),
 };
 const SOLDIER_ARMS_SCALE = 1.1; // slightly long arms so the support hand reaches a rifle's forend
@@ -503,12 +503,12 @@ export class ViewModel {
     };
     if (kind === 'rifle') {
       arm(0, -0.05, 0.03, -1.0, 0.35);
-      this.support = arm(-0.01, -0.03, -0.36, -0.95, -0.75, 0.55);
+      this.support = arm(-0.01, -0.03, -0.27, -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.23, -0.48);
       this.adsPos = new THREE.Vector3(0, -0.105, -0.3); // iron sights on the crosshair
     } else if (kind === 'sniper') {
       arm(0, -0.05, 0.05, -1.0, 0.35);
-      this.support = arm(-0.01, -0.02, -0.36, -0.95, -0.75, 0.55);
+      this.support = arm(-0.01, -0.02, -0.3, -0.95, -0.75, 0.55);
       this.base = new THREE.Vector3(0.19, -0.24, -0.5);
       this.adsPos = new THREE.Vector3(0, -0.115, -0.25); // hidden behind the scope overlay anyway
     } else if (kind === 'shotgun') {
@@ -517,7 +517,7 @@ export class ViewModel {
       this.holder.add(this.pumpArm);
       const a = new THREE.Group();
       a.rotation.order = 'YXZ';
-      a.position.set(-0.01, -0.01, -0.38);
+      a.position.set(-0.01, -0.01, -0.33);
       a.rotation.set(-0.95, -0.75, 0);
       a.add(limb(0.042, 0.55, this.sleeve));
       a.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), MATS.glove));
