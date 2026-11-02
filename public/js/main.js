@@ -1,10 +1,10 @@
 // Client entry point: renderer, menu, network messages and the frame loop.
 import * as THREE from 'three';
-import { MAP } from './shared/map.js';
+import { MAP, MAPS, MAP_ORDER, setMap } from './shared/map.js';
 import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_ORDER, DEFAULT_CLASS, GRENADES, THROW, loadoutFor } from './shared/config.js';
 import { throwVelocity } from './shared/grenade.js';
 import { GrenadeView } from './grenades.js';
-import { buildWorld } from './world.js';
+import { buildWorld, showMap } from './world.js';
 import { Input, LocalPlayer } from './player.js';
 import { Arsenal } from './weapons.js';
 import { Remotes } from './remote.js';
@@ -16,16 +16,18 @@ import * as audio from './audio.js';
 import { initAnnouncer, announce, setAnnouncerMode } from './announcer.js';
 import { loadAssets } from './assets.js';
 import { ObjectiveView } from './objective.js';
+import { ACTIONS, RESERVED, keyFor, keyName, keyLabel, setBindings, bindKey } from './keys.js';
 
 // ---------------------------------------------------------------- settings
 
-const DEFAULTS = { name: '', sens: 1.2, fov: 90, vol: 0.7, announcer: 'voice', cls: DEFAULT_CLASS };
+const DEFAULTS = { name: '', sens: 1.2, fov: 90, vol: 0.7, announcer: 'voice', graphics: 'high', cls: DEFAULT_CLASS, keys: {} };
 function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('qapishma.settings') || '{}') }; }
   catch { return { ...DEFAULTS }; }
 }
 const settings = loadSettings();
 if (!CLASSES[settings.cls]) settings.cls = DEFAULT_CLASS;
+settings.keys = setBindings(settings.keys);
 function saveSettings() {
   try { localStorage.setItem('qapishma.settings', JSON.stringify(settings)); } catch { /* private mode */ }
 }
@@ -34,7 +36,6 @@ function saveSettings() {
 
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -55,6 +56,33 @@ viewSun.position.set(0.5, 1, 0.3);
 viewScene.add(viewSun);
 viewScene.environment = scene.environment;
 viewScene.environmentIntensity = 0.3;
+
+// The server says which map is on (when we join and whenever the host switches).
+function changeMap(id) {
+  if (id === MAP.id || !setMap(id)) return;
+  showMap(scene, MAP);
+  viewScene.environment = scene.environment;
+  grenadeView?.clear();
+}
+
+// Graphics quality: render resolution (on Retina screens) and shadow detail.
+const GRAPHICS = {
+  low: { pixelRatio: 1, shadow: 1024 },
+  medium: { pixelRatio: 1.5, shadow: 2048 },
+  high: { pixelRatio: 2, shadow: 4096 },
+};
+function applyGraphics() {
+  const g = GRAPHICS[settings.graphics] || GRAPHICS.high;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, g.pixelRatio));
+  renderer.setSize(innerWidth, innerHeight);
+  scene.traverse(o => {
+    if (!o.isDirectionalLight || !o.castShadow || o.shadow.mapSize.x === g.shadow) return;
+    o.shadow.mapSize.set(g.shadow, g.shadow);
+    o.shadow.map?.dispose();
+    o.shadow.map = null; // rebuilt at the new size on the next frame
+  });
+}
+applyGraphics();
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
@@ -132,6 +160,7 @@ function onMessage(msg) {
       game.myId = msg.id;
       game.host = msg.host;
       game.mode = msg.mode;
+      changeMap(msg.map);
       setTeam(msg.team);
       game.joined = true;
       hud.show(true);
@@ -203,6 +232,7 @@ function onMessage(msg) {
     case 'match':
       game.phase = msg.state;
       game.winner = msg.winner ?? null;
+      if (msg.map) changeMap(msg.map);
       if (msg.mode) { game.mode = msg.mode; updateHostPanel(); }
       if (msg.state === 'live') {
         Object.assign(game, { killsThisMatch: 0, streak: 0, recentKills: [], leading: null, synced: false });
@@ -215,7 +245,7 @@ function onMessage(msg) {
     case 'obj': onObjective(msg); break;
     case 'gren':
       grenadeView.thrown(msg);
-      if (msg.owner !== game.myId) remotes.players.get(msg.owner)?.soldier.fireKick?.();
+      if (msg.owner !== game.myId) remotes.players.get(msg.owner)?.soldier.playThrow?.();
       break;
     case 'gdet': {
       const fx = grenadeView.detonated(msg, camera, me.alive);
@@ -488,7 +518,7 @@ const KNEEL_INPUT = { down: code => code === 'KeyC', hit: () => false };
 
 // Keys that work whether or not you're alive: class picker and team switch.
 function handleMenuKeys() {
-  if (input.hit('KeyB')) game.picker = !game.picker;
+  if (input.hit('KeyB')) game.picker = !game.picker; // keys are read by their default (see keys.js)
   if (input.hit('KeyM')) net.send({ t: 'team' });
   if (!game.picker) return;
   CLASS_ORDER.forEach((cls, i) => {
@@ -647,7 +677,7 @@ function updateHud() {
   } else if (game.phase === 'freeze') {
     const role = game.mode === 'obj' && game.ob
       ? (game.ob.att === game.team ? 'Attack: plant the charge at A or B' : 'Defend sites A and B') + ' · ' : '';
-    msg = `Round ${game.round}<small>${role}Starts in ${game.timeLeft}s · press B to change class</small>`;
+    msg = `Round ${game.round}<small>${role}Starts in ${game.timeLeft}s · press ${keyName('classMenu')} to change class</small>`;
   } else if (!me.alive && cfg.respawn && game.deathInfo) {
     const left = Math.max(0, Math.ceil(PLAYER.respawnTime - (performance.now() - game.deathInfo.at) / 1000));
     msg = `${killedBy()}<small>Respawning in ${left}s</small>`;
@@ -689,7 +719,7 @@ function updateObjectiveHud() {
   const action = objective?.available(game.myId, game.team, me.pos, me.alive && game.phase === 'live');
   const mine = ob.act && ob.act.id === game.myId;
   hud.useProgress(mine ? (ob.act.kind === 'plant' ? 'Planting…' : 'Defusing…') : null, mine ? ob.act.p : 0);
-  hud.usePrompt(action && !mine ? `Hold <kbd>E</kbd> to ${action}` : '');
+  hud.usePrompt(action && !mine ? `Hold <kbd>${keyName('use')}</kbd> to ${action}` : '');
 }
 
 function killedBy() {
@@ -706,7 +736,8 @@ function escapeHtml(s) {
 const menu = document.getElementById('menu');
 const status = document.getElementById('menu-status');
 const playBtn = document.getElementById('play');
-const fields = { name: 'name', sens: 'sens', fov: 'fov', vol: 'vol', announcer: 'announcer' };
+const fields = { name: 'name', sens: 'sens', fov: 'fov', vol: 'vol', announcer: 'announcer', graphics: 'graphics' };
+const TEXT_FIELDS = new Set(['name', 'announcer', 'graphics']);
 
 for (const [key, id] of Object.entries(fields)) {
   const el = document.getElementById(id);
@@ -715,13 +746,46 @@ for (const [key, id] of Object.entries(fields)) {
   const show = () => { if (out) out.textContent = key === 'vol' ? `${Math.round(el.value * 100)}%` : el.value; };
   show();
   el.addEventListener('input', () => {
-    settings[key] = key === 'name' || key === 'announcer' ? el.value : Number(el.value);
+    settings[key] = TEXT_FIELDS.has(key) ? el.value : Number(el.value);
     show();
     if (key === 'vol') audio.setVolume(settings.vol);
     if (key === 'announcer') setAnnouncerMode(settings.announcer);
+    if (key === 'graphics') applyGraphics();
     saveSettings();
   });
 }
+
+// Key bindings: click a key, then press the new one (Esc cancels).
+const keyList = document.getElementById('key-list');
+let rebinding = null;
+function renderKeys() {
+  keyList.innerHTML = ACTIONS.map(a => `<dt><button type="button" class="bind${rebinding === a.id ? ' waiting' : ''}" data-action="${a.id}">${
+    rebinding === a.id ? 'Press a key…' : escapeHtml(keyLabel(keyFor(a.id)))}</button></dt><dd>${a.label}</dd>`).join('');
+}
+keyList.addEventListener('click', e => {
+  const b = e.target.closest('button[data-action]');
+  if (!b) return;
+  rebinding = rebinding === b.dataset.action ? null : b.dataset.action;
+  renderKeys();
+});
+addEventListener('keydown', e => {
+  if (!rebinding) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.code !== 'Escape' && !RESERVED.test(e.code)) {
+    settings.keys = bindKey(rebinding, e.code);
+    saveSettings();
+  }
+  rebinding = null;
+  renderKeys();
+}, true);
+document.getElementById('keys-reset').addEventListener('click', () => {
+  settings.keys = setBindings({});
+  saveSettings();
+  rebinding = null;
+  renderKeys();
+});
+renderKeys();
 
 // Class buttons in the menu
 const classButtons = document.getElementById('class-buttons');
@@ -741,11 +805,15 @@ const hostPanel = document.getElementById('host-panel');
 const hostMode = document.getElementById('host-mode');
 hostMode.innerHTML = MODE_ORDER.map(m => `<option value="${m}">${MODES[m].name}</option>`).join('');
 hostMode.addEventListener('change', () => net.send({ t: 'host', mode: hostMode.value }));
+const hostMap = document.getElementById('host-map');
+hostMap.innerHTML = MAP_ORDER.map(m => `<option value="${m}">${MAPS[m].name}</option>`).join('');
+hostMap.addEventListener('change', () => net.send({ t: 'host', map: hostMap.value }));
 document.getElementById('host-restart').addEventListener('click', () => net.send({ t: 'host', restart: true }));
 function updateHostPanel() {
   hostPanel.classList.toggle('hidden', !game.host);
   hostMode.value = game.mode;
-  document.querySelector('.tagline').textContent = `LAN team shooter · ${MODES[game.mode].name}`;
+  hostMap.value = MAP.id;
+  document.querySelector('.tagline').textContent = `LAN team shooter · ${MODES[game.mode].name} · ${MAP.name}`;
 }
 
 function showMenu(text = '') {

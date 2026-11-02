@@ -25,7 +25,7 @@ Qapishma server running.
 - If macOS asks whether to allow incoming connections for `node`, click **Allow**, otherwise friends can't connect.
 - Stop the server with `Ctrl+C`.
 
-**Choosing the mode.** The player on the host Mac sees **Host controls** in the Esc menu: switch between Team Deathmatch, Elimination and Objective, or restart the match. To start the server straight into a mode (`elim` or `obj`):
+**Choosing the mode and map.** The player on the host Mac sees **Host controls** in the Esc menu: switch between Team Deathmatch, Elimination and Objective, pick the map (Yard or Depot), or restart the match. Switching either one restarts the match for everyone. To start the server straight into a mode (`elim` or `obj`):
 
 ```bash
 npm start -- --mode=obj
@@ -56,7 +56,11 @@ PORT=3001 npm start
 | Tab | Scoreboard |
 | B | Choose class (then 1–4) |
 | M | Switch team (only if it keeps teams balanced) |
-| Esc | Menu (sensitivity, field of view, volume) |
+| Esc | Menu (sensitivity, field of view, volume, graphics) |
+
+These are the default keys. To change one, open **Controls** in the menu, click a key, and press the new one; **Reset keys** puts them back. Your settings and keys are saved in your browser. Mouse buttons, 1–4 and Esc can't be changed.
+
+**Graphics:** High (default) renders at full Retina resolution with sharp shadows. On an older or busy Mac, Medium or Low lowers both and runs smoother.
 
 ## Current state: milestone 4
 
@@ -82,7 +86,10 @@ Class changes apply instantly during freeze time or right after spawning, otherw
 - Sprinting, sliding, quiet walking, aiming down sights (scope on the sniper).
 - Headshots and leg shots, recoil, spread, reloads, pump/bolt animations.
 - Announcer: plays your own recorded voice lines from `public/assets/sounds/announcer/`. Lines not recorded yet use the Mac's built-in voice. See [ASSETS.md](ASSETS.md#3-announcer-voice-lines-you-record-these).
-- One map, "Yard": three lanes, containers, crates, raised decks, and sites A/B ready for objective mode.
+- Two maps, both mirrored so neither team has an edge:
+  - **Yard:** three long lanes with containers, crates and raised decks.
+  - **Depot:** smaller and closer. A roofed hall in the middle, a raised loading dock to the north, and a rail yard of parked wagons to the south.
+  - Both have plant sites A and B for objective mode.
 - **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; realistic first-person guns. Map textures and sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 
 ### Roadmap
@@ -94,5 +101,5 @@ See [ROADMAP.md](ROADMAP.md) for the plan, the progress log, and the decisions m
 - `server.js` serves the game files and runs the match over WebSockets (`/ws`). It owns health, kills, score and respawns, and checks every reported hit for range, fire rate and walls in the way.
 - The browser (`public/js/`) handles rendering (three.js), movement, and finding what your shots hit, which keeps aiming feeling instant on a LAN.
 - `public/js/assets.js` + `public/js/soldier.js` load the built models and animate other players; if `public/assets/game/` is missing the game falls back to stand-in models.
-- `public/dev/` has two host-only tools: the asset **builder** and **viewer** (see ASSETS.md).
-- `public/js/shared/` holds rules both sides use: weapon stats and player speeds (`config.js`), the map layout (`map.js`), and collision (`collision.js`). Tweak numbers in `config.js` and restart the server.
+- `public/dev/` has the asset **builder** and **viewer** (host only, see ASSETS.md), and **arms.html**, which shows the first-person arms holding each weapon.
+- `public/js/shared/` holds rules both sides use: weapon stats and player speeds (`config.js`), the maps (`maps/yard.js`, `maps/depot.js`, listed in `map.js`), and collision (`collision.js`). Tweak numbers in `config.js` and restart the server.

@@ -1,12 +1,14 @@
 // Local player: keyboard/mouse input and client-side movement physics.
 import { PLAYER } from './shared/config.js';
 import { moveBody, canStand } from './shared/collision.js';
+import { translate } from './keys.js';
 
 export class Input {
   constructor(canvas) {
     this.canvas = canvas;
-    this.keys = new Set();
+    this.keys = new Set();      // held, by the key the game reads (see keys.js)
     this.pressed = new Set();   // keys pressed since last frame
+    this.held = new Map();      // physical key → what it was read as when pressed
     this.dx = 0; this.dy = 0;
     this.mouseDown = false;
     this.rightDown = false;
@@ -15,11 +17,18 @@ export class Input {
     addEventListener('keydown', e => {
       if (e.code === 'Tab' || e.code.startsWith('Alt')) e.preventDefault();
       if (!this.locked) return;
-      if (!this.keys.has(e.code)) this.pressed.add(e.code);
-      this.keys.add(e.code);
+      const code = translate(e.code);
+      if (code === null || e.repeat) return;
+      this.held.set(e.code, code);
+      if (!this.keys.has(code)) this.pressed.add(code);
+      this.keys.add(code);
     });
-    addEventListener('keyup', e => this.keys.delete(e.code));
-    addEventListener('blur', () => { this.keys.clear(); this.mouseDown = this.rightDown = false; });
+    addEventListener('keyup', e => {
+      const code = this.held.get(e.code);
+      this.held.delete(e.code);
+      if (code) this.keys.delete(code);
+    });
+    addEventListener('blur', () => { this.keys.clear(); this.held.clear(); this.mouseDown = this.rightDown = false; });
     addEventListener('mousemove', e => {
       if (!this.locked) return;
       this.dx += e.movementX; this.dy += e.movementY;
@@ -37,7 +46,7 @@ export class Input {
     addEventListener('wheel', e => { if (this.locked) this.wheel += Math.sign(e.deltaY); }, { passive: true });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
-      if (!this.locked) { this.keys.clear(); this.mouseDown = this.rightDown = false; }
+      if (!this.locked) { this.keys.clear(); this.held.clear(); this.mouseDown = this.rightDown = false; }
     });
   }
 

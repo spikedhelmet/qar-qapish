@@ -18,15 +18,15 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
 | 4 | Grenades: frag, smoke, flashbang | ✅ Done, needs a playtest |
-| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms done) |
+| 5 | Polish: real sounds, map textures, first-person arms, reloads, more maps, settings | 🚧 In progress (reloads, arms, 2nd map, settings done) |
 
 ### Milestone 5: polish (in progress)
 - ~~**Per-weapon reload animations**~~ done (see log).
 - ~~**First-person arms**~~ done (see log).
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - Photo textures for the map (ambientCG / Poly Haven, CC0).
-- Firing and reload animations on other players (clips already built).
-- More maps, key rebinding, graphics quality setting.
+- ~~**Other players' animations**~~ done: recoil and reload were already in, the grenade toss is now added.
+- ~~**Second map, key rebinding, graphics quality**~~ done (see log).
 - Your recorded announcer lines (ASSETS.md §3).
 
 ### Ideas parked for later
@@ -35,6 +35,16 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 7: Depot map, settings (`feature/milestone-5`)
+- **New map "Depot"**, an original design, smaller than Yard (64 × 52 m vs 80 × 60 m).
+  - Layout: a roofed brick hall in the middle (end doors, two side doors per long wall, pillars), a raised loading dock with stairs along the north wall, and wagons in rows to the south.
+  - Mirrored like Yard. Sites A and B are on the east half.
+  - A script checks that no spawn can see the other team's spawn. The crates in the hall and south of it are placed to block those lines.
+- **Map choice:** the host picks the map in Host controls. The server tells everyone which map is on when they join and whenever it changes, and the match restarts. Maps live in `shared/maps/`. `shared/map.js` holds the active map and swaps it in place, so every module keeps the same reference.
+- **Key rebinding:** in the menu under Controls, click a key and press the new one. Binding a key that is already in use swaps the two actions. On-screen prompts follow your keys, e.g. "Hold E to plant".
+- **Graphics quality:** High / Medium / Low sets render resolution and shadow detail. It applies immediately.
+- **Other players' grenade throws:** the toss animation now plays on the thrower, timed so the grenade leaves the hand when it appears.
 
 ### 2026-11-02 · Milestone 5, part 6: arms fixed (`feature/milestone-5`)
 - Playtest: the left arm looked cut off at the elbow, and the pistol hand looked broken.

@@ -1,5 +1,6 @@
 // DOM heads-up display.
 import { TEAMS, WEAPONS, CLASSES, CLASS_ORDER } from './shared/config.js';
+import { keyName } from './keys.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -71,7 +72,7 @@ export class Hud {
         const k = CLASSES[c];
         return `<div class="card ${c === current ? 'active' : ''}"><kbd>${i + 1}</kbd><b>${k.name}</b>
           <span>${WEAPONS[k.primary].name} · Pistol · Knife</span><p>${k.desc}</p></div>`;
-      }).join('')}</div><small>Press 1–4 to pick · B to close</small>`;
+      }).join('')}</div><small>Press 1–4 to pick · ${keyName('classMenu')} to close</small>`;
     });
   }
 

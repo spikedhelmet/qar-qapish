@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { MAP } from './public/js/shared/map.js';
+import { MAP, MAPS, setMap } from './public/js/shared/map.js';
 import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
 import { stepGrenade } from './public/js/shared/grenade.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
@@ -95,6 +95,7 @@ const argMode = (process.argv.find(a => a.startsWith('--mode=')) || '').split('=
 // Objective mode: `attackers` is the team planting this half; `charge` tracks the explosive.
 const match = {
   mode: MODES[argMode] ? argMode : 'tdm',
+  map: MAP.id,
   phase: 'live', phaseEnds: 0, round: 0,
   score: { A: 0, B: 0 }, winner: null, teamsAtStart: { A: 0, B: 0 },
   attackers: 'A', charge: null,
@@ -121,7 +122,7 @@ function startMatch() {
   match.attackers = 'A';
   match.charge = null;
   for (const p of players.values()) { p.kills = 0; p.deaths = 0; }
-  broadcast({ t: 'match', state: 'live', mode: match.mode });
+  broadcast({ t: 'match', state: 'live', mode: match.mode, map: match.map });
   if (cfg().respawn) {
     setPhase('live', cfg().timeLimit);
     for (const p of players.values()) spawn(p);
@@ -516,7 +517,13 @@ function switchTeam(p) {
 
 function handleHost(p, msg) {
   if (!p.host) return;
-  if (msg.mode && MODES[msg.mode] && msg.mode !== match.mode) {
+  if (msg.map && MAPS[msg.map] && msg.map !== match.map) {
+    setMap(msg.map);
+    match.map = msg.map;
+    broadcast({ t: 'notice', text: `Host switched the map to ${MAP.name}` });
+    console.log(`Map: ${MAP.name}`);
+    startMatch();
+  } else if (msg.mode && MODES[msg.mode] && msg.mode !== match.mode) {
     match.mode = msg.mode;
     broadcast({ t: 'notice', text: `Host switched to ${cfg().name}` });
     console.log(`Mode: ${cfg().name}`);
@@ -554,7 +561,7 @@ wss.on('connection', (ws, req) => {
         pos: [0, 0, 0], yaw: 0, pitch: 0, crouch: false, weapon: loadoutFor(cls)[0],
         hp: 0, alive: false, life: 0, kills: 0, deaths: 0, respawnAt: 0, protectedUntil: 0, history: [], lastFire: {} };
       players.set(p.id, p);
-      send(p, { t: 'welcome', id: p.id, team, mode: match.mode, host: p.host });
+      send(p, { t: 'welcome', id: p.id, team, mode: match.mode, map: match.map, host: p.host });
       broadcast({ t: 'notice', text: `${name} joined the ${TEAMS[team].name}` }, p);
       if (cfg().respawn ? match.phase === 'live' : match.phase === 'freeze') spawn(p);
       else if (!cfg().respawn) send(p, { t: 'notice', text: 'Round in progress. You join next round.' });
@@ -662,7 +669,7 @@ function lanAddresses() {
 startMatch();
 setInterval(tick, 1000 / TICK_RATE);
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\nQapishma server running (${cfg().name}).`);
+  console.log(`\nQapishma server running (${cfg().name} on ${MAP.name}).`);
   console.log(`  On this Mac:      http://localhost:${PORT}`);
   for (const ip of lanAddresses()) console.log(`  Friends on LAN:   http://${ip}:${PORT}`);
   console.log('');

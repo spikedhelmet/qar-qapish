@@ -10,6 +10,8 @@ const DIRS = ['f', 'fr', 'r', 'br', 'b', 'bl', 'l', 'fl']; // 45° sectors, cloc
 // Ground speed (m/s) each moving clip was animated at, so playback matches how fast the player moves.
 const CLIP_SPEED = { walk: 1.92, run: 4.8, sprint: 7.2, crouch: 2.04, pistol_walk_f: 2.55, pistol_walk_b: 1.41,
   pistol_run_f: 4.74, pistol_run_b: 3.3, pistol_strafe_l: 2.14, pistol_strafe_r: 2.42 };
+// Seconds into the throw clip where the grenade leaves the hand.
+const THROW_RELEASE = 1.8;
 const DEATHS = ['death_front', 'death_back', 'death_right', 'death_head_front', 'death_head_back'];
 
 // Clips keep only tracks for bones this character has (the two models differ by a few face bones).
@@ -108,13 +110,26 @@ export class AnimatedSoldier {
 
   // Reload on the upper body only, on top of whatever the legs are doing, timed to the weapon.
   playReload() {
-    const clip = upperBody(this.team, this.clips.rifle_reload);
+    this.playUpper('rifle_reload', WEAPONS[this.weaponKind]?.reload);
+  }
+
+  // Grenade toss. The server reports the throw at the moment of release, so the clip starts
+  // just before its own release point and plays the follow-through.
+  playThrow() {
+    this.playUpper('throw', null, THROW_RELEASE - 0.25);
+  }
+
+  // Plays a clip once on the arms and spine. seconds: how long it should take (default: its own
+  // length); from: where in the clip to start.
+  playUpper(id, seconds, from = 0) {
+    const clip = upperBody(this.team, this.clips[id]);
     if (!clip) return;
     const a = this.mixer.clipAction(clip);
     a.setLoop(THREE.LoopOnce, 1);
     a.clampWhenFinished = false;
-    a.timeScale = clip.duration / (WEAPONS[this.weaponKind]?.reload || clip.duration);
-    a.reset().setEffectiveWeight(3).play(); // weight 3 vs the walk/run's 1: the arms mostly follow the reload
+    a.timeScale = seconds ? clip.duration / seconds : 1;
+    a.reset().setEffectiveWeight(3).play(); // weight 3 vs the walk/run's 1: the arms mostly follow this clip
+    a.time = Math.max(0, from);
   }
 
   // Picks the clip for how the player is moving: s = { yaw, pitch, crouch, sliding, kneel, alive, vx, vy, vz }
