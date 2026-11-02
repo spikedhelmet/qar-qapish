@@ -21,6 +21,20 @@ function flashTexture() {
   return t;
 }
 
+// Soft round dot so particles read as puffs and sparks rather than squares.
+function dotTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.55)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
 function holeTexture() {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
@@ -41,6 +55,7 @@ export class Effects {
     this.flashMat = new THREE.SpriteMaterial({ map: flashTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
     this.holeMat = new THREE.MeshBasicMaterial({ map: holeTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
     this.holeGeo = new THREE.PlaneGeometry(0.09, 0.09);
+    this.dotTex = dotTexture();
     this.holes = [];
     this.tracerMat = new THREE.LineBasicMaterial({ color: 0xffe2a0, transparent: true, opacity: 0.8 });
     this.light = new THREE.PointLight(0xffc070, 0, 8, 2);
@@ -105,7 +120,7 @@ export class Effects {
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color, size, transparent: true, depthWrite: false }));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color, size, map: this.dotTex, transparent: true, depthWrite: false }));
     this.add(pts, life, (it, dt) => {
       const a = geo.attributes.position;
       for (let i = 0; i < count; i++) {
@@ -113,7 +128,7 @@ export class Effects {
         a.setXYZ(i, a.getX(i) + vel[i].x * dt, a.getY(i) + vel[i].y * dt, a.getZ(i) + vel[i].z * dt);
       }
       a.needsUpdate = true;
-      pts.material.opacity = 1 - it.age / it.life;
+      pts.material.opacity = (1 - it.age / it.life) * (size > 0.5 ? 0.55 : 1); // big puffs (smoke) stay see-through
     });
   }
 
@@ -127,6 +142,22 @@ export class Effects {
     this.scene.add(hole);
     this.holes.push(hole);
     if (this.holes.length > 150) this.scene.remove(this.holes.shift());
+  }
+
+  explosion(pos) {
+    const flash = new THREE.Sprite(this.flashMat.clone());
+    flash.position.copy(pos).add(new THREE.Vector3(0, 1, 0));
+    this.add(flash, 0.45, it => {
+      const k = it.age / it.life;
+      flash.scale.setScalar(4 + k * 9);
+      flash.material.opacity = 1 - k;
+    });
+    const light = new THREE.PointLight(0xffa040, 600, 45, 2);
+    light.position.copy(flash.position);
+    this.add(light, 0.5, it => { light.intensity = 600 * (1 - it.age / it.life); });
+    this.particles(pos, new THREE.Vector3(0, 1, 0), 0xffb050, 70, 14, 0.7, 0.25, 4);   // fireball
+    this.particles(pos, new THREE.Vector3(0, 1, 0), 0x3a352f, 45, 9, 1.4, 0.18, 12);   // debris
+    this.particles(pos, new THREE.Vector3(0, 1.5, 0), 0x77736d, 60, 3, 3.5, 0.9, -0.6); // rising smoke
   }
 
   blood(pos, dir) {
@@ -144,9 +175,12 @@ export class Effects {
       if (it.update) it.update(it, dt);
       if (it.age >= it.life) {
         this.scene.remove(it.obj);
-        if (!it.obj.isSprite) {
+        if (it.obj.isLight) it.obj.dispose();
+        else if (!it.obj.isSprite) {
           it.obj.geometry.dispose();
           if (it.obj.material !== this.tracerMat) it.obj.material.dispose();
+        } else if (it.obj.material !== this.flashMat) {
+          it.obj.material.dispose();
         }
         this.items.splice(i, 1);
       }

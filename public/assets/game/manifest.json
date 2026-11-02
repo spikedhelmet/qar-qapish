@@ -1,6 +1,5 @@
 {
  "version": 1,
- "built": "2026-11-02T06:16:25.444Z",
  "weapons": {
   "rifle": {
    "fp": "game/weapons/rifle_fp.glb",
@@ -177,6 +176,36 @@
    }
   }
  },
+ "props": {
+  "charge": {
+   "tp": "game/props/charge_tp.glb",
+   "length": 0.24,
+   "muzzle": [
+    0,
+    0.038,
+    -0.12
+   ],
+   "sightY": 0.076,
+   "bounds": [
+    [
+     -0.079,
+     0,
+     -0.12
+    ],
+    [
+     0.079,
+     0.076,
+     0.12
+    ]
+   ],
+   "credit": {
+    "title": "IED",
+    "author": "davidthe19th (https://sketchfab.com/davidthe19th)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/ied-e2c3b21b71d94115a0a8e095382e9d4e"
+   }
+  }
+ },
  "characters": {
   "A": {
    "file": "game/characters/team_a.glb",
@@ -240,5 +269,6 @@
    "kneel_down",
    "kneel_idle"
   ]
- }
+ },
+ "built": "2026-11-02T06:43:05.582Z"
 }

@@ -169,3 +169,15 @@ button.secondary { width: 100%; padding: 8px; font-size: 13px; color: var(--text
 
 .credits { margin: 10px 0 0; padding-left: 18px; line-height: 1.5; }
 .credits a { color: var(--accent); }
+
+/* ---------- objective mode ---------- */
+#objective { position: absolute; top: 66px; left: 50%; transform: translateX(-50%); padding: 5px 14px; background: var(--panel);
+  border-radius: 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; white-space: nowrap; }
+#objective .role { color: var(--muted); font-weight: 500; margin-right: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+#objective.danger { color: #fff; background: rgba(170, 30, 25, 0.85); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { background: rgba(120, 20, 18, 0.85); } }
+#use-prompt { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); font-size: 15px; font-weight: 700; color: var(--accent); }
+#use-prompt kbd { padding: 1px 7px; margin: 0 2px; border: 1px solid currentColor; border-radius: 3px; font: inherit; }
+#use-progress { position: absolute; left: 50%; top: 57%; transform: translateX(-50%); width: 240px; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+#use-progress .bar { margin-top: 6px; height: 8px; background: rgba(0, 0, 0, 0.55); border-radius: 4px; overflow: hidden; }
+#use-progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); }

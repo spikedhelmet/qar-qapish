@@ -25,10 +25,16 @@ Qapishma server running.
 - If macOS asks whether to allow incoming connections for `node`, click **Allow**, otherwise friends can't connect.
 - Stop the server with `Ctrl+C`.
 
-**Choosing the mode.** The player on the host Mac sees **Host controls** in the Esc menu: switch between Team Deathmatch and Elimination, or restart the match. To start the server straight into Elimination:
+**Choosing the mode.** The player on the host Mac sees **Host controls** in the Esc menu: switch between Team Deathmatch, Elimination and Objective, or restart the match. To start the server straight into a mode (`elim` or `obj`):
 
 ```bash
-npm start -- --mode=elim
+npm start -- --mode=obj
+```
+
+**Port already in use?** If another app on the Mac uses port 3000 (Next.js and other dev servers do), start the game on another port and share that link instead:
+
+```bash
+PORT=3001 npm start
 ```
 
 ## Controls
@@ -43,17 +49,19 @@ npm start -- --mode=elim
 | Alt / Option | Walk quietly (no footsteps) |
 | C (or Ctrl) | Crouch. While sprinting: **slide** (jump out of it to keep the speed) |
 | R | Reload |
+| E (hold) | Objective mode: plant the charge in a site / defuse it |
 | 1 / 2 / 3, Q, mouse wheel | Primary / pistol / knife, last weapon, cycle |
 | Tab | Scoreboard |
 | B | Choose class (then 1–4) |
 | M | Switch team (only if it keeps teams balanced) |
 | Esc | Menu (sensitivity, field of view, volume) |
 
-## Current state: milestone 2
+## Current state: milestone 3
 
 **Modes**
 - **Team Deathmatch:** first team to 50 kills (15-minute limit). Respawn after 3 s with 2 s of spawn protection.
 - **Elimination:** no respawns. Last team standing wins the round; if time runs out, the team with more players alive wins. First to 7 rounds. Each round opens with 5 s of freeze time to look around and change class. When you die you watch a teammate (click to switch).
+- **Objective:** one team attacks, the other defends; sides swap after round 6. One attacker carries the charge (it drops where they die; any attacker can pick it up). Hold E inside site A or B for 3.5 s to plant. Defenders then have 40 s to defuse it (hold E next to it for 6 s). Attackers win by detonation or by eliminating the defenders; defenders win by defusing, by eliminating the attackers before a plant, or when time runs out without a plant. First to 7 rounds.
 
 **Classes** (pick in the menu, or press B in game; also pistol + knife each)
 

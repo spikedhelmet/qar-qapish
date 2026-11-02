@@ -30,6 +30,10 @@ export const LINES = {
   last_alive:      { text: 'You are the last one standing.' },
   match_point:     { text: 'Match point.' },
   final_round:     { text: 'Final round.' },
+  // Objective mode
+  charge_planted:  { text: 'The charge has been planted.' },
+  charge_defused:  { text: 'The charge has been defused.' },
+  halftime:        { text: 'Half time. Switching sides.' },
 };
 
 let audioCtx = null, gain = null;

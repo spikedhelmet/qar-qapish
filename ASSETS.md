@@ -127,7 +127,9 @@ Save into `public/assets/sounds/announcer/`. The **file name** must match the ID
 | `match_point` | "Match point." | One round from winning | P2 |
 | `final_round` | "Final round." | Both teams one round from winning | P3 |
 
-Objective-mode lines (bomb planted, defused, etc.) will be added to this table in milestone 3.
+| `charge_planted` | "The charge has been planted." | Objective mode: charge planted (everyone hears it) | P2 |
+| `charge_defused` | "The charge has been defused." | Objective mode: charge defused | P2 |
+| `halftime` | "Half time. Switching sides." | Objective mode: teams swap attack and defense | P3 |
 
 **Recording tips**
 - **Voice Memos** on Mac or iPhone works fine. Share or export the memo, and the `.m4a` file plays as-is. `.mp3`, `.wav` and `.ogg` also work.
@@ -211,5 +213,6 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Sniper: "Modern Sniper Rifle | Free Lowpoly" by Vlasov Daniil, CC-BY 4.0
 - Shotgun: "Remington 870 Police Magnum 12 Gauge Shotgun" by 8sianDude, CC-BY 4.0
 - SMG: "MP5K" by Shorty_Digitan, CC-BY 4.0
-- Downloaded but not used yet: "M67 Fragmentation Grenade" (FJH), "M18 Smoke Grenade" and "M84 Stun Grenade" (Vanillatography), "IED" (davidthe19th), "FREE FPS Arms with glove" (Alexander_Ovelar), all CC-BY 4.0
+- Charge (objective mode): "IED" by davidthe19th, CC-BY 4.0
+- Downloaded but not used yet: "M67 Fragmentation Grenade" (FJH), "M18 Smoke Grenade" and "M84 Stun Grenade" (Vanillatography), "FREE FPS Arms with glove" (Alexander_Ovelar), all CC-BY 4.0
 - Characters and animations: Mixamo (Adobe), free for games, no credit required

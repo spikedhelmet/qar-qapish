@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { MAP } from './public/js/shared/map.js';
-import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, loadoutFor, damageFor } from './public/js/shared/config.js';
+import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -90,11 +90,13 @@ let nextId = 1;
 const argMode = (process.argv.find(a => a.startsWith('--mode=')) || '').split('=')[1] || process.env.MODE;
 
 // phase: 'freeze' (round start, can't move) → 'live' → 'roundEnd' → … → 'over'.
-// Team Deathmatch only uses 'live' and 'over'. score = team kills (TDM) or rounds won (Elimination).
+// Team Deathmatch only uses 'live' and 'over'. score = team kills (TDM) or rounds won (round modes).
+// Objective mode: `attackers` is the team planting this half; `charge` tracks the explosive.
 const match = {
   mode: MODES[argMode] ? argMode : 'tdm',
   phase: 'live', phaseEnds: 0, round: 0,
   score: { A: 0, B: 0 }, winner: null, teamsAtStart: { A: 0, B: 0 },
+  attackers: 'A', charge: null,
 };
 const cfg = () => MODES[match.mode];
 
@@ -109,6 +111,8 @@ function startMatch() {
   match.score = { A: 0, B: 0 };
   match.winner = null;
   match.round = 0;
+  match.attackers = 'A';
+  match.charge = null;
   for (const p of players.values()) { p.kills = 0; p.deaths = 0; }
   broadcast({ t: 'match', state: 'live', mode: match.mode });
   if (cfg().respawn) {
@@ -123,14 +127,17 @@ function startRound() {
   match.round++;
   setPhase('freeze', cfg().freezeTime);
   match.teamsAtStart = { A: teamCount('A'), B: teamCount('B') };
+  if (match.mode === 'obj') resetCharge();
   for (const p of players.values()) spawn(p);
-  broadcast({ t: 'round', phase: 'freeze', n: match.round, score: match.score });
+  if (match.mode === 'obj') giveCharge();
+  broadcast({ t: 'round', phase: 'freeze', n: match.round, score: match.score, att: match.attackers });
 }
 
-function endRound(winner) {
+// reason: 'eliminated' | 'time' | 'defused' | 'detonated'
+function endRound(winner, reason = 'eliminated') {
   if (winner) match.score[winner]++;
   setPhase('roundEnd', cfg().roundEnd);
-  broadcast({ t: 'round', phase: 'end', n: match.round, winner, score: match.score });
+  broadcast({ t: 'round', phase: 'end', n: match.round, winner, reason, score: match.score });
 }
 
 function endMatch() {
@@ -154,7 +161,7 @@ function aliveCount(team) {
 
 function pickSpawn(p) {
   const enemies = [...players.values()].filter(e => e.alive && e.team !== p.team);
-  const scored = MAP.spawns[p.team].map(s => {
+  const scored = MAP.spawns[spawnSide(match.mode, p.team, match.attackers)].map(s => {
     let nearest = Infinity;
     for (const e of enemies) nearest = Math.min(nearest, Math.hypot(e.pos[0] - s.x, e.pos[2] - s.z));
     const crowded = [...players.values()].some(o => o !== p && o.alive && Math.hypot(o.pos[0] - s.x, o.pos[2] - s.z) < 1);
@@ -197,6 +204,7 @@ function changeClass(p, cls) {
 }
 
 function kill(victim, killer, weapon, headshot) {
+  dropCharge(victim);
   victim.alive = false;
   victim.hp = 0;
   victim.deaths++;
@@ -207,6 +215,123 @@ function kill(victim, killer, weapon, headshot) {
   }
   broadcast({ t: 'kill', k: killer ? killer.id : null, v: victim.id, w: weapon, hs: headshot });
   if (cfg().respawn && killer && match.score[killer.team] >= cfg().killLimit) endMatch();
+}
+
+// ---------------------------------------------------------------- objective mode
+
+const defenders = () => (match.attackers === 'A' ? 'B' : 'A');
+
+// The charge is carried by an attacker, lies where its carrier fell, or is planted at a site.
+// `act` is the plant or defuse in progress: who, how long they've held E, and where they stand.
+function resetCharge() {
+  match.charge = { carrier: null, dropped: null, planted: null, act: null };
+}
+
+function giveCharge() {
+  const att = [...players.values()].filter(p => p.alive && p.team === match.attackers);
+  if (!att.length || match.charge.carrier || match.charge.dropped || match.charge.planted) return;
+  const p = att[Math.floor(Math.random() * att.length)];
+  match.charge.carrier = p.id;
+  send(p, { t: 'notice', text: 'You have the charge. Plant it at site A or B (hold E).' });
+}
+
+function dropCharge(p) {
+  const c = match.charge;
+  if (!c || c.carrier !== p.id) return;
+  c.carrier = null;
+  c.dropped = [p.pos[0], Math.max(0, p.pos[1]), p.pos[2]];
+  if (c.act?.id === p.id) c.act = null;
+  broadcast({ t: 'obj', ev: 'dropped', pos: c.dropped });
+}
+
+function actionAllowed(p, kind) {
+  const c = match.charge, o = cfg();
+  if (!p.alive) return false;
+  if (kind === 'plant') return !c.planted && c.carrier === p.id && !!siteAt(MAP, p.pos[0], p.pos[2]) && p.pos[1] < 0.5;
+  return !!c.planted && p.team === defenders() &&
+    Math.hypot(p.pos[0] - c.planted.pos[0], p.pos[2] - c.planted.pos[2]) < o.defuseRange &&
+    Math.abs(p.pos[1] - c.planted.pos[1]) < 1.5;
+}
+
+// Holding E keeps the timer running; moving away, letting go or firing resets it.
+function updateAction(dt) {
+  const c = match.charge, o = cfg();
+  if (c.act) {
+    const p = players.get(c.act.id);
+    const still = p && Math.hypot(p.pos[0] - c.act.anchor[0], p.pos[2] - c.act.anchor[1]) < 0.5;
+    if (!p || !p.use || !still || !actionAllowed(p, c.act.kind)) c.act = null;
+  }
+  if (!c.act) {
+    for (const p of players.values()) {
+      if (!p.use) continue;
+      const kind = actionAllowed(p, 'plant') ? 'plant' : actionAllowed(p, 'defuse') ? 'defuse' : null;
+      if (kind) { c.act = { id: p.id, kind, t: 0, anchor: [p.pos[0], p.pos[2]] }; break; }
+    }
+  }
+  if (!c.act) return;
+  c.act.t += dt;
+  const p = players.get(c.act.id);
+  if (c.act.kind === 'plant' && c.act.t >= o.plantTime) plant(p);
+  else if (c.act.kind === 'defuse' && c.act.t >= o.defuseTime) defuse(p);
+}
+
+function plant(p) {
+  const c = match.charge, site = siteAt(MAP, p.pos[0], p.pos[2]);
+  c.carrier = null;
+  c.act = null;
+  c.planted = { pos: [p.pos[0], 0, p.pos[2]], site: site.name, explodeAt: now() + cfg().fuseTime };
+  match.phaseEnds = c.planted.explodeAt; // the clock now counts down the fuse
+  broadcast({ t: 'obj', ev: 'planted', site: site.name, pos: c.planted.pos, id: p.id });
+}
+
+function defuse(p) {
+  const c = match.charge;
+  c.act = null;
+  broadcast({ t: 'obj', ev: 'defused', id: p.id, pos: c.planted.pos });
+  c.planted.defused = true;
+  endRound(defenders(), 'defused');
+}
+
+function detonate() {
+  const c = match.charge, { radius, damage } = cfg().blast, pos = c.planted.pos;
+  c.planted = null;
+  broadcast({ t: 'obj', ev: 'exploded', pos });
+  for (const p of players.values()) {
+    if (!p.alive) continue;
+    const d = Math.hypot(p.pos[0] - pos[0], p.pos[1] - pos[1], p.pos[2] - pos[2]);
+    if (d >= radius) continue;
+    p.hp -= Math.round(damage * (1 - d / radius));
+    send(p, { t: 'hurt', hp: Math.max(0, p.hp), from: pos });
+    if (p.hp <= 0) kill(p, null, 'charge', false);
+  }
+  endRound(match.attackers, 'detonated');
+}
+
+function objectiveTick(dt) {
+  const c = match.charge, o = cfg(), t = now();
+  if (c.dropped) {
+    for (const p of players.values()) {
+      if (!p.alive || p.team !== match.attackers) continue;
+      const near = Math.hypot(p.pos[0] - c.dropped[0], p.pos[2] - c.dropped[2]) < o.pickupRange &&
+        Math.abs(p.pos[1] - c.dropped[1]) < 1.5;
+      if (near) {
+        c.carrier = p.id;
+        c.dropped = null;
+        broadcast({ t: 'obj', ev: 'picked', id: p.id });
+        break;
+      }
+    }
+  }
+  updateAction(dt);
+  if (match.phase !== 'live') return;
+  if (c.planted && !c.planted.defused && t >= c.planted.explodeAt) { detonate(); return; }
+
+  // Defenders wiped: attackers win. Attackers wiped before planting: defenders win.
+  // After a plant the defenders still have to defuse, even with every attacker down.
+  const att = match.attackers, def = defenders();
+  if (match.teamsAtStart[def] > 0 && aliveCount(def) === 0) endRound(att, 'eliminated');
+  else if (!c.planted && match.teamsAtStart[att] > 0 && aliveCount(att) === 0) endRound(def, 'eliminated');
+  else if (!c.planted && t >= match.phaseEnds) endRound(def, 'time');
 }
 
 // Positions of a player over the last 350 ms, so hits on slightly stale positions still validate.
@@ -246,6 +371,7 @@ function handleFire(p, msg) {
   p.weapon = msg.w;
   p.protectedUntil = 0;
   p.firedSinceSpawn = true;
+  if (match.charge?.act?.id === p.id) match.charge.act = null;
 
   broadcast({ t: 'fx', id: p.id, w: msg.w, o: msg.o, e: Array.isArray(msg.e) ? msg.e.slice(0, w.pellets) : [] }, p);
 
@@ -294,6 +420,7 @@ function switchTeam(p) {
     send(p, { t: 'notice', text: `${TEAMS[other].name} already have enough players` });
     return;
   }
+  dropCharge(p);
   p.team = other;
   broadcast({ t: 'notice', text: `${p.name} joined the ${TEAMS[other].name}` });
   send(p, { t: 'team', team: other });
@@ -359,11 +486,13 @@ wss.on('connection', (ws, req) => {
       case 'team': switchTeam(p); break;
       case 'class': changeClass(p, msg.cls); break;
       case 'host': handleHost(p, msg); break;
+      case 'use': p.use = !!msg.on; break;
       case 'ping': send(p, { t: 'pong', c: msg.c }); break;
     }
   });
   ws.on('close', () => {
     if (!p) return;
+    dropCharge(p);
     players.delete(p.id);
     broadcast({ t: 'notice', text: `${p.name} left` });
     console.log(`- ${p.name} left, ${players.size} online`);
@@ -377,6 +506,8 @@ function tick() {
       if (c.respawn) {
         for (const p of players.values()) if (!p.alive && p.respawnAt && t >= p.respawnAt) spawn(p);
         if (t >= match.phaseEnds) endMatch();
+      } else if (match.mode === 'obj') {
+        objectiveTick(1 / TICK_RATE);
       } else {
         // A team that started the round with players and has nobody left standing loses it.
         const a = aliveCount('A'), b = aliveCount('B');
@@ -386,6 +517,7 @@ function tick() {
       }
       break;
     case 'freeze':
+      if (match.mode === 'obj') giveCharge(); // covers attackers who join or switch during freeze time
       if (t >= match.phaseEnds) {
         setPhase('live', c.roundTime);
         broadcast({ t: 'round', phase: 'live', n: match.round, score: match.score });
@@ -394,7 +526,13 @@ function tick() {
     case 'roundEnd':
       if (t >= match.phaseEnds) {
         if (Math.max(match.score.A, match.score.B) >= c.roundsToWin) endMatch();
-        else startRound();
+        else {
+          if (match.mode === 'obj' && match.round === c.halftime) {
+            match.attackers = defenders();
+            broadcast({ t: 'obj', ev: 'halftime', att: match.attackers });
+          }
+          startRound();
+        }
       }
       break;
     case 'over':
@@ -408,14 +546,27 @@ function tick() {
     m: match.mode,
     st: match.phase,
     rd: match.round,
-    tl: Math.max(0, Math.ceil(match.phaseEnds - t)),
+    tl: Math.max(0, Math.ceil(match.phaseEnds - t - 0.01)),
     sc: match.score,
+    ob: match.mode === 'obj' && match.charge ? objectiveSnapshot(t) : undefined,
     ps: [...players.values()].map(p => ({
       id: p.id, n: p.name, tm: p.team, c: p.cls, al: p.alive, hp: p.hp, k: p.kills, d: p.deaths, w: p.weapon,
       x: r(p.pos[0]), y: r(p.pos[1]), z: r(p.pos[2]), yw: r(p.yaw), pt: r(p.pitch), cr: p.crouch, sl: !!p.slide,
       sp: p.protectedUntil > t,
+      kn: match.charge?.act?.id === p.id, // kneeling to plant or defuse
     })),
   });
+}
+
+function objectiveSnapshot(t) {
+  const c = match.charge, o = cfg();
+  return {
+    att: match.attackers,
+    carrier: c.carrier,
+    dropped: c.dropped,
+    planted: c.planted && { pos: c.planted.pos, site: c.planted.site, left: Math.max(0, c.planted.explodeAt - t), fuse: o.fuseTime },
+    act: c.act && { id: c.act.id, kind: c.act.kind, p: Math.min(1, c.act.t / (c.act.kind === 'plant' ? o.plantTime : o.defuseTime)) },
+  };
 }
 
 function lanAddresses() {

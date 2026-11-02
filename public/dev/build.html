@@ -32,7 +32,7 @@
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
     import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
     import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-    import { WEAPONS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
+    import { WEAPONS, PROPS, CHARACTERS, ANIMATIONS, TEXTURE_SIZE } from './assets.config.js';
 
     const logEl = document.getElementById('log');
     const log = (msg, cls) => {
@@ -98,12 +98,37 @@
           if (v.z < zLimit) { min = Math.min(min, v.x); max = Math.max(max, v.x); }
         }
       });
-      return (min + max) / 2;
+      return min <= max ? (min + max) / 2 : null;
     }
 
-    async function buildWeapon(kind, cfg) {
+    // Older Sketchfab models use the spec-gloss material extension, which three.js no longer reads:
+    // move their color texture onto the regular material so it isn't lost.
+    async function convertSpecGloss(gltf) {
+      const jobs = [];
+      gltf.scene.traverse(o => {
+        if (!o.isMesh) return;
+        for (const m of [].concat(o.material)) {
+          const index = gltf.parser.associations.get(m)?.materials;
+          const sg = gltf.parser.json.materials?.[index]?.extensions?.KHR_materials_pbrSpecularGlossiness;
+          if (!sg) continue;
+          if (sg.diffuseFactor) m.color.setRGB(sg.diffuseFactor[0], sg.diffuseFactor[1], sg.diffuseFactor[2]);
+          m.roughness = 1 - 0.6 * (sg.glossinessFactor ?? 1);
+          m.metalness = 0;
+          if (sg.diffuseTexture) jobs.push(gltf.parser.getDependency('texture', sg.diffuseTexture.index).then(t => {
+            t.colorSpace = THREE.SRGBColorSpace;
+            m.map = t;
+            m.needsUpdate = true;
+          }));
+        }
+      });
+      await Promise.all(jobs);
+    }
+
+    // views: which copies to write. Weapons get 'fp' (2K, own gun) and 'tp' (1K, held by others); props only 'tp'.
+    async function buildWeapon(kind, cfg, { views = ['fp', 'tp'], folder = 'weapons' } = {}) {
       const gltf = await gltfLoader.loadAsync(srcUrl(cfg.src));
       const extras = gltf.parser.json.asset?.extras || {};
+      await convertSpecGloss(gltf);
       const model = gltf.scene;
       if (cfg.hide) model.traverse(o => { if (o.isMesh && cfg.hide.test(o.name)) o.visible = false; });
 
@@ -120,7 +145,9 @@
       const box = visibleBox(root), size = box.getSize(new THREE.Vector3());
       // Center on the barrel, not the bounding box: side parts (mounts, levers, cocking tubes)
       // stick out on one side and would push the gun off the line of sight.
-      const boreX = frontCenterX(root, box.min.z + size.z * 0.04);
+      // Props have no barrel (and rigged meshes keep vertices in bind space): use the box center.
+      const boxX = (box.min.x + box.max.x) / 2;
+      const boreX = views.includes('fp') ? frontCenterX(root, box.min.z + size.z * 0.04) ?? boxX : boxX;
       const at = ([fromBack, fromBottom]) => new THREE.Vector3(
         boreX, box.min.y + fromBottom * size.y, box.max.z - fromBack * size.z);
       const grip = at(cfg.grip), muzzle = at(cfg.muzzle);
@@ -130,13 +157,15 @@
       const toGame = p => p.clone().sub(grip).multiplyScalar(s).toArray().map(r3);
 
       useJpeg(root);
-      const fp = await exportGlb(root, TEXTURE_SIZE.firstPerson);
-      const tp = await exportGlb(root, TEXTURE_SIZE.thirdPerson);
-      const fpSize = await save(`game/weapons/${kind}_fp.glb`, fp);
-      const tpSize = await save(`game/weapons/${kind}_tp.glb`, tp);
-      log(`  ${kind.padEnd(8)} ${mb(fpSize)} (first person) · ${mb(tpSize)} (others) · from ${cfg.src.split('/').pop()}`);
+      const files = {}, sizes = [];
+      for (const view of views) {
+        const glb = await exportGlb(root, view === 'fp' ? TEXTURE_SIZE.firstPerson : TEXTURE_SIZE.thirdPerson);
+        files[view] = `game/${folder}/${kind}_${view}.glb`;
+        sizes.push(`${mb(await save(files[view], glb))} (${view === 'fp' ? 'first person' : 'others'})`);
+      }
+      log(`  ${kind.padEnd(8)} ${sizes.join(' · ')} · from ${cfg.src.split('/').pop()}`);
       return {
-        fp: `game/weapons/${kind}_fp.glb`, tp: `game/weapons/${kind}_tp.glb`,
+        ...files,
         length: cfg.length, muzzle: toGame(muzzle),
         sightY: r3((box.max.y - grip.y) * s),       // top of the gun above the grip, for aiming down sights
         bounds: [toGame(box.min), toGame(box.max)],
@@ -228,15 +257,33 @@
       return { file: 'game/animations.glb', clips: clips.map(c => c.name) };
     }
 
-    async function buildAll() {
+    // only: rebuild just these sections ('weapons', 'props', 'characters', 'animations') and keep the rest.
+    async function buildAll({ only } = {}) {
       const t0 = performance.now();
-      const manifest = { version: 1, built: new Date().toISOString(), weapons: {}, characters: {}, animations: null };
-      log('Weapons');
-      for (const [kind, cfg] of Object.entries(WEAPONS)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
-      log('Characters');
-      for (const [team, cfg] of Object.entries(CHARACTERS)) manifest.characters[team] = await buildCharacter(team, cfg);
-      log('Animations');
-      manifest.animations = await buildAnimations(CHARACTERS.A.src);
+      const want = section => !only || only.includes(section);
+      let manifest = { version: 1, weapons: {}, props: {}, characters: {}, animations: null };
+      if (only) {
+        try { manifest = { ...manifest, ...(await (await fetch('/assets/game/manifest.json', { cache: 'no-cache' })).json()) }; }
+        catch { throw new Error('no existing manifest to update; run a full build first'); }
+      }
+      manifest.built = new Date().toISOString();
+      if (want('weapons')) {
+        log('Weapons');
+        for (const [kind, cfg] of Object.entries(WEAPONS)) manifest.weapons[kind] = await buildWeapon(kind, cfg);
+      }
+      if (want('props')) {
+        log('Props');
+        manifest.props = {};
+        for (const [kind, cfg] of Object.entries(PROPS)) manifest.props[kind] = await buildWeapon(kind, cfg, { views: ['tp'], folder: 'props' });
+      }
+      if (want('characters')) {
+        log('Characters');
+        for (const [team, cfg] of Object.entries(CHARACTERS)) manifest.characters[team] = await buildCharacter(team, cfg);
+      }
+      if (want('animations')) {
+        log('Animations');
+        manifest.animations = await buildAnimations(CHARACTERS.A.src);
+      }
       await save('game/manifest.json', manifest);
       log(`Done in ${((performance.now() - t0) / 1000).toFixed(1)} s. Reload the game to use the new assets.`);
       return manifest;

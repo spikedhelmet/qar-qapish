@@ -93,7 +93,7 @@ export class AnimatedSoldier {
 
   fireKick() { this.kick = 1; }
 
-  // Picks the clip for how the player is moving: s = { yaw, pitch, crouch, sliding, alive, vx, vy, vz }
+  // Picks the clip for how the player is moving: s = { yaw, pitch, crouch, sliding, kneel, alive, vx, vy, vz }
   chooseClip(s) {
     const speed = Math.hypot(s.vx, s.vz);
     const fwd = -s.vx * Math.sin(s.yaw) - s.vz * Math.cos(s.yaw);
@@ -102,6 +102,7 @@ export class AnimatedSoldier {
     const dir = DIRS[sector];
     const rate = (base) => Math.min(1.6, Math.max(0.6, speed / base));
 
+    if (s.kneel) return ['kneel_idle', 1]; // planting or defusing
     if (Math.abs(s.vy) > 2.5) return ['jump_loop', 1];
     if (s.crouch || s.sliding) return speed < 0.4 || s.sliding ? ['crouch_idle', 1] : [`crouch_walk_${dir}`, rate(CLIP_SPEED.crouch)];
     if (speed < 0.4) return [this.hold === 'pistol' ? 'pistol_idle' : 'rifle_idle', 1];

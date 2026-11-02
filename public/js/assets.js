@@ -2,6 +2,7 @@
 // If they're missing, `assets.ready` stays false and the game uses its stand-in models.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 export const assets = {
   ready: false,
@@ -9,6 +10,7 @@ export const assets = {
   characters: {},          // team → scene (clone with SkeletonUtils before use)
   clips: {},               // clip id → AnimationClip
   weapons: { fp: {}, tp: {} },
+  props: {},               // kind → scene (charge, …)
 };
 
 const BASE = '/assets/game/';
@@ -28,6 +30,7 @@ export async function loadAssets(onProgress = () => {}) {
   const add = (file, use) => jobs.push({ file, use });
   for (const [team, c] of Object.entries(manifest.characters)) add(c.file, g => { assets.characters[team] = g.scene; });
   add(manifest.animations.file, g => { for (const clip of g.animations) assets.clips[clip.name] = clip; });
+  for (const [kind, prop] of Object.entries(manifest.props || {})) add(prop.tp, g => { assets.props[kind] = g.scene; });
   for (const [kind, w] of Object.entries(manifest.weapons)) {
     add(w.fp, g => { assets.weapons.fp[kind] = g.scene; });
     add(w.tp, g => { assets.weapons.tp[kind] = g.scene; });
@@ -58,6 +61,13 @@ export async function loadAssets(onProgress = () => {}) {
 
 export function weaponInfo(kind) {
   return assets.manifest?.weapons[kind] || null;
+}
+
+// A fresh copy of a world prop (e.g. the charge), or null when not built.
+// SkeletonUtils keeps rigged props (the charge has a skeleton) bound to their own bones.
+export function propModel(kind) {
+  const src = assets.props[kind];
+  return src ? SkeletonUtils.clone(src) : null;
 }
 
 // A fresh copy of a weapon model ('fp' = first person, 'tp' = held by other players), or null.

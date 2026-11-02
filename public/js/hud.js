@@ -79,6 +79,25 @@ export class Hud {
     this.set('crossVis', visible, v => { this.cross.style.display = v ? '' : 'none'; });
   }
 
+  // Charge status under the score bar. danger: pulsing red (planted, you're defending).
+  objective(html, danger = false) {
+    const el = $('objective');
+    this.set('obj', html + danger, () => {
+      el.classList.toggle('hidden', !html);
+      el.classList.toggle('danger', danger);
+      el.innerHTML = html;
+    });
+  }
+
+  usePrompt(html) { this.set('prompt', html, v => { $('use-prompt').innerHTML = v; }); }
+
+  // label + progress 0..1, or label null to hide.
+  useProgress(label, p) {
+    const el = $('use-progress');
+    this.set('progLabel', label, v => { el.classList.toggle('hidden', !v); el.querySelector('span').textContent = v || ''; });
+    if (label) el.querySelector('i').style.width = `${Math.round(p * 100)}%`;
+  }
+
   scope(on) { this.set('scope', on, v => document.getElementById('scope').classList.toggle('hidden', !v)); }
 
   announce(text) {

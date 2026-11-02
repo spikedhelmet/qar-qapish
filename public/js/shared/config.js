@@ -44,8 +44,32 @@ export const MODES = {
     roundTime: 120,
     roundEnd: 5,      // seconds to show the round result
   },
+  // Attackers plant a charge at site A or B; defenders stop them or defuse it. Sides swap at half time.
+  obj: {
+    name: 'Objective', roundsToWin: 7, endScreen: 12, respawn: false,
+    freezeTime: 5,
+    roundTime: 115,   // no plant by then: defenders win
+    roundEnd: 6,
+    halftime: 6,      // swap attack/defense after this many rounds
+    plantTime: 3.5,   // seconds holding E inside a site
+    defuseTime: 6,    // seconds holding E next to the charge
+    fuseTime: 40,     // seconds from plant to detonation
+    blast: { radius: 14, damage: 400 },
+    pickupRange: 1.4,
+    defuseRange: 1.8,
+  },
 };
-export const MODE_ORDER = ['tdm', 'elim'];
+export const MODE_ORDER = ['tdm', 'elim', 'obj'];
+
+// Which spawn area a team uses: in objective mode attackers always start west (spawn set A).
+export function spawnSide(mode, team, attackers) {
+  if (mode !== 'obj') return team;
+  return team === attackers ? 'A' : 'B';
+}
+
+export function siteAt(map, x, z) {
+  return map.sites.find(s => x >= s.min[0] && x <= s.max[0] && z >= s.min[1] && z <= s.max[1]) || null;
+}
 
 export const CLASSES = {
   assault:  { name: 'Assault',  primary: 'rifle',   grenade: 'frag',  speed: 1.0,  desc: 'Rifle. Reliable at every range.' },

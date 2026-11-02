@@ -13,6 +13,7 @@ import { Net } from './net.js';
 import * as audio from './audio.js';
 import { initAnnouncer, announce, setAnnouncerMode } from './announcer.js';
 import { loadAssets } from './assets.js';
+import { ObjectiveView } from './objective.js';
 
 // ---------------------------------------------------------------- settings
 
@@ -67,6 +68,7 @@ const me = new LocalPlayer(MAP);
 const arsenal = new Arsenal();
 const remotes = new Remotes(scene);
 const effects = new Effects(scene, viewScene);
+let objective = null; // created once models have loaded (it uses the charge model)
 const hud = new Hud();
 let viewModel = null;
 
@@ -96,6 +98,9 @@ const game = {
   recentKills: [],      // timestamps of my recent kills, for multi-kills
   leading: null,        // was my team ahead at the last snapshot
   lastAliveSaid: false,
+  ob: null,             // objective-mode state from the server
+  roundReason: null,    // why the last round ended
+  usingE: false,        // E held state last sent to the server
 };
 const modeCfg = () => MODES[game.mode];
 
@@ -147,6 +152,7 @@ function onMessage(msg) {
       game.timeLeft = msg.tl;
       game.phase = msg.st;
       game.round = msg.rd;
+      game.ob = msg.ob || null;
       const mine = msg.ps.find(p => p.id === game.myId);
       if (mine) me.hp = mine.hp;
       remotes.applySnapshot(msg.ps, game.myId, game.team);
@@ -197,6 +203,39 @@ function onMessage(msg) {
       }
       break;
     case 'notice': hud.notice(msg.text); break;
+    case 'obj': onObjective(msg); break;
+  }
+}
+
+function onObjective(msg) {
+  const name = id => escapeHtml(playerById(id)?.n || 'Someone');
+  const attacking = game.ob ? game.ob.att === game.team : false;
+  switch (msg.ev) {
+    case 'planted':
+      announce('charge_planted', { priority: 2 });
+      hud.notice(`${playerById(msg.id)?.n || 'Someone'} planted the charge at ${msg.site}`);
+      break;
+    case 'defused':
+      announce('charge_defused', { priority: 2 });
+      break;
+    case 'exploded':
+      objective?.explode(msg.pos);
+      { // camera jolt that fades with distance
+        const d = Math.hypot(me.pos[0] - msg.pos[0], me.pos[2] - msg.pos[2]);
+        const k = Math.max(0, 1 - d / 40) * 0.08;
+        viewModel?.shake.kick(k, (Math.random() - 0.5) * k, (Math.random() - 0.5) * k * 2);
+      }
+      break;
+    case 'dropped':
+      if (attacking) hud.notice('The charge was dropped. Pick it up!');
+      break;
+    case 'picked':
+      if (attacking) hud.notice(msg.id === game.myId ? 'You picked up the charge' : `${name(msg.id)} picked up the charge`);
+      break;
+    case 'halftime':
+      announce('halftime', { priority: 2 });
+      hud.notice('Half time: teams switch sides');
+      break;
   }
 }
 
@@ -214,6 +253,7 @@ function onRound(msg) {
     announce('round_start', { priority: 2 });
   } else if (msg.phase === 'end') {
     game.roundWinner = msg.winner;
+    game.roundReason = msg.reason;
     const lastRound = Math.max(msg.score.A, msg.score.B) >= modeCfg().roundsToWin;
     if (msg.winner && !lastRound) announce(msg.winner === game.team ? 'round_won' : 'round_lost', { priority: 2 });
   }
@@ -356,8 +396,12 @@ function frame(now) {
     }
     const trigger = canAct && input.mouseDown;
     const aimHeld = canAct && input.rightDown && !me.sprinting;
+    // Objective: hold E to plant / defuse. The server times it; we keep the player still and kneeling.
+    const action = objective && canAct ? objective.available(game.myId, game.team, me.pos, me.alive) : null;
+    const using = !!action && input.down('KeyE');
+    if (using !== game.usingE) { game.usingE = using; net.send({ t: 'use', on: using }); }
     if (me.alive) {
-      const ev = me.update(dt, canAct ? input : NO_INPUT, { speedMult: arsenal.moveMult * CLASSES[game.cls].speed, sprintMult: CLASSES[game.cls].speed, aiming: arsenal.aiming, firing: trigger });
+      const ev = me.update(dt, using ? KNEEL_INPUT : canAct ? input : NO_INPUT, { speedMult: arsenal.moveMult * CLASSES[game.cls].speed, sprintMult: CLASSES[game.cls].speed, aiming: arsenal.aiming, firing: trigger });
       if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6);
       if (ev.slide) audio.playSlide(null);
     }
@@ -379,6 +423,7 @@ function frame(now) {
   }
 
   remotes.update(dt);
+  objective?.update(dt, game.ob);
   effects.update(dt);
   audio.updateListener(camera);
   if (game.joined) updateHud();
@@ -402,6 +447,7 @@ function frame(now) {
 }
 
 const NO_INPUT = { down: () => false, hit: () => false };
+const KNEEL_INPUT = { down: code => code === 'KeyC', hit: () => false };
 
 // Keys that work whether or not you're alive: class picker and team switch.
 function handleMenuKeys() {
@@ -494,6 +540,7 @@ function updateHud() {
   hud.scope(me.alive && !!arsenal.def.ads?.scope && arsenal.adsT > 0.9);
   hud.scoreboard(input.down('Tab') || game.phase === 'over', game.players, game.myId, game.score);
   hud.classPicker(game.picker, settings.cls);
+  updateObjectiveHud();
 
   let msg = '';
   const color = team => TEAMS[team].css;
@@ -504,9 +551,12 @@ function updateHud() {
   } else if (game.phase === 'roundEnd') {
     const w = game.roundWinner;
     const title = w ? `<span style="color:${color(w)}">${TEAMS[w].name}</span> win the round` : 'Round draw';
-    msg = `${title}<small>Next round in ${game.timeLeft}s</small>`;
+    const why = { detonated: 'The charge detonated', defused: 'The charge was defused', time: 'Time ran out' }[game.roundReason];
+    msg = `${title}<small>${why ? why + ' · ' : ''}Next round in ${game.timeLeft}s</small>`;
   } else if (game.phase === 'freeze') {
-    msg = `Round ${game.round}<small>Starts in ${game.timeLeft}s · press B to change class</small>`;
+    const role = game.mode === 'obj' && game.ob
+      ? (game.ob.att === game.team ? 'Attack: plant the charge at A or B' : 'Defend sites A and B') + ' · ' : '';
+    msg = `Round ${game.round}<small>${role}Starts in ${game.timeLeft}s · press B to change class</small>`;
   } else if (!me.alive && cfg.respawn && game.deathInfo) {
     const left = Math.max(0, Math.ceil(PLAYER.respawnTime - (performance.now() - game.deathInfo.at) / 1000));
     msg = `${killedBy()}<small>Respawning in ${left}s</small>`;
@@ -519,6 +569,36 @@ function updateHud() {
     msg = 'Click to resume';
   }
   hud.message(msg);
+}
+
+function updateObjectiveHud() {
+  const ob = game.mode === 'obj' ? game.ob : null;
+  if (!ob) { hud.objective(''); hud.usePrompt(''); hud.useProgress(null); return; }
+  const attacking = ob.att === game.team;
+  const role = `<span class="role">${attacking ? 'Attack' : 'Defend'}</span>`;
+  const clock = s => `${Math.floor(s / 60)}:${String(Math.ceil(s) % 60).padStart(2, '0')}`;
+  let text, danger = false;
+  if (ob.planted) {
+    text = `Charge planted at ${ob.planted.site} · ${clock(ob.planted.left)}`;
+    danger = !attacking;
+    if (!attacking) text += ' · defuse it!';
+  } else if (!attacking) {
+    text = 'Stop the charge from being planted at A or B';
+  } else if (ob.carrier === game.myId) {
+    text = 'You carry the charge · plant it at A or B';
+  } else if (ob.carrier) {
+    text = `Charge carried by ${escapeHtml(playerById(ob.carrier)?.n || 'a teammate')}`;
+  } else if (ob.dropped) {
+    text = 'The charge is on the ground · pick it up';
+  } else {
+    text = 'Plant the charge at A or B';
+  }
+  hud.objective(role + text, danger);
+
+  const action = objective?.available(game.myId, game.team, me.pos, me.alive && game.phase === 'live');
+  const mine = ob.act && ob.act.id === game.myId;
+  hud.useProgress(mine ? (ob.act.kind === 'plant' ? 'Planting…' : 'Defusing…') : null, mine ? ob.act.p : 0);
+  hud.usePrompt(action && !mine ? `Hold <kbd>E</kbd> to ${action}` : '');
 }
 
 function killedBy() {
@@ -627,14 +707,17 @@ loadAssets((done, total) => { status.textContent = `Loading models… ${done}/${
   playBtn.disabled = false;
   status.textContent = a.ready ? '' : 'Using stand-in models (run /dev/build.html on the host to build the real ones).';
   renderCredits(a.manifest);
+  objective = new ObjectiveView(scene, effects);
 });
 
 function renderCredits(manifest) {
   const list = document.getElementById('credits-list');
-  const rows = Object.entries(manifest?.weapons || {}).map(([kind, w]) => {
+  const items = { ...(manifest?.weapons || {}), ...(manifest?.props || {}) };
+  const rows = Object.entries(items).map(([kind, w]) => {
     const c = w.credit || {};
     const author = escapeHtml((c.author || 'unknown').replace(/\s*\(.*\)$/, ''));
-    return `<li><b>${escapeHtml(WEAPONS[kind]?.name || kind)}</b>: “${escapeHtml(c.title || '')}” by ${author}` +
+    const label = WEAPONS[kind]?.name || kind[0].toUpperCase() + kind.slice(1);
+    return `<li><b>${escapeHtml(label)}</b>: “${escapeHtml(c.title || '')}” by ${author}` +
       (c.source ? ` · <a href="${escapeHtml(c.source)}" target="_blank" rel="noopener">source</a>` : '') +
       ` · ${escapeHtml((c.license || '').split(' ')[0])}</li>`;
   });
@@ -643,4 +726,4 @@ function renderCredits(manifest) {
 }
 
 // Handy for poking at the game from the browser console.
-window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, get viewModel() { return viewModel; } };
+window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, get viewModel() { return viewModel; }, get objective() { return objective; } };

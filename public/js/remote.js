@@ -48,7 +48,7 @@ export class Remotes {
       // A respawn teleports; don't slide across the map from the death spot.
       const last = r.buf[r.buf.length - 1];
       if (last && !last.al && s.al) r.buf.length = 0;
-      r.buf.push({ t, x: s.x, y: s.y, z: s.z, yw: s.yw, pt: s.pt, cr: s.cr, sl: s.sl, al: s.al, w: s.w });
+      r.buf.push({ t, x: s.x, y: s.y, z: s.z, yw: s.yw, pt: s.pt, cr: s.cr, sl: s.sl, kn: s.kn, al: s.al, w: s.w });
       if (r.buf.length > 30) r.buf.shift();
     }
     this.myTeam = myTeam;
@@ -90,7 +90,7 @@ export class Remotes {
       const st = {
         x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k,
         yaw: lerpAngle(a.yw, b.yw, k), pitch: a.pt + (b.pt - a.pt) * k,
-        crouch: k < 0.5 ? a.cr : b.cr, sliding: k < 0.5 ? a.sl : b.sl, alive: b.al, weapon: b.w,
+        crouch: k < 0.5 ? a.cr : b.cr, sliding: k < 0.5 ? a.sl : b.sl, kneel: b.kn, alive: b.al, weapon: b.w,
       };
       const secs = span / 1000;
       st.vx = span > 0 ? (b.x - a.x) / secs : 0;

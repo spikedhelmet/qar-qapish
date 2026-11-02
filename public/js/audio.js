@@ -105,6 +105,29 @@ export function playStep(pos, loud = 1) {
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });
 }
 
+// Charge beep: a short tone from where the charge is.
+export function playBeep(pos, urgent = false) {
+  if (!ctx) return;
+  const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'square';
+  o.frequency.value = urgent ? 2600 : 2100;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.25, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  const f = ctx.createBiquadFilter();
+  f.type = 'lowpass'; f.frequency.value = 4000;
+  o.connect(f).connect(g).connect(output(pos));
+  o.start(t); o.stop(t + 0.08);
+}
+
+export function playExplosion(pos) {
+  if (!ctx) return;
+  const out = output(pos);
+  burst(out, { dur: 2.2, freq: 900, q: 0.4, gain: 1.6, attack: 0.004, sweep: 0.08 });
+  burst(out, { dur: 0.35, freq: 3000, q: 0.3, gain: 1.0, sweep: 0.2 });
+  thump(out, { freq: 70, dur: 1.2, gain: 1.6 });
+}
+
 export function playSlide(pos) {
   if (!ctx) return;
   burst(output(pos), { dur: 0.7, freq: 900, q: 0.7, gain: 0.3, attack: 0.04, sweep: 0.35 });

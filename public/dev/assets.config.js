@@ -31,6 +31,11 @@ export const WEAPONS = {
   },
 };
 
+// World objects (not held in first person): same frame as weapons, one 1K file each.
+export const PROPS = {
+  charge: { src: 'weapons/ied.glb', length: 0.24, grip: [0.5, 0], muzzle: [1, 0.5] }, // origin: center of its base
+};
+
 // One character per team (Mixamo FBX, T-pose, with skin). Scaled to `height` meters.
 export const CHARACTERS = {
   A: { src: 'characters/swat_blue_mesh.fbx', height: 1.8 },

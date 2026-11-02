@@ -16,18 +16,11 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | 2 | Classes (Assault, Marksman, Breacher, Runner), sniper / shotgun / SMG, Elimination mode | ✅ Done |
 | – | Real assets: animated SWAT soldiers, real guns, asset build pipeline | ✅ Done, playtested |
 | – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
-| 3 | Objective mode: plant / defuse a charge at site A or B | ⏭ Next |
-| 4 | Grenades: frag, smoke, flashbang | Planned |
+| 3 | Objective mode: plant / defuse a charge at site A or B | ✅ Done, needs a playtest |
+| 4 | Grenades: frag, smoke, flashbang | ⏭ Next |
 | 5 | Polish: real sounds, map textures, first-person arms, more maps, settings | Planned |
 
-### Milestone 3: objective mode (next)
-- Attackers carry a charge (IED model, already downloaded) and plant it at site A or B; defenders defuse it.
-- Plant and defuse use the kneeling animations from the pistol pack (already downloaded).
-- Round ends on detonation, defuse, wipe-out, or time running out without a plant.
-- Teams swap sides at half time. New announcer lines (planted, defused, etc.).
-- **Needs from you:** nothing to download.
-
-### Milestone 4: grenades
+### Milestone 4: grenades (next)
 - Frag (damage with falloff, blocked by walls), smoke (blocks vision), flashbang (whites out the screen of anyone looking at it).
 - Throwing physics with bounces; one grenade per class, as set in the class table.
 - Models already downloaded (M67, M18, M84); the throw animation is in place.
@@ -48,6 +41,17 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 3: objective mode (`feature/milestone-3`)
+- New mode "Objective" (host menu or `npm start -- --mode=obj`). Attackers start west, defenders east; sides swap after round 6; first to 7.
+- One attacker carries the charge; it drops where they die and any attacker can pick it up. Hold E for 3.5 s inside site A or B to plant; defenders hold E for 6 s next to it to defuse. Moving, letting go or firing resets the timer. The server times everything.
+- 40 s fuse with an accelerating beep and blinking light; detonation damages everyone within 14 m.
+- HUD: role and charge status under the score bar (pulses red for defenders once planted), "Hold E" prompt, plant/defuse progress bar, round result reason (detonated / defused / time).
+- Players kneel while planting or defusing (Mixamo kneel clip). Explosion with flash, light, fireball, debris and smoke; camera jolt by distance.
+- New announcer lines: charge planted, charge defused, half time.
+- Charge model: the IED download. Its materials used an old glTF format three.js no longer reads, so the builder now converts it; rigged props are cloned with their skeleton.
+- Builder can rebuild single sections (`buildAll({ only: ['props'] })`), so small additions don't re-export every model.
+- Verified with bots (18 server checks: carrying, plant/defuse timing and interruption, drops, detonation damage, elimination rules, half-time swap) and in the browser (HUD, planting, kneeling, charge model, explosion). **Not yet:** a real match.
 
 ### 2026-11-02 · Weapon feel (`feature/real-assets`)
 - Playtest feedback on real guns: too far from the camera, rifle skewed left, SMG skewed right, firing felt flat.
@@ -83,6 +87,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11-02 | Objective mode follows familiar plant/defuse rules: after a plant, defenders must defuse even if every attacker is down | Keeps late rounds tense and gives the defuse a purpose. |
 | 2026-10-30 | Raw assets stay out of git; only optimized copies are committed. No Git LFS. | Originals are 599 MB with files over GitHub's 100 MB limit; optimized copies are ~53 MB. LFS adds a tool for everyone and has small free quotas. |
 | 2026-10-30 | Download 4K weapon textures, ship 2K (own gun) and 1K (others) | 4K for every gun would need ~3 GB of graphics memory on an 8 GB M1. |
 | 2026-10-30 | Mixamo animation packs instead of single downloads | 3 packs cover ~90% of the animations in a few clicks. |
