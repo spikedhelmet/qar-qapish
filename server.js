@@ -64,8 +64,9 @@ const server = http.createServer((req, res) => {
     }));
     return;
   }
-  if (url === '/api/announcer') { // which voice lines have been recorded
-    fs.readdir(path.join(ROOT, 'public/assets/sounds/announcer'), (err, files) => {
+  if (url === '/api/announcer' || url === '/api/sounds/ui') { // which voice lines / UI sounds have been added
+    const dir = url === '/api/announcer' ? 'announcer' : 'ui';
+    fs.readdir(path.join(ROOT, 'public/assets/sounds', dir), (err, files) => {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
       res.end(JSON.stringify(err ? [] : files.filter(f => /\.(m4a|mp3|wav|ogg)$/i.test(f))));
     });

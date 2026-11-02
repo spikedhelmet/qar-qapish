@@ -44,7 +44,7 @@ PORT=3001 npm start
 | WASD | Move |
 | Mouse / left click | Aim / fire |
 | Right click (hold) | Sniper: look through the scope (other guns don't aim down sights for now) |
-| Space | Jump. Sprint jumps carry less speed, and jumping again right after landing is lower and slower (no bunny hopping) |
+| Space | Jump. Sprint jumps carry less speed, and jumping again right after landing is lower and slower (no bunny hopping). **Climb:** jump at a ledge up to about 1.9 m (crates, low walls, the loading dock) while moving toward it, or keep jump held as you reach it |
 | Shift (hold, moving forward) | Sprint. You can't fire while sprinting |
 | Alt / Option | Walk quietly (no footsteps) |
 | C (or Ctrl) | Crouch. While sprinting: **slide** |
@@ -56,7 +56,7 @@ PORT=3001 npm start
 | Tab | Scoreboard |
 | B | Choose class (then 1–4) |
 | M | Switch team (also in the Esc menu). By default only if it keeps teams even; the host can allow uneven teams |
-| Esc | Menu (sensitivity, field of view, volume, graphics) |
+| Esc | Menu (sensitivity, field of view, volume, crosshair, graphics) |
 
 These are the default keys. To change one, open **Controls** in the menu, click a key, and press the new one; **Reset keys** puts them back. Your settings and keys are saved in your browser. Mouse buttons, 1–4 and Esc can't be changed.
 

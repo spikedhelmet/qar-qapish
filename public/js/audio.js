@@ -12,6 +12,33 @@ export function initAudio(volume) {
   noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const data = noise.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  loadUiSounds();
+}
+
+// Hit / headshot / kill confirmations: your own files in public/assets/sounds/ui/ (hit, head, kill:
+// .ogg, .mp3, .wav or .m4a) play instead of the built-in ones below.
+const uiSounds = {};
+async function loadUiSounds() {
+  try {
+    const files = await (await fetch('/api/sounds/ui')).json();
+    await Promise.all(files.map(async f => {
+      const id = f.replace(/\.[^.]+$/, '');
+      uiSounds[id] = await ctx.decodeAudioData(await (await fetch('/assets/sounds/ui/' + encodeURIComponent(f))).arrayBuffer());
+    }));
+  } catch { /* none added */ }
+}
+
+// A pure tone with a fast attack and an exponential fade (bell-like when partials are stacked).
+function ping(dest, freq, dur, gain, at = 0) {
+  const t = ctx.currentTime + at;
+  const o = ctx.createOscillator();
+  o.frequency.value = freq;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(dest);
+  o.start(t); o.stop(t + dur + 0.02);
 }
 
 export function setVolume(v) { if (master) master.gain.value = v; }
@@ -220,12 +247,28 @@ export function playSlide(pos) {
   burst(output(pos), { dur: 0.7, freq: 900, q: 0.7, gain: 0.3, attack: 0.04, sweep: 0.35 });
 }
 
+// Hit confirmation: a short dry tick. Headshot: a bright metallic tink on top. Kill: a clear ding.
+export function playConfirm(kind) {
+  if (!ctx) return;
+  if (uiSounds[kind]) {
+    const src = ctx.createBufferSource();
+    src.buffer = uiSounds[kind];
+    src.connect(master);
+    src.start();
+    return;
+  }
+  burst(master, { dur: 0.018, freq: 5200, q: 0.7, type: 'highpass', gain: 0.18 });
+  ping(master, 1850, 0.045, 0.22);
+  if (kind === 'head') { ping(master, 3150, 0.22, 0.14); ping(master, 4730, 0.16, 0.08); }
+  if (kind === 'kill') {
+    ping(master, 1320, 0.55, 0.2, 0.03); ping(master, 2650, 0.32, 0.09, 0.03); ping(master, 3960, 0.18, 0.05, 0.03);
+    thump(master, { freq: 150, dur: 0.09, gain: 0.25 });
+  }
+}
+
 export function playClick(kind) {
   if (!ctx) return;
   const presets = {
-    hit: { dur: 0.05, freq: 2400, q: 6, type: 'bandpass', gain: 0.5 },
-    head: { dur: 0.12, freq: 4200, q: 12, type: 'bandpass', gain: 0.7 },
-    kill: { dur: 0.25, freq: 1500, q: 10, type: 'bandpass', gain: 0.6 },
     reload: { dur: 0.04, freq: 3000, q: 4, type: 'bandpass', gain: 0.35 },
     empty: { dur: 0.03, freq: 5000, q: 6, type: 'bandpass', gain: 0.3 },
     hurt: { dur: 0.15, freq: 500, q: 1, type: 'lowpass', gain: 0.5 },

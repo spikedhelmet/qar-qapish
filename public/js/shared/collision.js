@@ -69,6 +69,29 @@ export function canStand(map, pos, height) {
   return !overlapsAny(map, pos[0], pos[1], pos[2], PLAYER.radius, height);
 }
 
+// A ledge to climb onto in direction (dx, dz) (unit): the top of a box just in front, higher than a
+// step and no higher than `maxTop`, with room to stand on it and nothing overhead on the way up.
+// Returns the standing position on top, or null.
+export function findLedge(map, pos, height, dx, dz, maxTop) {
+  const r = PLAYER.radius;
+  for (const reach of [r + 0.08, r + PLAYER.climbReach]) {
+    const x = pos[0] + dx * reach, z = pos[2] + dz * reach;
+    let best = null;
+    for (const b of map.boxes) {
+      if (x < b.min[0] || x > b.max[0] || z < b.min[2] || z > b.max[2]) continue;
+      const top = b.max[1];
+      if (top <= pos[1] + PLAYER.stepHeight || top > maxTop) continue;
+      if (!best || top > best) best = top;
+    }
+    if (best === null) continue;
+    const stand = [pos[0] + dx * (reach + r * 0.6), best + EPS, pos[2] + dz * (reach + r * 0.6)];
+    if (overlapsAny(map, stand[0], stand[1], stand[2], r, height)) continue;          // no room on top
+    if (overlapsAny(map, pos[0], best + EPS, pos[2], r, height)) continue;            // ceiling above us
+    return stand;
+  }
+  return null;
+}
+
 // Moves a player body through the map one axis at a time, stepping up small ledges.
 // Mutates pos and vel; returns { onGround }.
 export function moveBody(map, pos, vel, dt, height, wasOnGround) {

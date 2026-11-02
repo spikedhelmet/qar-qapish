@@ -21,7 +21,7 @@ import { ACTIONS, RESERVED, keyFor, keyName, keyLabel, setBindings, bindKey } fr
 
 // ---------------------------------------------------------------- settings
 
-const DEFAULTS = { name: '', sens: 1.2, fov: 90, vol: 0.7, announcer: 'voice', graphics: 'high', cls: DEFAULT_CLASS, keys: {} };
+const DEFAULTS = { name: '', sens: 1.2, fov: 90, vol: 0.7, announcer: 'voice', graphics: 'high', crosshair: 'static', cls: DEFAULT_CLASS, keys: {} };
 function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('qapishma.settings') || '{}') }; }
   catch { return { ...DEFAULTS }; }
@@ -218,7 +218,7 @@ function onMessage(msg) {
     }
     case 'hitok':
       hud.hitmarker(msg.kill ? 'kill' : msg.hs ? 'head' : '');
-      audio.playClick(msg.kill ? 'kill' : msg.hs ? 'head' : 'hit');
+      audio.playConfirm(msg.kill ? 'kill' : msg.hs ? 'head' : 'hit');
       break;
     case 'kill': {
       const killer = playerById(msg.k), victim = playerById(msg.v);
@@ -476,10 +476,11 @@ function frame(now) {
       const ev = me.update(dt, using ? KNEEL_INPUT : canAct ? input : NO_INPUT, { speedMult: arsenal.moveMult * CLASSES[game.cls].speed, sprintMult: CLASSES[game.cls].speed, aiming: arsenal.aiming, firing: trigger });
       if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6);
       if (ev.slide) audio.playSlide(null);
+      if (ev.climb) audio.playStep(null, 1.1);
     }
 
     if (arsenal.update(dt, trigger, aimHeld) === 'reloaded') audio.playClick('reload');
-    if (canAct && !arsenal.def.grenade && arsenal.canFire(trigger, me.sprintRecover > 0)) shoot();
+    if (canAct && !arsenal.def.grenade && arsenal.canFire(trigger, me.sprintRecover > 0 || me.climbing)) shoot();
     updateThrow(dt, canAct);
 
     game.sendTimer -= dt;
@@ -514,7 +515,7 @@ function frame(now) {
       drawT: arsenal.drawT / arsenal.def.draw,
       reloadT: arsenal.reloadT >= 0 ? arsenal.reloadT / arsenal.def.reload : -1,
       lookDX: playing ? input.dx : 0, lookDY: playing ? input.dy : 0,
-      adsT: arsenal.adsT, sprinting: me.sprinting, sliding: me.sliding,
+      adsT: arsenal.adsT, sprinting: me.sprinting, sliding: me.sliding, climbing: me.climbing,
     });
     renderer.clearDepth();
     renderer.render(viewScene, viewCamera);
@@ -652,7 +653,8 @@ function updateHud() {
     pips: cfg.respawn ? null : { A: alive('A'), B: alive('B') },
   });
   const spread = arsenal.spread(me.speed(), me.onGround, me.crouching);
-  const px = (spread / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * (innerHeight / 2);
+  // Dynamic crosshair: the gap shows the current spread. Static: always the same.
+  const px = settings.crosshair === 'dynamic' ? (spread / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * (innerHeight / 2) : 0;
   hud.crosshair(px, me.alive && !WEAPONS[arsenal.current].melee && arsenal.adsT < 0.3 && !me.sprinting);
   hud.scope(me.alive && !!arsenal.def.ads?.scope && arsenal.adsT > 0.9);
   hud.reticle(me.alive && hasOptic(arsenal.current) && arsenal.adsT > 0.85 && arsenal.reloadT < 0);
@@ -745,8 +747,8 @@ function escapeHtml(s) {
 const menu = document.getElementById('menu');
 const status = document.getElementById('menu-status');
 const playBtn = document.getElementById('play');
-const fields = { name: 'name', sens: 'sens', fov: 'fov', vol: 'vol', announcer: 'announcer', graphics: 'graphics' };
-const TEXT_FIELDS = new Set(['name', 'announcer', 'graphics']);
+const fields = { name: 'name', sens: 'sens', fov: 'fov', vol: 'vol', announcer: 'announcer', graphics: 'graphics', crosshair: 'crosshair-style' };
+const TEXT_FIELDS = new Set(['name', 'announcer', 'graphics', 'crosshair']);
 
 for (const [key, id] of Object.entries(fields)) {
   const el = document.getElementById(id);

@@ -640,8 +640,9 @@ export class ViewModel {
   }
 
   // drawT: 0→1 raise progress, reloadT: 0→1 reload progress (or -1), adsT: 0→1 aimed in
-  update(dt, { speed, onGround, drawT, reloadT, lookDX, lookDY, adsT = 0, sprinting = false, sliding = false }) {
+  update(dt, { speed, onGround, drawT, reloadT, lookDX, lookDY, adsT = 0, sprinting = false, sliding = false, climbing = false }) {
     this.sprintT += ((sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 10);
+    this.climbT = (this.climbT || 0) + ((climbing ? 1 : 0) - (this.climbT || 0)) * Math.min(1, dt * 12); // gun drops out of the way
     const steady = 1 - adsT * 0.85; // aiming damps bob and sway
     this.recoilPos.update(dt);
     this.recoilRot.update(dt);
@@ -664,7 +665,7 @@ export class ViewModel {
     p.x -= this.sprintT * 0.07; p.y -= this.sprintT * 0.07;
     rx -= this.sprintT * 0.35; ry += this.sprintT * 0.75;
     if (sliding) rz += 0.18;
-    const lower = 1 - Math.min(1, drawT);
+    const lower = Math.max(1 - Math.min(1, drawT), this.climbT);
     p.y -= lower * 0.25;
     rx -= lower * 0.6;
     if (reloadT >= 0) {
@@ -731,10 +732,8 @@ export class ViewModel {
       rx -= this.sprintT * 0.3; ry += this.sprintT * 0.6;
     }
     if (sliding) rz += 0.18;
-    if (!this.rig.actions.draw) {
-      const lower = 1 - Math.min(1, drawT);
-      p.y -= lower * 0.25; rx -= lower * 0.6;
-    }
+    const lower = Math.max(this.rig.actions.draw ? 0 : 1 - Math.min(1, drawT), this.climbT);
+    p.y -= lower * 0.25; rx -= lower * 0.6;
     // Reload sounds at the usual beats (the clip does the moving).
     if (reloadT >= 0 && this.reload) {
       const r = this.reload, t = Math.min(1, reloadT), crossed = at => r.last < at && t >= at;

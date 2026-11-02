@@ -35,6 +35,8 @@ export const PLAYER = {
   landRecover: 0.45,    // seconds after landing with slower movement and a lower jump…
   landSlow: 0.45,       // …starting this much slower, so chained jumps lose speed instead of keeping it
   stepHeight: 0.45,
+  climbHeight: 1.9,     // highest ledge you can pull yourself onto, measured from the ground you jumped from
+  climbReach: 0.45,     // how close (meters past your body) the ledge's edge has to be
   respawnTime: 3,       // seconds
   spawnProtection: 2,   // seconds, ends early when the player fires
 };

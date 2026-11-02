@@ -1,6 +1,6 @@
 // Local player: keyboard/mouse input and client-side movement physics.
 import { PLAYER } from './shared/config.js';
-import { moveBody, canStand } from './shared/collision.js';
+import { moveBody, canStand, findLedge } from './shared/collision.js';
 import { translate } from './keys.js';
 
 export class Input {
@@ -89,6 +89,8 @@ export class LocalPlayer {
     this.stepDist = 0;
     this.landT = 0;
     this.jumped = false;
+    this.climb = null;    // pulling up onto a ledge: { from, to, t, dur }
+    this.groundY = this.pos ? this.pos[1] : 0;
   }
 
   spawn(pos, yaw, life) {
@@ -109,10 +111,13 @@ export class LocalPlayer {
     this.pitch = Math.max(-1.5, Math.min(1.5, this.pitch - dy * k));
   }
 
-  // opts: { speedMult, sprintMult, aiming, firing }. Returns sound events: { step, loud, landed, slide }.
+  get climbing() { return !!this.climb; }
+
+  // opts: { speedMult, sprintMult, aiming, firing }. Returns sound events: { step, loud, landed, slide, climb }.
   update(dt, input, { speedMult = 1, sprintMult = 1, aiming = false, firing = false } = {}) {
     const P = PLAYER;
-    const ev = { step: false, loud: false, landed: false, slide: false };
+    const ev = { step: false, loud: false, landed: false, slide: false, climb: false };
+    if (this.climb) return this.updateClimb(dt, ev);
 
     let fx = 0, fz = 0;
     if (input.down('KeyW')) fz -= 1;
@@ -181,6 +186,11 @@ export class LocalPlayer {
       this.vel[0] += a * wish[0]; this.vel[2] += a * wish[1];
     }
 
+    // Climbing: jump at a ledge while moving toward it (or keep jump held as you reach it mid-air).
+    if (fz < 0 && (input.hit('Space') || (!this.onGround && input.down('Space'))) && this.tryClimb(wish)) {
+      ev.climb = true;
+      return ev;
+    }
     if (this.onGround && input.hit('Space') && canStand(this.map, this.pos, P.height)) {
       // Jumps carry at most jumpMaxSpeed forward, less right after a landing.
       const cap = P.jumpMaxSpeed * fresh, speed = this.speed();
@@ -196,7 +206,7 @@ export class LocalPlayer {
     const res = moveBody(this.map, this.pos, this.vel, dt, this.height, this.onGround);
     ev.landed = !this.onGround && res.onGround;
     if (ev.landed && this.jumped) this.landT = P.landRecover; // stepping off a ledge or stairs doesn't count
-    if (this.onGround) this.jumped = false;
+    if (this.onGround) { this.jumped = false; this.groundY = this.pos[1]; }
     this.onGround = res.onGround;
     if (this.pos[1] < -20) this.pos = [0, 2, 0]; // safety net
 
@@ -209,6 +219,42 @@ export class LocalPlayer {
         ev.step = true;
         ev.loud = this.sprinting;
       }
+    }
+    return ev;
+  }
+
+  // Starts pulling up onto a ledge in the direction we're moving, if there's one within reach.
+  tryClimb(wish) {
+    const len = Math.hypot(wish[0], wish[1]);
+    if (!len) return false;
+    const base = this.onGround ? this.pos[1] : this.groundY;
+    const to = findLedge(this.map, this.pos, PLAYER.height, wish[0] / len, wish[1] / len, base + PLAYER.climbHeight);
+    if (!to) return false;
+    const rise = to[1] - this.pos[1];
+    this.climb = { from: this.pos.slice(), to, t: 0, dur: 0.3 + rise * 0.22 };
+    this.vel = [0, 0, 0];
+    this.sprinting = this.sliding = false;
+    this.crouching = false;
+    this.height = PLAYER.height;
+    return true;
+  }
+
+  // Up first (hands on the edge), then forward onto the top.
+  updateClimb(dt, ev) {
+    const c = this.climb;
+    c.t = Math.min(1, c.t + dt / c.dur);
+    const up = Math.min(1, c.t / 0.7), across = Math.max(0, (c.t - 0.55) / 0.45);
+    const ease = k => k * k * (3 - 2 * k);
+    this.pos[1] = c.from[1] + (c.to[1] - c.from[1]) * (1 - (1 - up) * (1 - up));
+    this.pos[0] = c.from[0] + (c.to[0] - c.from[0]) * ease(across);
+    this.pos[2] = c.from[2] + (c.to[2] - c.from[2]) * ease(across);
+    this.eyeHeight += ((c.t < 0.7 ? PLAYER.crouchEye : PLAYER.eye) - this.eyeHeight) * Math.min(1, dt * 10); // head ducks over the edge
+    if (c.t >= 1) {
+      this.pos = c.to.slice();
+      this.climb = null;
+      this.onGround = true;
+      this.groundY = this.pos[1];
+      ev.landed = true;
     }
     return ev;
   }
