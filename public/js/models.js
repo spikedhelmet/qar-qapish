@@ -453,12 +453,14 @@ class Spring {
 
 // Animated first-person sets (fprig.js): hip moves the whole set from where its creator framed it
 // (meters: right, up, back) and turn tilts it (radians: pitch, yaw, roll), both easing out when aiming.
+// The arms are cut off at the shoulder: the rifle, SMG and shotgun sit closer to the eye so that cut
+// stays off screen (checked over every clip, on a 16:9 screen).
 // relief: how far in front of the eye the rear sight sits when aiming (meters).
 const ANIM_VIEW = {
-  rifle:   { hip: [0, 0, 0], relief: 0.2 },
+  rifle:   { hip: [0, -0.01, 0.05], relief: 0.2 },
   vsk:     { hip: [0.11, -0.14, -0.22], turn: [0.06, 0.12, 0.08], relief: 0.16 }, // no camera in the set: framed by hand
-  smg:     { hip: [0, 0, 0], relief: 0.14 },
-  shotgun: { hip: [0.02, -0.02, -0.08], relief: 0.18 },
+  smg:     { hip: [0, -0.01, 0.07], relief: 0.14 },
+  shotgun: { hip: [0.02, -0.07, 0.15], relief: 0.18 },
   sniper:  { hip: [0, 0, 0], relief: 0.07 },
   pistol:  { hip: [0, 0, 0], relief: 0.36 },
   makarov: { hip: [0.02, -0.09, 0], relief: 0.36 },

@@ -37,6 +37,14 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · No cut-off shoulder in view (`feature/milestone-5`)
+- The arms are cut off at the shoulder, and the shotgun (and a little of the rifle and the SMG's empty reload) showed the cut.
+- Found by checking every clip at 11 points on a 16:9 screen for upper-arm vertices in view. The rifle, SMG and shotgun sets now sit closer to the eye and slightly lower, so the guns also look bigger:
+  - rifle 5 cm back, 1 cm down;
+  - SMG 7 cm back, 1 cm down;
+  - shotgun 15 cm back, 7 cm down.
+- Result: 0 upper-arm vertices on screen at the hip for every gun. Aiming would still show some on the rifle, but only the sniper aims down sights for now; revisit if aiming comes back.
+
 ### 2026-11-02 · Yard: spawn cover (`feature/milestone-5`)
 - The map check found 22 open lines between the two Yard spawns, down the middle lane.
 - Two 2.4 m walls now stand either side of the middle at each spawn, replacing the two small crates. The crate stack in the middle covers the gap between them, and the far raised deck is too low to see over them.
