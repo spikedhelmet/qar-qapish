@@ -72,6 +72,9 @@ export function spawnSide(mode, team, attackers) {
   return team === attackers ? 'A' : 'B';
 }
 
+// Standing on a site's floor (sites can be raised, like Plaza's pavilions)?
+export function onSiteFloor(site, y) { return Math.abs(y - (site.y || 0)) < 0.5; }
+
 export function siteAt(map, x, z) {
   return map.sites.find(s => x >= s.min[0] && x <= s.max[0] && z >= s.min[1] && z <= s.max[1]) || null;
 }

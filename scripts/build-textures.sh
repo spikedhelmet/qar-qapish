@@ -16,6 +16,9 @@ SURFACES=(
   "brick Bricks085"
   "wood Planks020"
   "steel CorrugatedSteel005"
+  "paving PavingStones136"
+  "stone Tiles143"
+  "plaster PaintedPlaster006"
 )
 
 mkdir -p "$OUT"

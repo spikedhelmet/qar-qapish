@@ -37,6 +37,21 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Plaza, second version; three more textures (`feature/milestone-5`)
+- **Pavilions are raised and enclosed.** The floor is 2.2 m up, too high to climb. Plaster walls close the sides, a roof is at 5 m, and the plaza side has a half wall with a window band above it and a doorway. The objective sites sit inside the pavilions.
+- **Stairs go up:**
+  - from each team's lane into both pavilions, where the sketch says "stairs here";
+  - from the plaza through each pavilion's doorway.
+  - The terraces are gone: spawns, bands and lanes are all at ground level, and the passages into the plaza are flat and covered.
+- **Mirrored east/west as well as north/south,** so both teams have the same routes to both pavilions.
+- **Objective sites can be raised:** each site can give its floor height `y`. Planting checks you're on that floor, and the charge and its ground marking sit there.
+- **Less brick:** three more CC0 textures from ambientCG.
+  - Paving slabs (PavingStones136) for the plaza floor, warmed up since the photo looks olive under the sky.
+  - Limestone blocks (Tiles143) for Plaza's walls.
+  - Whitewashed plaster (PaintedPlaster006) for the pavilions.
+  - All 8 photo textures together come to 8.5 MB.
+- Checked by script and in the browser: every route walks cleanly, no spawn can see the other team's, and the sites register on the raised floors.
+
 ### 2026-11-02 · Host controls before joining (`feature/milestone-5`)
 - On the host Mac, the menu shows the mode, map and team-rule controls before you join.
   - The changes go to the server over HTTP (`POST /api/host`), and it only accepts them from the host Mac.

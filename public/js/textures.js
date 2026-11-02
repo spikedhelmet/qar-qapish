@@ -183,6 +183,21 @@ function container(size, rgb, seed) {
   return c;
 }
 
+// Stone blocks or paving slabs: a noisy base color cut into a grid (alternate rows offset for blocks).
+function slabs(size, rgb, rows, cols, offset, seed) {
+  const c = canvas(size), ctx = c.getContext('2d');
+  paintNoise(ctx, size, rgb, fbm(size, seed), 0.25, 0.05, seed);
+  ctx.strokeStyle = 'rgba(40,36,30,0.45)';
+  ctx.lineWidth = Math.max(2, size / 200);
+  const h = size / rows, w = size / cols;
+  for (let y = 0; y < rows; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * h); ctx.lineTo(size, y * h); ctx.stroke();
+    const shift = offset && y % 2 ? w / 2 : 0;
+    for (let x = 0; x <= cols; x++) { ctx.beginPath(); ctx.moveTo(x * w + shift, y * h); ctx.lineTo(x * w + shift, (y + 1) * h); ctx.stroke(); }
+  }
+  return c;
+}
+
 // Large site letter painted on the ground.
 export function siteDecal(letter) {
   const size = 512, c = canvas(size), ctx = c.getContext('2d');
@@ -216,6 +231,9 @@ export function createSurfaces(renderer) {
     container_red: make(container(size, [150, 52, 40], 41), 2.6, 0.55, 0.45),
     container_blue: make(container(size, [45, 78, 120], 43), 2.6, 0.55, 0.45),
     container_green: make(container(size, [60, 98, 64], 47), 2.6, 0.55, 0.45),
+    paving: make(slabs(size, [150, 145, 134], 4, 4, false, 61), 2, 0.9),
+    stone: make(slabs(size, [196, 174, 136], 5, 3, true, 67), 2, 0.9),
+    plaster: make(slabs(size, [214, 208, 196], 1, 1, false, 71), 3, 0.95),
   };
   loadPhotos(surfaces, renderer);
   return surfaces;
@@ -233,6 +251,9 @@ const PHOTO = {
   container_red: { tex: 'steel', tile: [3, 3], tint: [0.62, 0.13, 0.08], metalness: 0.3 },
   container_blue: { tex: 'steel', tile: [3, 3], tint: [0.1, 0.2, 0.42], metalness: 0.3 },
   container_green: { tex: 'steel', tile: [3, 3], tint: [0.14, 0.3, 0.14], metalness: 0.3 },
+  paving: { tex: 'paving', tile: [2.5, 2.5], tint: [1.12, 0.98, 0.88], rough: 0.9 }, // olive in the photo; warmer under the blue sky
+  stone: { tex: 'stone', tile: [2.4, 2.4], rough: 0.9 },
+  plaster: { tex: 'plaster', tile: [3, 3], tint: [0.9, 0.88, 0.84], rough: 0.95, bump: 0.6 },
 };
 const PHOTO_DIR = '/assets/game/textures/';
 

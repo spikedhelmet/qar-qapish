@@ -188,6 +188,9 @@ Save into `public/assets/sounds/sfx/` as `.mp3`, `.ogg` or `.wav`. Good free sou
 | Lane dividers, hall | Bricks085 | |
 | Crates | Planks020 | A corner of the photo, with a painted frame and brace on top |
 | Containers | CorrugatedSteel005 | One grey steel, tinted red / blue / green |
+| Plaza floor | PavingStones136 | Warmed up (olive in the photo) |
+| Plaza walls | Tiles143 | Limestone blocks |
+| Pavilion walls | PaintedPlaster006 | Whitewashed plaster |
 | Trims, doors | Metal plates / rusted metal | P3, not yet |
 
 To swap a texture:
@@ -241,4 +244,4 @@ Shown in the game's menu (built from each model's licence data). Currently:
   - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
-- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005), CC0
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster006), CC0

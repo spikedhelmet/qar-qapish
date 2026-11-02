@@ -85,7 +85,7 @@ export function showMap(scene, map) {
       new THREE.MeshStandardMaterial({ map: siteDecal(site.name), transparent: true, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2 }),
     );
     decal.rotation.x = -Math.PI / 2;
-    decal.position.set(site.min[0] + sx / 2, 0.01, site.min[1] + sz / 2);
+    decal.position.set(site.min[0] + sx / 2, (site.y || 0) + 0.01, site.min[1] + sz / 2);
     decal.receiveShadow = true;
     decal.userData.own = true;
     level.add(decal);

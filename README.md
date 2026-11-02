@@ -90,7 +90,7 @@ Class changes apply instantly during freeze time or right after spawning, otherw
 - Two maps, both mirrored so neither team has an edge:
   - **Yard:** three long lanes with containers, crates and raised decks.
   - **Depot:** smaller and closer. A roofed hall in the middle, a raised loading dock to the north, and a rail yard of parked wagons to the south.
-  - **Plaza** (drawn by the team): a walled plaza with a fountain in the middle and a roofed pavilion at each end. Each team spawns on a raised terrace behind a wall, crosses a band of cover, and comes down the east stairs or a covered stairway into the plaza. Mirrored north/south.
+  - **Plaza** (drawn by the team): a paved plaza with a fountain, walled on its long sides, between two raised pavilions with plaster walls, a roof and windows onto the plaza. Each team spawns behind a wall, crosses a band of cover, and either takes a covered passage into the plaza or climbs stairs from the lane into a pavilion. The plaza has stairs up into both pavilions too. Mirrored both ways.
   - All three have plant sites A and B for objective mode.
 - **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; first-person guns with arms and hand-made animations (idle, walk, fire, reload) by Cransh, photo textures on the maps (ambientCG). Sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 

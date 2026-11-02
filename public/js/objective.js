@@ -2,7 +2,7 @@
 // the explosion, and what the local player can do right now (plant / defuse).
 import * as THREE from 'three';
 import { MAP } from './shared/map.js';
-import { MODES, siteAt } from './shared/config.js';
+import { MODES, siteAt, onSiteFloor } from './shared/config.js';
 import { propModel } from './assets.js';
 import { playBeep, playExplosion } from './audio.js';
 
@@ -70,7 +70,8 @@ export class ObjectiveView {
     const ob = this.state;
     if (!ob || !alive) return null;
     const cfg = MODES.obj;
-    if (!ob.planted && ob.carrier === myId && siteAt(MAP, pos[0], pos[2]) && pos[1] < 0.5) return 'plant';
+    const site = siteAt(MAP, pos[0], pos[2]);
+    if (!ob.planted && ob.carrier === myId && site && onSiteFloor(site, pos[1])) return 'plant';
     if (ob.planted && team !== ob.att) {
       const d = Math.hypot(pos[0] - ob.planted.pos[0], pos[2] - ob.planted.pos[2]);
       if (d < cfg.defuseRange && Math.abs(pos[1] - ob.planted.pos[1]) < 1.5) return 'defuse';

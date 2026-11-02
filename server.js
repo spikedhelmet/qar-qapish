@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { MAP, MAPS, setMap } from './public/js/shared/map.js';
-import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, classOffered, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt } from './public/js/shared/config.js';
+import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, classOffered, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt, onSiteFloor } from './public/js/shared/config.js';
 import { stepGrenade } from './public/js/shared/grenade.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
 
@@ -275,7 +275,10 @@ function dropCharge(p) {
 function actionAllowed(p, kind) {
   const c = match.charge, o = cfg();
   if (!p.alive) return false;
-  if (kind === 'plant') return !c.planted && c.carrier === p.id && !!siteAt(MAP, p.pos[0], p.pos[2]) && p.pos[1] < 0.5;
+  if (kind === 'plant') {
+    const site = siteAt(MAP, p.pos[0], p.pos[2]);
+    return !c.planted && c.carrier === p.id && !!site && onSiteFloor(site, p.pos[1]);
+  }
   return !!c.planted && p.team === defenders() &&
     Math.hypot(p.pos[0] - c.planted.pos[0], p.pos[2] - c.planted.pos[2]) < o.defuseRange &&
     Math.abs(p.pos[1] - c.planted.pos[1]) < 1.5;
@@ -307,7 +310,7 @@ function plant(p) {
   const c = match.charge, site = siteAt(MAP, p.pos[0], p.pos[2]);
   c.carrier = null;
   c.act = null;
-  c.planted = { pos: [p.pos[0], 0, p.pos[2]], site: site.name, explodeAt: now() + cfg().fuseTime };
+  c.planted = { pos: [p.pos[0], site.y || 0, p.pos[2]], site: site.name, explodeAt: now() + cfg().fuseTime };
   match.phaseEnds = c.planted.explodeAt; // the clock now counts down the fuse
   broadcast({ t: 'obj', ev: 'planted', site: site.name, pos: c.planted.pos, id: p.id });
 }
