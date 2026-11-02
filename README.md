@@ -75,11 +75,7 @@ Class changes apply instantly during freeze time or right after spawning, otherw
 
 ### Roadmap
 
-1. ~~Core: movement, LAN play, rifle/pistol/knife, Team Deathmatch~~
-2. ~~Classes (Assault, Marksman, Breacher, Runner) with sniper, shotgun and SMG; Elimination mode~~
-3. Objective mode (plant / defuse at A or B)
-4. Grenades: frag, smoke, flash
-5. Polish: real sounds, settings, more maps
+See [ROADMAP.md](ROADMAP.md) for the plan, the progress log, and the decisions made along the way.
 
 ## How it works
 
