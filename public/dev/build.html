@@ -85,6 +85,22 @@
       return box;
     }
 
+    // Middle of the gun's left/right extent over its front tip (z < zLimit): the muzzle is symmetric.
+    function frontCenterX(root, zLimit) {
+      let min = Infinity, max = -Infinity;
+      const v = new THREE.Vector3();
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        for (let p = o; p; p = p.parent) if (!p.visible) return;
+        const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+          if (v.z < zLimit) { min = Math.min(min, v.x); max = Math.max(max, v.x); }
+        }
+      });
+      return (min + max) / 2;
+    }
+
     async function buildWeapon(kind, cfg) {
       const gltf = await gltfLoader.loadAsync(srcUrl(cfg.src));
       const extras = gltf.parser.json.asset?.extras || {};
@@ -102,8 +118,11 @@
       root.add(wrap);
 
       const box = visibleBox(root), size = box.getSize(new THREE.Vector3());
+      // Center on the barrel, not the bounding box: side parts (mounts, levers, cocking tubes)
+      // stick out on one side and would push the gun off the line of sight.
+      const boreX = frontCenterX(root, box.min.z + size.z * 0.04);
       const at = ([fromBack, fromBottom]) => new THREE.Vector3(
-        (box.min.x + box.max.x) / 2, box.min.y + fromBottom * size.y, box.max.z - fromBack * size.z);
+        boreX, box.min.y + fromBottom * size.y, box.max.z - fromBack * size.z);
       const grip = at(cfg.grip), muzzle = at(cfg.muzzle);
       const s = cfg.length / size.z;
       wrap.scale.setScalar(s);

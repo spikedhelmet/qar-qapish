@@ -313,13 +313,75 @@ export function teamColor(team) {
 
 // ---------------------------------------------------------------- first-person hands + gun
 
+// How each gun kicks in your hands (the aim kick itself lives in weapons.js).
+// back/up in meters, pitch/yaw/roll in radians at the peak; shake = camera jolt.
+const KICK = {
+  rifle:   { back: 0.045, up: 0.006, pitch: 0.09, yaw: 0.03, roll: 0.05, shake: 0.004 },
+  smg:     { back: 0.03, up: 0.004, pitch: 0.06, yaw: 0.03, roll: 0.04, shake: 0.003 },
+  pistol:  { back: 0.035, up: 0.012, pitch: 0.24, yaw: 0.03, roll: 0.06, shake: 0.004 },
+  shotgun: { back: 0.09, up: 0.02, pitch: 0.3, yaw: 0.05, roll: 0.1, shake: 0.016 },
+  sniper:  { back: 0.1, up: 0.02, pitch: 0.25, yaw: 0.03, roll: 0.07, shake: 0.016 },
+};
+
+// Where spent casings leave the gun (gun space) and what they look like.
+const EJECT = {
+  rifle:   { port: [0.025, 0.045, -0.12], size: [0.0045, 0.03], color: 0xb08d3c },
+  smg:     { port: [0.022, 0.05, -0.08], size: [0.0042, 0.02], color: 0xb08d3c },
+  pistol:  { port: [0.012, 0.045, -0.04], size: [0.0045, 0.02], color: 0xb08d3c },
+  sniper:  { port: [0.03, 0.045, -0.04], size: [0.005, 0.045], color: 0xb08d3c },
+  shotgun: { port: [0.025, 0.03, -0.08], size: [0.009, 0.05], color: 0x9a2a22 },
+};
+
+const rndSpin = () => (Math.random() * 2 - 1) * 25;
+
+// Damped spring on three axes: kicked with a velocity, it snaps back with a small overshoot.
+class Spring {
+  constructor(stiffness, damping) {
+    this.k = stiffness;
+    this.c = damping;
+    this.x = new THREE.Vector3();
+    this.v = new THREE.Vector3();
+    // Damping lowers the first peak; scale kicks up so they reach the requested size.
+    const w = Math.sqrt(stiffness), zeta = damping / (2 * w), wd = Math.sqrt(1 - zeta * zeta);
+    this.gain = w / Math.exp(-zeta * Math.atan2(wd, zeta) / wd);
+  }
+  // Adds a kick whose peak displacement is (x, y, z).
+  kick(x, y, z) {
+    this.v.x += x * this.gain; this.v.y += y * this.gain; this.v.z += z * this.gain;
+  }
+  update(dt) {
+    for (let t = 0; t < dt; t += 1 / 240) {
+      const h = Math.min(1 / 240, dt - t);
+      this.v.x += (-this.k * this.x.x - this.c * this.v.x) * h;
+      this.v.y += (-this.k * this.x.y - this.c * this.v.y) * h;
+      this.v.z += (-this.k * this.x.z - this.c * this.v.z) * h;
+      this.x.addScaledVector(this.v, h);
+    }
+  }
+}
+
+// Real gun models: where the grip sits at the hip, and how far in front of the eye the gun
+// sits when aiming (adsZ; the rear sight ends up roughly a hand's width from the eye).
+// adsY nudges the sight line when the gun's highest point isn't its sight.
+const REAL_VIEW = {
+  rifle:   { hip: [0.15, -0.18, -0.33], adsZ: 0.05 },
+  sniper:  { hip: [0.15, -0.19, -0.36], adsZ: -0.1 },
+  shotgun: { hip: [0.15, -0.19, -0.31], adsZ: -0.24 },
+  smg:     { hip: [0.13, -0.16, -0.29], adsZ: -0.15, adsY: 0.012 }, // look through the rear drum, not over it
+  pistol:  { hip: [0.11, -0.13, -0.31], adsZ: -0.34 },
+  knife:   { hip: [0.17, -0.19, -0.29] },
+};
+
 export class ViewModel {
   constructor(team) {
     this.group = new THREE.Group();
     this.holder = new THREE.Group();
     this.group.add(this.holder);
     this.sleeve = mat(UNIFORMS[team].shirt, 0.95);
-    this.kick = 0;
+    this.recoilPos = new Spring(300, 22);
+    this.recoilRot = new Spring(300, 22);
+    this.shake = new Spring(500, 30);   // camera jolt, read by main.js
+    this.shells = [];
     this.swing = 0;
     this.bobT = 0;
     this.sway = new THREE.Vector2();
@@ -387,14 +449,22 @@ export class ViewModel {
     this.gun.traverse(o => { o.castShadow = false; o.receiveShadow = false; });
     // Real models: line the top of the gun (its sights) up with the screen center when aiming.
     const info = weaponInfo(kind);
-    if (info && !this.gun.userData.pump && kind !== 'knife') this.adsPos = new THREE.Vector3(0, -info.sightY - 0.002, this.adsPos.z);
+    if (info) {
+      const v = REAL_VIEW[kind];
+      this.base = new THREE.Vector3(...v.hip);
+      this.adsPos = v.adsZ === undefined ? this.base
+        : new THREE.Vector3(0, -info.sightY - 0.002 + (v.adsY || 0), v.adsZ);
+    }
   }
 
   // drawT: 0→1 raise progress, reloadT: 0→1 reload progress (or -1), adsT: 0→1 aimed in
   update(dt, { speed, onGround, drawT, reloadT, lookDX, lookDY, adsT = 0, sprinting = false, sliding = false }) {
     this.sprintT += ((sprinting ? 1 : 0) - this.sprintT) * Math.min(1, dt * 10);
     const steady = 1 - adsT * 0.85; // aiming damps bob and sway
-    this.kick += (0 - this.kick) * Math.min(1, dt * 14);
+    this.recoilPos.update(dt);
+    this.recoilRot.update(dt);
+    this.shake.update(dt);
+    this.updateShells(dt);
     this.swing = Math.max(0, this.swing - dt * 3.5);
     this.sway.x += (Math.max(-1, Math.min(1, -lookDX * 0.02)) - this.sway.x) * Math.min(1, dt * 8);
     this.sway.y += (Math.max(-1, Math.min(1, lookDY * 0.02)) - this.sway.y) * Math.min(1, dt * 8);
@@ -405,8 +475,8 @@ export class ViewModel {
     const bob = (this.sprintT > 0.5 ? 2 : 1) * steady;
     p.x += (Math.sin(this.bobT) * 0.012 * moving + this.sway.x * 0.02) * bob;
     p.y += (Math.abs(Math.cos(this.bobT)) * 0.012 * moving - this.sway.y * 0.015) * bob;
-    p.z += this.kick * (0.06 - adsT * 0.03);
-    let rx = this.kick * (0.12 - adsT * 0.08), rz = 0, ry = this.sway.x * 0.05 * steady;
+    p.add(this.recoilPos.x);
+    let rx = this.recoilRot.x.x, ry = this.sway.x * 0.05 * steady + this.recoilRot.x.y, rz = this.recoilRot.x.z;
     // Sprint: gun swings down and across the body.
     p.x -= this.sprintT * 0.07; p.y -= this.sprintT * 0.07;
     rx -= this.sprintT * 0.35; ry += this.sprintT * 0.75;
@@ -427,7 +497,9 @@ export class ViewModel {
     }
     // Pump / bolt: slide the forend (and the hand on it) back and forward.
     if (this.cycle > 0) {
+      const before = this.cycle;
       this.cycle = Math.max(0, this.cycle - dt);
+      if (before > 0.2 && this.cycle <= 0.2) this.ejectShell(); // casing comes out mid-pump / bolt
       const k = this.cycle < 0.45 ? Math.sin((1 - this.cycle / 0.45) * Math.PI) : 0;
       const pump = this.gun.userData.pump;
       if (pump) pump.position.z = -0.38 + k * 0.09;
@@ -439,9 +511,50 @@ export class ViewModel {
   }
 
   // `cycleIn` > 0: pump or bolt action plays that many seconds after the shot.
-  fireKick(cycleIn = 0) {
-    this.kick = 1;
+  fireKick(cycleIn = 0, adsT = 0) {
+    const k = KICK[this.kind];
+    if (!k) return;
+    const calm = 1 - adsT * 0.5; // aiming down sights steadies the gun
+    const rnd = () => Math.random() * 2 - 1;
+    this.recoilPos.kick(rnd() * 0.004 * calm, k.up * calm, k.back * calm);
+    this.recoilRot.kick(k.pitch * calm, rnd() * k.yaw * calm, rnd() * k.roll * calm);
+    this.shake.kick(k.shake * (0.7 + Math.random() * 0.3), rnd() * k.shake * 0.4, rnd() * k.shake);
     if (cycleIn) this.cycle = cycleIn;
+    else this.ejectShell();
+  }
+
+  ejectShell() {
+    const e = EJECT[this.kind];
+    if (!e) return;
+    const shell = new THREE.Mesh(new THREE.CylinderGeometry(e.size[0], e.size[0], e.size[1], 8),
+      new THREE.MeshStandardMaterial({ color: e.color, metalness: 0.8, roughness: 0.35 }));
+    shell.position.fromArray(e.port).applyMatrix4(this.holder.matrix);
+    shell.rotation.set(Math.PI / 2, 0, Math.random());
+    // Thrown out to the right and up, a little backward, tumbling.
+    const v = new THREE.Vector3(1.3 + Math.random() * 0.6, 0.9 + Math.random() * 0.6, 0.25 + Math.random() * 0.3)
+      .applyQuaternion(this.holder.quaternion);
+    this.group.add(shell);
+    this.shells.push({ mesh: shell, v, spin: new THREE.Vector3(rndSpin(), rndSpin(), rndSpin()), age: 0 });
+    if (this.shells.length > 12) this.removeShell(this.shells.shift());
+  }
+
+  updateShells(dt) {
+    for (let i = this.shells.length - 1; i >= 0; i--) {
+      const s = this.shells[i];
+      s.age += dt;
+      s.v.y -= 7 * dt;
+      s.mesh.position.addScaledVector(s.v, dt);
+      s.mesh.rotation.x += s.spin.x * dt;
+      s.mesh.rotation.y += s.spin.y * dt;
+      s.mesh.rotation.z += s.spin.z * dt;
+      if (s.age > 0.7) { this.removeShell(s); this.shells.splice(i, 1); }
+    }
+  }
+
+  removeShell(s) {
+    this.group.remove(s.mesh);
+    s.mesh.geometry.dispose();
+    s.mesh.material.dispose();
   }
   slash() { this.swing = 1; }
   muzzleWorld(target) { return this.gun.userData.muzzle.getWorldPosition(target); }

@@ -312,7 +312,7 @@ function shoot() {
     audio.playSwish(null);
   } else {
     // Pump and bolt guns cycle their action after each shot.
-    viewModel.fireKick(def.fireInterval > 0.5 ? 0.6 : 0);
+    viewModel.fireKick(def.fireInterval > 0.5 ? 0.6 : 0, arsenal.adsT);
     audio.playShot(kind, null);
     _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
     _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
@@ -451,7 +451,8 @@ function updateCamera(dt, playing) {
     const eye = me.eye();
     camera.position.set(eye[0], eye[1], eye[2]);
     game.roll += ((me.sliding ? 0.07 : 0) - game.roll) * Math.min(1, dt * 10);
-    camera.rotation.set(me.pitch + arsenal.recoil.pitch, me.yaw + arsenal.recoil.yaw, game.roll);
+    const jolt = viewModel ? viewModel.shake.x : { x: 0, y: 0, z: 0 };
+    camera.rotation.set(me.pitch + arsenal.recoil.pitch + jolt.x, me.yaw + arsenal.recoil.yaw + jolt.y, game.roll + jolt.z);
   } else {
     const deathCam = game.deathInfo && performance.now() - game.deathInfo.at < 2500;
     const spec = !modeCfg().respawn && game.phase !== 'over' && !deathCam ? spectateTarget(playing) : null;

@@ -14,7 +14,8 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 | 1 | Core: movement, LAN play, rifle / pistol / knife, Team Deathmatch | ✅ Done |
 | – | Playtest feedback: sprint, slide, aim down sights, announcer | ✅ Done |
 | 2 | Classes (Assault, Marksman, Breacher, Runner), sniper / shotgun / SMG, Elimination mode | ✅ Done |
-| – | Real assets: animated SWAT soldiers, real guns, asset build pipeline | ✅ Done, needs a playtest |
+| – | Real assets: animated SWAT soldiers, real guns, asset build pipeline | ✅ Done, playtested |
+| – | Weapon feel: closer guns, centered sights, punchier recoil, shell casings | ✅ Done, needs a playtest |
 | 3 | Objective mode: plant / defuse a charge at site A or B | ⏭ Next |
 | 4 | Grenades: frag, smoke, flashbang | Planned |
 | 5 | Polish: real sounds, map textures, first-person arms, more maps, settings | Planned |
@@ -33,6 +34,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - **Needs from you:** grenade sounds (see ASSETS.md §4).
 
 ### Milestone 5: polish
+- **Per-weapon reload animations** (first person): magazine out / new magazine in / charging handle for the rifle, SMG and pistol, shell-by-shell for the shotgun, bolt + magazine for the sniper. Done in code by moving the gun's own magazine part (the models keep it as a separate piece), timed to each gun's reload length and to reload sounds. Better once real first-person arms are in, so the two go together.
 - Real sounds: gunshots, reloads, footsteps, impacts (ASSETS.md §4).
 - Photo textures for the map (ambientCG / Poly Haven, CC0).
 - First-person arms (model downloaded: "FREE FPS Arms with glove").
@@ -46,6 +48,12 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Weapon feel (`feature/real-assets`)
+- Playtest feedback on real guns: too far from the camera, rifle skewed left, SMG skewed right, firing felt flat.
+- Guns now centered on their barrel instead of their bounding box (side parts like the AK's scope mount and the MP5K's cocking tube were pulling them 6–10 mm off the sight line).
+- Guns sit closer at the hip, and much closer when aiming: the rear sight ends up a hand's width from the eye. SMG now aims through its rear drum; shotgun sights down the barrel to the bead.
+- Firing: spring-based kick per weapon (back, up, random twist, with a small overshoot), a camera jolt, calmer when aiming, and brass casings that fly out of the ejection port. The shotgun drops a red shell on the pump and the sniper ejects on the bolt.
 
 ### 2026-10-30 · Real assets (`feature/real-assets`)
 - Other players are now animated Mixamo soldiers: blue SWAT (Falcons) and black SWAT (Jackals), with 49 clips covering idle, 8-way walk/run, sprint, crouch, jump, 6 deaths and a pistol set. Their upper body follows their aim, and the real gun sits in their hand.
