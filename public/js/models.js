@@ -2,8 +2,8 @@
 // They expose the same small interface the real Mixamo / Sketchfab models will use later.
 import * as THREE from 'three';
 import { TEAMS, WEAPONS } from './shared/config.js';
-import { weaponModel, weaponInfo, armsModel } from './assets.js';
-import { FpArms } from './fparms.js';
+import { weaponModel, weaponInfo, armsModel, characterModel } from './assets.js';
+import { FpArms, RIGS } from './fparms.js';
 import { playMech } from './audio.js';
 
 const mat = (color, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -364,6 +364,14 @@ const HAND_POSES = {
 };
 HAND_POSES.smoke = HAND_POSES.flash = HAND_POSES.frag;
 
+// Where the arms' shoulders sit relative to the eye. The soldier's sit a little ahead of the eye
+// (its arms are shorter) — its chest stays below the bottom of the view.
+const ARMS_PLACE = {
+  soldier: new THREE.Vector3(0, -0.37, -0.14),
+  arms: new THREE.Vector3(0, -0.3, -0.05),
+};
+const SOLDIER_ARMS_SCALE = 1.1; // slightly long arms so the support hand reaches a rifle's forend
+
 // Moving parts inside the real gun models (matched by mesh name): the magazine that comes out
 // on a reload, and the bolt / slide that gets racked afterwards.
 const PARTS = {
@@ -433,13 +441,7 @@ export class ViewModel {
     this.holder = new THREE.Group();
     this.group.add(this.holder);
     this.sleeve = mat(UNIFORMS[team].shirt, 0.95);
-    // Real arms model when built; the stand-in sleeves then only mark where the hands go.
-    const arms = armsModel();
-    if (arms) {
-      this.armsRig = new FpArms(arms);
-      arms.position.set(0, -0.3, -0.05); // shoulders just below and behind the eye
-      this.group.add(arms);
-    }
+    this.buildArms(team);
     this.recoilPos = new Spring(300, 22);
     this.recoilRot = new Spring(300, 22);
     this.shake = new Spring(500, 30);   // camera jolt, read by main.js
@@ -450,7 +452,30 @@ export class ViewModel {
     this.sprintT = 0;
   }
 
-  setTeam(team) { this.sleeve.color.setHex(UNIFORMS[team].shirt); }
+  setTeam(team) {
+    this.sleeve.color.setHex(UNIFORMS[team].shirt);
+    if (team !== this.team) {
+      this.buildArms(team);
+      if (this.kind) this.setWeapon(this.kind);
+    }
+  }
+
+  // Real arms: your team's own soldier (head and legs hidden, so sleeves and gloves match what others
+  // see), else the separate arms model, else the stand-in sleeves. With real arms the stand-in
+  // sleeves only mark where the hands go.
+  buildArms(team) {
+    this.team = team;
+    if (this.armsBody) this.group.remove(this.armsBody);
+    this.armsRig = null;
+    let body = characterModel(team), rig = RIGS.mixamo, shoulders = ARMS_PLACE.soldier;
+    if (body) body.scale.setScalar(SOLDIER_ARMS_SCALE);
+    else { body = armsModel(); rig = RIGS.sketchfab; shoulders = ARMS_PLACE.arms; }
+    this.armsBody = body;
+    if (!body) return;
+    this.armsRig = new FpArms(body, rig);
+    body.position.copy(shoulders).sub(this.armsRig.shoulderMid());
+    this.group.add(body);
+  }
 
   setWeapon(kind) {
     this.kind = kind;

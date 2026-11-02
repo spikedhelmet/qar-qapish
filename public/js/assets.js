@@ -31,7 +31,9 @@ export async function loadAssets(onProgress = () => {}) {
   const add = (file, use) => jobs.push({ file, use });
   for (const [team, c] of Object.entries(manifest.characters)) add(c.file, g => { assets.characters[team] = g.scene; });
   add(manifest.animations.file, g => { for (const clip of g.animations) assets.clips[clip.name] = clip; });
-  if (manifest.arms) add(manifest.arms.file, g => { assets.arms = g.scene; });
+  // The separate arms model is only a fallback: first person normally uses the team's own soldier.
+  const haveSoldiers = Object.keys(manifest.characters || {}).length > 0;
+  if (manifest.arms && !haveSoldiers) add(manifest.arms.file, g => { assets.arms = g.scene; });
   for (const [kind, prop] of Object.entries(manifest.props || {})) add(prop.tp, g => { assets.props[kind] = g.scene; });
   for (const [kind, w] of Object.entries(manifest.weapons)) {
     add(w.fp, g => { assets.weapons.fp[kind] = g.scene; });
@@ -63,6 +65,11 @@ export async function loadAssets(onProgress = () => {}) {
 
 export function weaponInfo(kind) {
   return assets.manifest?.weapons[kind] || null;
+}
+
+// A fresh copy of a team's soldier (for first-person arms), or null when not built.
+export function characterModel(team) {
+  return assets.characters[team] ? SkeletonUtils.clone(assets.characters[team]) : null;
 }
 
 // A fresh copy of the first-person arms (rigged), or null when not built.

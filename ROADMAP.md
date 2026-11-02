@@ -36,6 +36,13 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Milestone 5, part 3: team-matched arms (`feature/milestone-5`)
+- Playtest feedback: the Sketchfab arms (bare forearms, fingerless gloves) didn't fit the SWAT look.
+- First person now uses your own team's soldier: a copy cut down to just the triangles skinned to the arm and hand bones (head, body and legs removed; the third-person soldiers are untouched), so the sleeves and gloves match what others see — blue sleeves for the Falcons, black for the Jackals — and switch with your team.
+- Same hand IK, generalised for the Mixamo skeleton (its hands hang off the forearms, so out-of-reach targets stop at full stretch instead of stretching). Arms 10% longer and shoulders set low and a little forward so the support hand reaches a rifle's forend.
+- Fixed while testing: collapsing the head bone to hide it threw spikes across the screen (replaced by cutting triangles); Mixamo mirrors the left hand's bone axes, so finger curl runs the opposite way per hand.
+- The Sketchfab arms remain as a fallback only (not downloaded when the soldiers exist).
+
 ### 2026-11-02 · Milestone 5, part 2: first-person arms (`feature/milestone-5`)
 - The stand-in sleeves are replaced by the rigged "FREE FPS Arms with glove" model (bare forearms, fingerless gloves).
 - Every frame the hands are put on the weapon and the elbows bend to reach (two-bone IK, elbows down and out; the forearm stretches slightly rather than leave a gap when the left hand reaches far up a rifle). Fingers curl around the grip, the index finger less (trigger).
