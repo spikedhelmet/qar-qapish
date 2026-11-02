@@ -42,9 +42,10 @@ both(12, 0, 0.6, 5, 1.3, 'concrete');
 both(23.5, 0, 7, 10, 1.5, 'concrete');
 for (let i = 1; i <= 4; i++) both(20 - 0.6 * (4 - i) - 0.3, 0, 0.6, 4, 0.3 * i, 'concrete');
 
-// Spawn cover
-both(31, -4.5, 1.2, 1.2, 1.2, 'crate');
-both(31, 4.5, 1.2, 1.2, 1.2, 'crate');
+// Spawn cover: walls either side of the middle (2.4 m) so the spawns can't see each other down the
+// middle lane; the crate stack in the middle covers the gap between them.
+both(30.5, -5, 0.6, 5, 2.4, 'concrete');
+both(30.5, 5, 0.6, 5, 2.4, 'concrete');
 both(28, -20, 0.6, 4, 1.3, 'concrete');
 both(28, 20, 0.6, 4, 1.3, 'concrete');
 

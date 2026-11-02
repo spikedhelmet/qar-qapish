@@ -37,6 +37,11 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Yard: spawn cover (`feature/milestone-5`)
+- The map check found 22 open lines between the two Yard spawns, down the middle lane.
+- Two 2.4 m walls now stand either side of the middle at each spawn, replacing the two small crates. The crate stack in the middle covers the gap between them, and the far raised deck is too low to see over them.
+- Map check: 0 open spawn lines, all ground reachable.
+
 ### 2026-11-02 · Old Town map (`feature/milestone-5`)
 - **New close-quarters map "Old Town"**, an original layout. It's 64 × 48 m, the smallest map so far.
   - Alleys about 3.5 m wide run between solid 6 m buildings.
