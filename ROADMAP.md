@@ -30,12 +30,22 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Your recorded announcer lines (ASSETS.md §3).
 
 ### Ideas parked for later
-- **Climbing / mantling:** pull up onto ledges about chest high (crates, the loading dock, low walls) by jumping at them. The map is all boxes, so the climbable spots can be found automatically. This needs a climb-up animation for other players (Mixamo has "Climbing" / "Climb Up Wall").
+- A climb-up animation for other players (Mixamo "Climb Up Wall"); for now they see a quick rise.
 - Slide and knife-attack animations (Mixamo).
 - Kill-cam, round MVP, match stats.
 - Gun skins per team.
 
 ## Progress log
+
+### 2026-11-02 · Milestone 5, part 13: climbing, crosshair, hit sounds (`feature/milestone-5`)
+- **Climbing:** jump at a ledge while moving toward it, or keep jump held as you reach it mid-air, and you pull yourself up.
+  - Ledges count up to 1.9 m above the ground you jumped from: the 1.2 m dock, 1.5 m decks and crates, 1.3 m walls. The 2.4 m crate stacks, 2.6 m containers and 4.2 m walls stay out of reach.
+  - There has to be room to stand on top and nothing overhead.
+  - The climb takes 0.4–0.7 s: up first with the head ducking over the edge, then forward. The gun drops out of the way and can't fire meanwhile.
+  - Built with `findLedge` in `collision.js` and checked with a movement simulation on both maps.
+- **Crosshair:** a new menu option, Static (the new default) or Dynamic (opens up with spread, as before).
+- **Hit markers:** half as thick.
+- **Hit confirmation sounds:** a dry tick on a hit, a bright tink on a headshot and a ding on a kill, all built in code. Your own files in `public/assets/sounds/ui/` (`hit`, `head`, `kill`) play instead if you add them. Kenney's CC0 "Interface Sounds" pack is a good source; its site blocks automated downloads, so I couldn't fetch it.
 
 ### 2026-11-02 · Milestone 5, part 12: Vanguard hidden, scope-only aiming (`feature/milestone-5`)
 - **Vanguard is hidden for now.** Its VSK set doesn't match the other guns. The class is kept in `config.js` but left out of `CLASS_ORDER`, and the server refuses it.
