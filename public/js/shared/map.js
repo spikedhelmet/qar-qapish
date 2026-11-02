@@ -3,9 +3,10 @@
 import { YARD } from './maps/yard.js';
 import { DEPOT } from './maps/depot.js';
 import { PLAZA } from './maps/plaza.js';
+import { OLDTOWN } from './maps/oldtown.js';
 
-export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA };
-export const MAP_ORDER = ['yard', 'depot', 'plaza'];
+export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA, oldtown: OLDTOWN };
+export const MAP_ORDER = ['yard', 'depot', 'plaza', 'oldtown'];
 
 export const MAP = { ...YARD };
 

@@ -37,6 +37,15 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Old Town map (`feature/milestone-5`)
+- **New close-quarters map "Old Town"**, an original layout. It's 64 × 48 m, the smallest map so far.
+  - Alleys about 3.5 m wide run between solid 6 m buildings.
+  - Buildings you can walk into: a hall with pillars facing the courtyard, with five doorways; two houses with inner rooms; and a chapel with pews, between the two north houses.
+  - The middle is a paved courtyard with a well. Market stalls block the east–west alleys in the middle, so there's no straight line from yard to yard.
+  - Each team spawns in a walled yard with four ways out: two alleys, a low covered passage and a house door.
+  - Mirrored east/west. The objective sites are in the hall and the north house on the defenders' half.
+- **New check script for maps:** spawn clearance, spawn-to-spawn sightlines, and a ground flood fill showing every walkable spot is reachable. Old Town: no open spawn lines, all 6,610 ground cells reachable.
+
 ### 2026-11-02 · Plaza: firing spots and more doorways (`feature/milestone-5`)
 - The band between the spawn wall and the wall in front of it was a dead end. Now:
   - That inner wall is 2.4 m, down from 3 m.

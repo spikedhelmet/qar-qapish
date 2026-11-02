@@ -25,7 +25,7 @@ Qapishma server running.
 - If macOS asks whether to allow incoming connections for `node`, click **Allow**, otherwise friends can't connect.
 - Stop the server with `Ctrl+C`.
 
-**Choosing the mode and map.** On the host Mac, the menu shows **Host controls**, before you join as well as in game (Esc): switch between Team Deathmatch, Elimination and Objective, pick the map (Yard, Depot or Plaza), or restart the match. Switching either one restarts the match for everyone. To start the server straight into a mode (`elim` or `obj`):
+**Choosing the mode and map.** On the host Mac, the menu shows **Host controls**, before you join as well as in game (Esc): switch between Team Deathmatch, Elimination and Objective, pick the map (Yard, Depot, Plaza or Old Town), or restart the match. Switching either one restarts the match for everyone. To start the server straight into a mode (`elim` or `obj`):
 
 ```bash
 npm start -- --mode=obj
@@ -91,7 +91,8 @@ Class changes apply instantly during freeze time or right after spawning, otherw
   - **Yard:** three long lanes with containers, crates and raised decks.
   - **Depot:** smaller and closer. A roofed hall in the middle, a raised loading dock to the north, and a rail yard of parked wagons to the south.
   - **Plaza** (drawn by the team): a paved plaza with a fountain, walled on its long sides, between two raised pavilions with plaster walls, a roof and windows onto the plaza. Each team spawns behind a wall, crosses a band of cover, and either takes a covered passage into the plaza or climbs stairs from the lane into a pavilion. The plaza has stairs up into both pavilions too. Mirrored both ways.
-  - All three have plant sites A and B for objective mode.
+  - **Old Town:** close quarters. Narrow alleys between solid buildings, and rooms you fight through: a hall onto a small courtyard with a well, two houses with inner rooms, and a chapel. Each team spawns in a walled yard at its end, with four ways out. Mirrored east/west.
+  - All four have plant sites A and B for objective mode.
 - **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; first-person guns with arms and hand-made animations (idle, walk, fire, reload) by Cransh, photo textures on the maps (ambientCG). Sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 
 ### Roadmap
