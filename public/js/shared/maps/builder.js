@@ -19,7 +19,8 @@ export function builder() {
     box(-w - 0.5, 0, 1, 2 * d, wall, 'concrete');
     box(w + 0.5, 0, 1, 2 * d, wall, 'concrete');
   }
-  // Spawn points in a column at x = side * x, facing the middle.
+  // Spawn points in a column at x = side * x, facing the middle. (A spawn may also give y: the
+// height of the ground it stands on.)
   function spawnColumn(side, x, zs) {
     return zs.map(z => ({ x: side * x, z, yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2 }));
   }

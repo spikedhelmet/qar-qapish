@@ -37,6 +37,13 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-02 · Milestone 5, part 14: Plaza map (`feature/milestone-5`)
+- **New map "Plaza", built from the team's sketch** and mirrored north/south as asked. It's 80 × 56 m.
+  - Middle: a walled plaza with a fountain, crates and low walls. It opens at both ends into roofed pavilions on pillars, which hold the objective sites A and B.
+  - Each side: a terrace 2.2 m up, too high to climb. The spawn sits behind a 3 m wall with doorways at both ends. A band of cover runs behind a waist-high parapet. Stairs at the east end lead down to the lane, and a covered stairway in the middle leads into the plaza.
+  - Checked by script: no spawn can see the other team's spawn, both ways down the terrace walk cleanly, and the terrace can't be climbed from the lane.
+- **Spawns can now sit on raised ground:** each spawn point can give its own height (`y`).
+
 ### 2026-11-02 · Milestone 5, part 13: climbing, crosshair, hit sounds (`feature/milestone-5`)
 - **Climbing:** jump at a ledge while moving toward it, or keep jump held as you reach it mid-air, and you pull yourself up.
   - Ledges count up to 1.9 m above the ground you jumped from: the 1.2 m dock, 1.5 m decks and crates, 1.3 m walls. The 2.4 m crate stacks, 2.6 m containers and 4.2 m walls stay out of reach.

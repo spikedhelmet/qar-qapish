@@ -2,9 +2,10 @@
 // so those references stay valid.
 import { YARD } from './maps/yard.js';
 import { DEPOT } from './maps/depot.js';
+import { PLAZA } from './maps/plaza.js';
 
-export const MAPS = { yard: YARD, depot: DEPOT };
-export const MAP_ORDER = ['yard', 'depot'];
+export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA };
+export const MAP_ORDER = ['yard', 'depot', 'plaza'];
 
 export const MAP = { ...YARD };
 

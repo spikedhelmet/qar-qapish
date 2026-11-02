@@ -184,7 +184,7 @@ function pickSpawn(p) {
 
 function spawn(p) {
   const s = pickSpawn(p);
-  p.pos = [s.x, 0, s.z];
+  p.pos = [s.x, s.y || 0, s.z]; // spawns on raised ground (Plaza's terraces) give their height
   p.yaw = s.yaw; p.pitch = 0;
   p.crouch = false;
   p.hp = PLAYER.maxHp;
