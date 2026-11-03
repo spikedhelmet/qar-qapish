@@ -158,9 +158,9 @@ In the game now (all CC0, from OpenGameArt and a GitHub mirror of Kenney's impac
 | Frag, charge explosion | "150 combat sound effects" |
 | Flashbang | "Flash bang sound" |
 | Footsteps (wood, grass; metal from plate impacts), softened; landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
-| Shotgun shots and pump, concrete (boot) footsteps, jump, sniper scope | "FREE FPS SFX Pack", downloaded by the team into `assets-src/sounds/new/` (licence and author to confirm for the credits) |
+| Shotgun shots and pump, concrete (boot) footsteps, jump, sniper scope | "FREE FPS SFX" by LMGLolo (lmglolo.itch.io/free-fps-sfx), **CC BY-ND 4.0**: credit required, no modified copies. So these files are only converted to AAC, same length, level and channels; muffling and volume are applied in the game as they play. Downloaded by the team into `assets-src/sounds/new/` |
 
-**The team's own downloads** go in `assets-src/sounds/new/` (not fetched by script). The build uses the "FREE FPS SFX Pack" from there, and lists the other files on the sound board as alternatives: SPR-208, "Hammer Cocking Back On Pistol", "Small Explosion", the pack's sniper shots and rocket explosions.
+**The team's own downloads** go in `assets-src/sounds/new/` (not fetched by script). The build uses "FREE FPS SFX" (LMGLolo, CC BY-ND 4.0) from there, unmodified, and lists the other files on the sound board as alternatives: SPR-208, "Hammer Cocking Back On Pistol", "Small Explosion", the pack's sniper shots and rocket explosions.
 
 **Announcer from recordings:** the two announcer recordings in `assets-src/sounds/new/` ("voicebosch warlord" and "Announcer Pack 2"; "Annoucer Pack 1" is the same file as the voicebosch one) are split into 60 lines on the sound board. Pick what each one says and **Save labels**; the next `node scripts/build-sounds.mjs` cuts the labelled ones into `public/assets/sounds/announcer/<line>.m4a`. Lines you haven't labelled keep the placeholder voice.
 
@@ -260,4 +260,4 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
 - Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002, Bark012, LeafSet005, LeafSet030, Foliage001, Bricks066, WoodSiding011, Rock030, Planks012), CC0
-- Sounds (all CC0; see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others
+- Sounds: "FREE FPS SFX" by LMGLolo, CC BY-ND 4.0 (https://lmglolo.itch.io/free-fps-sfx), shotgun, boot footsteps, jump and scope. The rest CC0 (see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others

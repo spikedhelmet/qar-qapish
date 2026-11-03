@@ -944,6 +944,8 @@ function renderCredits(manifest) {
       ` · ${escapeHtml((c.license || '').split(' ')[0])}</li>`;
   });
   rows.push('<li><b>Characters and animations</b>: Mixamo (Adobe)</li>');
+  rows.push('<li><b>Shotgun, footsteps, jump, scope sounds</b>: “FREE FPS SFX” by LMGLolo · <a href="https://lmglolo.itch.io/free-fps-sfx" target="_blank" rel="noopener">source</a> · CC BY-ND 4.0</li>');
+  rows.push('<li><b>Gunshots and other sounds</b>: The Free Firearm Sound Library, Kenney and OpenGameArt packs · CC0</li>');
   list.innerHTML = rows.join('');
   photoTextures.then(t => {
     if (!t) return;

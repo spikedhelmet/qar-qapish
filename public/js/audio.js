@@ -162,7 +162,8 @@ export function playShot(weapon, pos) {
   // Recorded: the close-up take nearby, the mid-distance take further off. The VSK is suppressed.
   const far = pos && listenerDistance(pos) > 30;
   const opts = { gain: pos ? 1.2 : 0.55, lowpass: weapon === 'vsk' ? 1600 : 0 };
-  if (sample(`${far ? 'far' : 'shot'}_${weapon}`, out, opts) || sample(`shot_${weapon}`, out, opts)) return;
+  if (far && sample(`far_${weapon}`, out, opts)) return;
+  if (sample(`shot_${weapon}`, out, far ? { gain: opts.gain * 0.6, lowpass: opts.lowpass || 2200 } : opts)) return; // no far take: muffle the close one
   burst(out, { dur: s.dur, freq: s.crack, q: 0.5, gain: s.gain, sweep: 0.15 });
   burst(out, { dur: s.dur * 2.5, freq: 900, q: 0.3, gain: s.gain * 0.35, sweep: 0.3 }); // tail
   thump(out, { freq: s.boom, dur: 0.18, gain: s.gain * 0.8 });
@@ -178,7 +179,7 @@ export function playSwish(pos) {
 export function playStep(pos, loud = 1, mat) {
   if (!ctx) return;
   const out = output(pos);
-  if (sample('step_' + surface(mat), out, { gain: 0.55 * loud })) return;
+  if (sample('step_' + surface(mat), out, { gain: 0.55 * loud, lowpass: 3500 })) return; // softened as it plays
   burst(out, { dur: 0.09, freq: 420, q: 1.2, gain: 0.25 * loud });
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });
 }
@@ -300,7 +301,7 @@ export function playEarRing(amount, seconds) {
 // Reload steps: magazine out / in, bolt or slide rack, shotgun shell and pump. delay: seconds from now.
 export function playMech(kind, delay = 0) {
   if (!ctx) return;
-  if (sample(kind, master, { gain: 0.6, delay })) return;
+  if (sample(kind, master, { gain: kind === 'scope' ? 1.2 : 0.6, delay })) return;
   if (kind === 'pump') kind = 'rack';
   const presets = {
     magOut: [{ dur: 0.06, freq: 1800, q: 3, type: 'bandpass', gain: 0.35 }, { dur: 0.12, freq: 600, q: 1, gain: 0.2 }],
