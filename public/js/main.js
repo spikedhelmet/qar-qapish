@@ -1,6 +1,7 @@
 // Client entry point: renderer, menu, network messages and the frame loop.
 import * as THREE from 'three';
 import { MAP, MAPS, MAP_ORDER, setMap } from './shared/map.js';
+import { surfaceUnder } from './shared/collision.js';
 import { WEAPONS, TEAMS, SEND_RATE, MODES, MODE_ORDER, PLAYER, CLASSES, CLASS_ORDER, DEFAULT_CLASS, classOffered, GRENADES, THROW, loadoutFor } from './shared/config.js';
 import { throwVelocity } from './shared/grenade.js';
 import { GrenadeView } from './grenades.js';
@@ -418,13 +419,15 @@ function shoot() {
     // Pump and bolt guns cycle their action after each shot.
     viewModel.fireKick(def.fireInterval > 0.5 ? 0.6 : 0, arsenal.adsT);
     audio.playShot(kind, null);
+    if (kind === 'shotgun') audio.playMech('pump', 0.32);
+    if (kind === 'sniper') audio.playMech('rack', 0.45);
     _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
     _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
     const worldMuzzle = eye.clone().addScaledVector(_dir, 0.7).addScaledVector(_right, 0.14).addScaledVector(_up, -0.12);
     effects.muzzleFlash(worldMuzzle, viewModel.muzzleWorld(new THREE.Vector3()), flashSize(kind));
     for (const res of out.results) {
       effects.tracer(worldMuzzle, res.point);
-      if (res.wall) { effects.impact(res.point, res.normal); audio.playImpact(res.point); }
+      if (res.wall) { effects.impact(res.point, res.normal); audio.playImpact(res.point, res.mat); }
     }
   }
   for (const res of out.results) if (res.player) effects.blood(res.point, res.dir.clone().negate());
@@ -474,7 +477,9 @@ function frame(now) {
     if (using !== game.usingE) { game.usingE = using; net.send({ t: 'use', on: using }); }
     if (me.alive) {
       const ev = me.update(dt, using ? KNEEL_INPUT : canAct ? input : NO_INPUT, { speedMult: arsenal.moveMult * CLASSES[game.cls].speed, sprintMult: CLASSES[game.cls].speed, aiming: arsenal.aiming, firing: trigger });
-      if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6);
+      const ground = ev.step || ev.hard ? surfaceUnder(MAP, me.pos) : null;
+      if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6, ground);
+      if (ev.hard) audio.playLand(null, ground);
       if (ev.slide) audio.playSlide(null);
       if (ev.climb) audio.playStep(null, 1.1);
     }
@@ -487,7 +492,7 @@ function frame(now) {
     if (me.alive && game.sendTimer <= 0) {
       game.sendTimer = 1 / SEND_RATE;
       const r = v => Math.round(v * 1000) / 1000;
-      net.send({ t: 's', l: me.life, p: me.pos.map(r), yw: r(me.yaw), pt: r(me.pitch + arsenal.recoil.pitch), cr: me.crouching, sl: me.sliding, w: arsenal.current });
+      net.send({ t: 's', l: me.life, p: me.pos.map(r), yw: r(me.yaw), pt: r(me.pitch + arsenal.recoil.pitch), cr: me.crouching, sl: me.sliding, ru: me.sprinting, ar: !me.onGround && !me.climbing, w: arsenal.current });
     }
     updateCamera(dt, playing);
   } else {

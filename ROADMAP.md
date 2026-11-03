@@ -37,6 +37,35 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-03 · Villa rebuilt after the schematic; no more getting stuck; window climbing; recorded sounds (`feature/milestone-5`)
+- **Getting stuck, found and fixed.** Two causes:
+  - The thin ground layers (lawn, paths, floorboards) were solid boxes a few millimeters high, and players stood inside them.
+  - When a body touched several boxes at once, movement only looked at the first one. So you could catch on the edge of a floor layer instead of sliding along a wall, or land on a lower box while inside a higher one.
+  - Fixes:
+    - Ground cover is now `decal()`: drawn, but not solid.
+    - Movement considers every box it touches: it steps onto the highest one, slides along the nearest face, and lands on the highest top.
+  - Checked with 60 random wandering runs per map (random turns, strafes, sprints and jumps): before the fix, all 60 Villa runs ended with the body inside a box; now none do, on any map.
+- **Villa rebuilt after the team's schematic.** Clockwise from the north-west:
+  - A barn; the carport where the defenders start; a road in from the west gate; a long walled alley.
+  - A storehouse with a locked store, a corridor and a front room.
+  - A front lawn; a sunken pool (1.4 m deep, steps at one end, a diving board) beside the house.
+  - The house: lounge, dining room and study across the front; a back room and the bedroom behind; a closed garage annex.
+  - The back yard where the attackers start.
+  - Map check: no open spawn lines, all ground reachable. Walking by script covers the routes, both pool exits, the diving board, and in and out through windows.
+- **Climbing through windows** (or over a wall too low to stand under): jump at it while moving toward it. You go up onto the sill ducked, across, and drop down on the far side. Windows are 1.6 m tall with a 0.9 m sill.
+- **Sprint** 7.0 → 6.2 m/s.
+- **Other players' movement looks smoother:**
+  - The animation reads a smoothed velocity, with hysteresis on direction and walk/run, so it no longer flicks between clips on jittery snapshots.
+  - Switching between leg cycles keeps the stride's phase, and playback speed eases.
+  - Players now send whether they're sprinting and whether they're in the air, so jumps and sprints show for sure. Going up stairs no longer plays the jump animation.
+- **Recorded sounds** (CC0) replace the synthesized ones:
+  - gunshots, with a far take beyond 30 m;
+  - reloads, pump and bolt after shotgun and sniper shots, dry fire;
+  - footsteps by surface: concrete, wood, grass, metal;
+  - landings, bullet impacts by surface, knife, grenade bounce, explosions, flashbang.
+  - `scripts/fetch-sounds.sh` + `scripts/build-sounds.mjs`, 1.2 MB in the game.
+- **Server fix:** it clamped every player's height to −1 m or above, which would have shown players in the pool higher than they are.
+
 ### 2026-11-02 · Villa map; grass texture (`feature/milestone-5`)
 - **New map "Villa"**, an original layout with one theme throughout: a walled estate around a two-storey house. 80 × 60 m.
   - **Street (attackers' spawn):** parked cars and street lamps. Three ways into the grounds: the main gate, a side door by the gazebo, and a collapsed stretch of the estate wall at the west end.

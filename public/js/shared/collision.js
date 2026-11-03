@@ -56,17 +56,36 @@ export function rayPlayer(o, d, x, y, z, crouching, maxDist) {
   return best;
 }
 
+const touches = (b, x, y, z, r, h) =>
+  x + r > b.min[0] + EPS && x - r < b.max[0] - EPS &&
+  y + h > b.min[1] + EPS && y < b.max[1] - EPS &&
+  z + r > b.min[2] + EPS && z - r < b.max[2] - EPS;
+
 function overlapsAny(map, x, y, z, r, h) {
-  for (const b of map.boxes) {
-    if (x + r > b.min[0] + EPS && x - r < b.max[0] - EPS &&
-        y + h > b.min[1] + EPS && y < b.max[1] - EPS &&
-        z + r > b.min[2] + EPS && z - r < b.max[2] - EPS) return b;
-  }
+  for (const b of map.boxes) if (touches(b, x, y, z, r, h)) return b;
   return null;
+}
+
+// Every box the body would overlap (a body can touch a floor, a wall and a step at once).
+function overlapsAll(map, x, y, z, r, h) {
+  const out = [];
+  for (const b of map.boxes) if (touches(b, x, y, z, r, h)) out.push(b);
+  return out;
 }
 
 export function canStand(map, pos, height) {
   return !overlapsAny(map, pos[0], pos[1], pos[2], PLAYER.radius, height);
+}
+
+// The material of the ground under a body at pos (including ground cover like lawn or floorboards).
+export function surfaceUnder(map, pos) {
+  let best = null;
+  for (const b of [...map.boxes, ...(map.decals || [])]) {
+    if (pos[0] < b.min[0] || pos[0] > b.max[0] || pos[2] < b.min[2] || pos[2] > b.max[2]) continue;
+    if (b.max[1] > pos[1] + 0.05 || b.max[1] < pos[1] - 0.3) continue;
+    if (!best || b.max[1] > best.max[1]) best = b;
+  }
+  return best?.mat;
 }
 
 // A ledge to climb onto in direction (dx, dz) (unit): the top of a box just in front, higher than a
@@ -92,6 +111,35 @@ export function findLedge(map, pos, height, dx, dz, maxTop) {
   return null;
 }
 
+// A window (or a low wall) to climb through in direction (dx, dz): a sill just in front, higher than
+// a step and no higher than `maxTop`, with an opening above it at least `gap` tall, and room to come
+// down on the far side. Returns { over, to }: the point on the sill and the landing spot beyond it
+// (at sill height; the player drops from there), or null.
+export function findVault(map, pos, dx, dz, maxTop, gap) {
+  const r = PLAYER.radius;
+  for (const reach of [r + 0.08, r + PLAYER.climbReach]) {
+    const x = pos[0] + dx * reach, z = pos[2] + dz * reach;
+    let sill = null;
+    for (const b of map.boxes) {
+      if (x < b.min[0] || x > b.max[0] || z < b.min[2] || z > b.max[2]) continue;
+      if (b.max[1] <= pos[1] + PLAYER.stepHeight || b.max[1] > maxTop) continue;
+      if (!sill || b.max[1] > sill.max[1]) sill = b;
+    }
+    if (!sill) continue;
+    const y = sill.max[1] + EPS;
+    // Through the opening: the body (only `gap` tall while ducking through) must fit all the way over.
+    for (let d = reach; d < reach + 2; d += 0.1) {
+      const px = pos[0] + dx * d, pz = pos[2] + dz * d;
+      if (overlapsAny(map, px, y, pz, r * 0.8, gap)) break;
+      const clear = px - r > sill.max[0] || px + r < sill.min[0] || pz - r > sill.max[2] || pz + r < sill.min[2];
+      if (clear && !overlapsAny(map, px, y, pz, r, gap)) {
+        return { over: [x, y, z], to: [px + dx * 0.05, y, pz + dz * 0.05] };
+      }
+    }
+  }
+  return null;
+}
+
 // Moves a player body through the map one axis at a time, stepping up small ledges.
 // Mutates pos and vel; returns { onGround }.
 export function moveBody(map, pos, vel, dt, height, wasOnGround) {
@@ -103,19 +151,20 @@ export function moveBody(map, pos, vel, dt, height, wasOnGround) {
     if (delta === 0) continue;
     const next = pos.slice();
     next[axis] += delta;
-    const hit = overlapsAny(map, next[0], next[1], next[2], r, height);
-    if (!hit) { pos[axis] = next[axis]; continue; }
+    const hits = overlapsAll(map, next[0], next[1], next[2], r, height);
+    if (!hits.length) { pos[axis] = next[axis]; continue; }
 
-    // Try stepping up onto the obstacle.
-    const rise = hit.max[1] - pos[1];
+    // Try stepping up onto the obstacle (onto the highest of everything we'd touch).
+    const top = Math.max(...hits.map(b => b.max[1]));
+    const rise = top - pos[1];
     if (wasOnGround && rise > 0 && rise <= PLAYER.stepHeight &&
-        !overlapsAny(map, next[0], hit.max[1] + EPS, next[2], r, height)) {
+        !overlapsAny(map, next[0], top + EPS, next[2], r, height)) {
       pos[axis] = next[axis];
-      pos[1] = hit.max[1] + EPS;
+      pos[1] = top + EPS;
       continue;
     }
-    // Slide flush against the face.
-    pos[axis] = delta > 0 ? hit.min[axis] - r - EPS * 2 : hit.max[axis] + r + EPS * 2;
+    // Slide flush against the nearest face.
+    pos[axis] = delta > 0 ? Math.min(...hits.map(b => b.min[axis])) - r - EPS * 2 : Math.max(...hits.map(b => b.max[axis])) + r + EPS * 2;
     if (overlapsAny(map, pos[0], pos[1], pos[2], r, height)) pos[axis] = next[axis] - delta;
     vel[axis] = 0;
   }
@@ -123,15 +172,15 @@ export function moveBody(map, pos, vel, dt, height, wasOnGround) {
   const dy = vel[1] * dt;
   const next = pos.slice();
   next[1] += dy;
-  const hit = overlapsAny(map, next[0], next[1], next[2], r, height);
-  if (!hit) {
+  const hits = overlapsAll(map, next[0], next[1], next[2], r, height);
+  if (!hits.length) {
     pos[1] = next[1];
   } else if (dy <= 0) {
-    pos[1] = hit.max[1] + EPS;
+    pos[1] = Math.max(...hits.map(b => b.max[1])) + EPS; // land on the highest thing underfoot
     vel[1] = 0;
     onGround = true;
   } else {
-    pos[1] = hit.min[1] - height - EPS;
+    pos[1] = Math.min(...hits.map(b => b.min[1])) - height - EPS;
     vel[1] = 0;
   }
   // Treat a tiny gap below the feet as ground so walking down stairs stays smooth.

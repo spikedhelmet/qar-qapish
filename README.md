@@ -44,7 +44,7 @@ PORT=3001 npm start
 | WASD | Move |
 | Mouse / left click | Aim / fire |
 | Right click (hold) | Sniper: look through the scope (other guns don't aim down sights for now) |
-| Space | Jump. Sprint jumps carry less speed, and jumping again right after landing is lower and slower (no bunny hopping). **Climb:** jump at a ledge up to about 1.9 m (crates, low walls, the loading dock) while moving toward it, or keep jump held as you reach it |
+| Space | Jump. Sprint jumps carry less speed, and jumping again right after landing is lower and slower (no bunny hopping). **Climb:** jump at a ledge up to about 1.9 m (crates, low walls, the loading dock) while moving toward it, or keep jump held as you reach it. **Windows:** jump at a window the same way to climb through it, ducked |
 | Shift (hold, moving forward) | Sprint. You can't fire while sprinting |
 | Alt / Option | Walk quietly (no footsteps) |
 | C (or Ctrl) | Crouch. While sprinting: **slide** |
@@ -92,10 +92,10 @@ Class changes apply instantly during freeze time or right after spawning, otherw
   - **Depot:** smaller and closer. A roofed hall in the middle, a raised loading dock to the north, and a rail yard of parked wagons to the south.
   - **Plaza** (drawn by the team): a paved plaza with a fountain, walled on its long sides, between two raised pavilions with plaster walls, a roof and windows onto the plaza. Each team spawns behind a wall, crosses a band of cover, and either takes a covered passage into the plaza or climbs stairs from the lane into a pavilion. The plaza has stairs up into both pavilions too. Mirrored both ways.
   - **Old Town:** close quarters. Narrow alleys between solid buildings, and rooms you fight through: a hall onto a small courtyard with a well, two houses with inner rooms, and a chapel. Each team spawns in a walled yard at its end, with four ways out. Mirrored east/west.
-  - **Villa:** a walled estate around a two-storey house. Attackers start on the street and get in through the gate, a side door or a collapsed stretch of wall; they cross a front garden with a fountain, hedges and a gazebo. Defenders start by the pool behind the house. Inside: a hall with a grand staircase to a gallery, four rooms downstairs, bedrooms and a balcony upstairs. A garage and a shed stand at the sides. Not mirrored: each side has its own routes.
+  - **Villa** (laid out after the team's schematic): a walled estate around a one-storey house. Defenders start in the carport at the front, across the road from the lawn; attackers start in the back yard behind the bedroom. The house has a lounge, dining room and study across the front, and a back room and a bedroom behind. Its windows can be climbed through. Around it: a sunken pool you can jump into, a barn, a storehouse with a corridor and a front room, and a long walled alley along the west side, reached through the road gate. Not mirrored.
   - The first four are mirrored so neither team has an edge.
   - All five have plant sites A and B for objective mode.
-- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; first-person guns with arms and hand-made animations (idle, walk, fire, reload) by Cransh, photo textures on the maps (ambientCG). Sounds are still stand-ins. See [ASSETS.md](ASSETS.md) for how assets are added and built.
+- **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; first-person guns with arms and hand-made animations (idle, walk, fire, reload) by Cransh, photo textures on the maps (ambientCG), and recorded CC0 sounds: real gunshots (a close and a far take for each gun), reloads, footsteps that change with the surface, landings, bullet impacts, knife and grenades. See [ASSETS.md](ASSETS.md) for how assets are added and built.
 
 ### Roadmap
 

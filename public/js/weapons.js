@@ -172,7 +172,7 @@ function trace(eye, dir, range, ctx) {
   }
   if (best) return { player: best, point: eye.clone().addScaledVector(dir, best.t), dir };
   if (wall.t < Infinity) {
-    return { wall: true, point: eye.clone().addScaledVector(dir, wall.t), normal: new THREE.Vector3().fromArray(wall.normal), dir };
+    return { wall: true, point: eye.clone().addScaledVector(dir, wall.t), normal: new THREE.Vector3().fromArray(wall.normal), mat: wall.box.mat, dir };
   }
   return { point: eye.clone().addScaledVector(dir, Math.min(range, 300)), dir };
 }

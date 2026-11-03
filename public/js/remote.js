@@ -4,7 +4,9 @@ import { INTERP_DELAY, TEAMS } from './shared/config.js';
 import { Soldier } from './models.js';
 import { AnimatedSoldier } from './soldier.js';
 import { assets } from './assets.js';
-import { playStep, playSlide } from './audio.js';
+import { playStep, playSlide, playLand } from './audio.js';
+import { surfaceUnder } from './shared/collision.js';
+import { MAP } from './shared/map.js';
 
 function nameTag(name, team) {
   const c = document.createElement('canvas');
@@ -48,7 +50,7 @@ export class Remotes {
       // A respawn teleports; don't slide across the map from the death spot.
       const last = r.buf[r.buf.length - 1];
       if (last && !last.al && s.al) r.buf.length = 0;
-      r.buf.push({ t, x: s.x, y: s.y, z: s.z, yw: s.yw, pt: s.pt, cr: s.cr, sl: s.sl, kn: s.kn, al: s.al, w: s.w });
+      r.buf.push({ t, x: s.x, y: s.y, z: s.z, yw: s.yw, pt: s.pt, cr: s.cr, sl: s.sl, ru: s.ru, ar: s.ar, kn: s.kn, al: s.al, w: s.w });
       if (r.buf.length > 30) r.buf.shift();
     }
     this.myTeam = myTeam;
@@ -90,7 +92,8 @@ export class Remotes {
       const st = {
         x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k,
         yaw: lerpAngle(a.yw, b.yw, k), pitch: a.pt + (b.pt - a.pt) * k,
-        crouch: k < 0.5 ? a.cr : b.cr, sliding: k < 0.5 ? a.sl : b.sl, kneel: b.kn, alive: b.al, weapon: b.w,
+        crouch: k < 0.5 ? a.cr : b.cr, sliding: k < 0.5 ? a.sl : b.sl, sprint: k < 0.5 ? a.ru : b.ru, air: a.ar && b.ar,
+        kneel: b.kn, alive: b.al, weapon: b.w,
       };
       const secs = span / 1000;
       st.vx = span > 0 ? (b.x - a.x) / secs : 0;
@@ -110,12 +113,13 @@ export class Remotes {
       }
 
       if (prev && st.sliding && !prev.sliding) playSlide(new THREE.Vector3(st.x, st.y, st.z));
+      if (prev && prev.air && !st.air && st.alive) playLand(new THREE.Vector3(st.x, st.y, st.z), surfaceUnder(MAP, [st.x, st.y, st.z]));
       // Footsteps for running players; walking and crouching are silent.
       if (prev && st.alive && st.speed > 3.4 && Math.abs(st.y - prev.y) < 0.2) {
         r.stepDist += Math.hypot(st.x - prev.x, st.z - prev.z);
         if (r.stepDist > 2.3) {
           r.stepDist = 0;
-          playStep(new THREE.Vector3(st.x, st.y, st.z), 1.4);
+          playStep(new THREE.Vector3(st.x, st.y, st.z), 1.4, surfaceUnder(MAP, [st.x, st.y, st.z]));
         }
       }
     }

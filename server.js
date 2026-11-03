@@ -509,11 +509,13 @@ function handleState(p, msg) {
   p.history.unshift({ pos: p.pos, crouch: p.crouch, t: now() });
   if (p.history.length > 12) p.history.pop();
   const b = MAP.bounds;
-  p.pos = [Math.min(b.max[0], Math.max(b.min[0], x)), Math.max(-1, y), Math.min(b.max[2], Math.max(b.min[2], z))];
+  p.pos = [Math.min(b.max[0], Math.max(b.min[0], x)), Math.max(Math.min(-1, b.min[1]), y), Math.min(b.max[2], Math.max(b.min[2], z))]; // Villa's pool goes below 0
   p.yaw = Number(msg.yw) || 0;
   p.pitch = Number(msg.pt) || 0;
   p.crouch = !!msg.cr;
   p.slide = !!msg.sl;
+  p.sprint = !!msg.ru;
+  p.air = !!msg.ar;
   if (loadoutFor(p.cls).includes(msg.w)) p.weapon = msg.w;
 }
 
@@ -676,6 +678,7 @@ function tick() {
     ps: [...players.values()].map(p => ({
       id: p.id, n: p.name, tm: p.team, c: p.cls, al: p.alive, hp: p.hp, k: p.kills, d: p.deaths, w: p.weapon,
       x: r(p.pos[0]), y: r(p.pos[1]), z: r(p.pos[2]), yw: r(p.yaw), pt: r(p.pitch), cr: p.crouch, sl: !!p.slide,
+      ru: p.sprint, ar: p.air, // sprinting, off the ground: for the other players' animations
       sp: p.protectedUntil > t,
       kn: match.charge?.act?.id === p.id, // kneeling to plant or defuse
     })),

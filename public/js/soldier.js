@@ -13,6 +13,8 @@ const CLIP_SPEED = { walk: 1.92, run: 4.8, sprint: 7.2, crouch: 2.04, pistol_wal
 // Seconds into the throw clip where the grenade leaves the hand.
 const THROW_RELEASE = 1.8;
 const DEATHS = ['death_front', 'death_back', 'death_right', 'death_head_front', 'death_head_back'];
+// Leg cycles: switching between these keeps the stride's phase, so the feet don't jump.
+const LOCOMOTION = /walk|run|sprint|strafe/;
 
 // Clips keep only tracks for bones this character has (the two models differ by a few face bones).
 const clipCache = new Map();
@@ -54,6 +56,11 @@ export class AnimatedSoldier {
     this.current = null;
     this.dying = null;
     this.kick = 0;
+    this.vel = [0, 0];      // smoothed ground velocity (snapshots are 30 a second and a little jittery)
+    this.sector = 0;        // movement direction, 0 … 7, see DIRS
+    this.gait = 'idle';     // idle / walk / run
+    this.airT = 0;          // how long the player has been off the ground
+    this.rate = 1;          // smoothed playback speed
     this.gunMount = new THREE.Group();
     this.bones.RightHand.add(this.gunMount);
     this.grips = {};
@@ -69,7 +76,11 @@ export class AnimatedSoldier {
     const next = this.action(id);
     next.timeScale = timeScale;
     if (this.current === next) return;
+    const prev = this.current;
     next.reset().setEffectiveWeight(1).play();
+    if (prev && LOCOMOTION.test(prev.getClip().name) && LOCOMOTION.test(id)) {
+      next.time = (prev.time / prev.getClip().duration) * next.getClip().duration; // same point in the stride
+    }
     if (this.current && fade > 0) this.current.crossFadeTo(next, fade, false);
     else if (this.current) this.current.stop();
     this.current = next;
@@ -132,27 +143,41 @@ export class AnimatedSoldier {
     a.time = Math.max(0, from);
   }
 
-  // Picks the clip for how the player is moving: s = { yaw, pitch, crouch, sliding, kneel, alive, vx, vy, vz }
-  chooseClip(s) {
-    const speed = Math.hypot(s.vx, s.vz);
-    const fwd = -s.vx * Math.sin(s.yaw) - s.vz * Math.cos(s.yaw);
-    const right = s.vx * Math.cos(s.yaw) - s.vz * Math.sin(s.yaw);
-    const sector = ((Math.round(Math.atan2(right, fwd) / (Math.PI / 4)) % 8) + 8) % 8;
-    const dir = DIRS[sector];
-    const rate = (base) => Math.min(1.6, Math.max(0.6, speed / base));
+  // Picks the clip for how the player is moving: s = { yaw, pitch, crouch, sliding, sprint, air, kneel, alive, vx, vy, vz }.
+  // Reads a smoothed velocity, and only changes direction or gait once the change is clear, so the
+  // legs don't flick between clips on every jittery snapshot.
+  chooseClip(s, dt) {
+    const k = 1 - Math.exp(-dt * 10);
+    this.vel[0] += (s.vx - this.vel[0]) * k;
+    this.vel[1] += (s.vz - this.vel[1]) * k;
+    const [vx, vz] = this.vel, speed = Math.hypot(vx, vz);
+    const fwd = -vx * Math.sin(s.yaw) - vz * Math.cos(s.yaw);
+    const right = vx * Math.cos(s.yaw) - vz * Math.sin(s.yaw);
+    if (speed > 0.5) {
+      const angle = Math.atan2(right, fwd) / (Math.PI / 4);                 // in sectors
+      const off = Math.abs(((angle - this.sector + 12) % 8) - 4);            // how far from the current one
+      if (off > 0.5 + 0.2) this.sector = ((Math.round(angle) % 8) + 8) % 8;  // past the edge by a margin
+    }
+    const dir = DIRS[this.sector];
+    this.gait = this.gait === 'idle' ? (speed > 0.7 ? 'walk' : 'idle')
+      : speed < 0.35 ? 'idle'
+      : this.gait === 'run' ? (speed < 3.0 ? 'walk' : 'run')
+      : speed > 3.7 ? 'run' : 'walk';
+    this.airT = s.air || (s.air === undefined && Math.abs(s.vy) > 3.5) ? this.airT + dt : 0;
+    const rate = (base) => Math.min(1.5, Math.max(0.7, speed / base));
 
     if (s.kneel) return ['kneel_idle', 1]; // planting or defusing
-    if (Math.abs(s.vy) > 2.5) return ['jump_loop', 1];
-    if (s.crouch || s.sliding) return speed < 0.4 || s.sliding ? ['crouch_idle', 1] : [`crouch_walk_${dir}`, rate(CLIP_SPEED.crouch)];
-    if (speed < 0.4) return [this.hold === 'pistol' ? 'pistol_idle' : 'rifle_idle', 1];
+    if (this.airT > 0.12) return ['jump_loop', 1];
+    if (s.crouch || s.sliding) return this.gait === 'idle' || s.sliding ? ['crouch_idle', 1] : [`crouch_walk_${dir}`, rate(CLIP_SPEED.crouch)];
+    if (this.gait === 'idle') return [this.hold === 'pistol' ? 'pistol_idle' : 'rifle_idle', 1];
 
     if (this.hold === 'pistol') {
       const fb = dir.includes('b') ? 'b' : 'f';
-      const id = dir === 'l' || dir === 'r' ? `pistol_strafe_${dir}` : `pistol_${speed > 3.4 ? 'run' : 'walk'}_${fb}`;
+      const id = dir === 'l' || dir === 'r' ? `pistol_strafe_${dir}` : `pistol_${this.gait}_${fb}`;
       return [id, rate(CLIP_SPEED[id])];
     }
-    if (speed > 6.2 && dir === 'f') return ['sprint_f', rate(CLIP_SPEED.sprint)];
-    if (speed > 3.4) return [`rifle_run_${dir}`, rate(CLIP_SPEED.run)];
+    if ((s.sprint ?? speed > 5.8) && dir === 'f' && this.gait === 'run') return ['sprint_f', rate(CLIP_SPEED.sprint)];
+    if (this.gait === 'run') return [`rifle_run_${dir}`, rate(CLIP_SPEED.run)];
     return [`rifle_walk_${dir}`, rate(CLIP_SPEED.walk)];
   }
 
@@ -174,9 +199,11 @@ export class AnimatedSoldier {
       this.dying = null;
       this.current = null;
     }
-    const [id, timeScale] = this.chooseClip(s);
-    this.play(id, 0.2, timeScale);
-    this.current.timeScale = timeScale;
+    const [id, timeScale] = this.chooseClip(s, dt);
+    const switching = this.current !== this.action(id);
+    this.rate = switching ? timeScale : this.rate + (timeScale - this.rate) * Math.min(1, dt * 6);
+    this.play(id, 0.25, this.rate);
+    this.current.timeScale = this.rate;
     this.mixer.update(dt);
 
     // Lean the spine to follow the player's aim, plus a little kick when firing.

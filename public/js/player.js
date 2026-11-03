@@ -1,6 +1,6 @@
 // Local player: keyboard/mouse input and client-side movement physics.
 import { PLAYER } from './shared/config.js';
-import { moveBody, canStand, findLedge } from './shared/collision.js';
+import { moveBody, canStand, findLedge, findVault } from './shared/collision.js';
 import { translate } from './keys.js';
 
 export class Input {
@@ -89,7 +89,7 @@ export class LocalPlayer {
     this.stepDist = 0;
     this.landT = 0;
     this.jumped = false;
-    this.climb = null;    // pulling up onto a ledge: { from, to, t, dur }
+    this.climb = null;    // pulling up onto a ledge: { from, to, t, dur }, or through a window: also { via }
     this.groundY = this.pos ? this.pos[1] : 0;
   }
 
@@ -113,10 +113,11 @@ export class LocalPlayer {
 
   get climbing() { return !!this.climb; }
 
-  // opts: { speedMult, sprintMult, aiming, firing }. Returns sound events: { step, loud, landed, slide, climb }.
+  // opts: { speedMult, sprintMult, aiming, firing }. Returns sound events: { step, loud, landed, hard (a real
+  // drop, not a stair), slide, climb }.
   update(dt, input, { speedMult = 1, sprintMult = 1, aiming = false, firing = false } = {}) {
     const P = PLAYER;
-    const ev = { step: false, loud: false, landed: false, slide: false, climb: false };
+    const ev = { step: false, loud: false, landed: false, hard: false, slide: false, climb: false };
     if (this.climb) return this.updateClimb(dt, ev);
 
     let fx = 0, fz = 0;
@@ -186,8 +187,8 @@ export class LocalPlayer {
       this.vel[0] += a * wish[0]; this.vel[2] += a * wish[1];
     }
 
-    // Climbing: jump at a ledge while moving toward it (or keep jump held as you reach it mid-air).
-    if (fz < 0 && (input.hit('Space') || (!this.onGround && input.down('Space'))) && this.tryClimb(wish)) {
+    // Climbing: jump at a ledge or a window while moving toward it (or keep jump held as you reach it mid-air).
+    if (fz < 0 && (input.hit('Space') || (!this.onGround && input.down('Space'))) && (this.tryClimb(wish) || this.tryVault(wish))) {
       ev.climb = true;
       return ev;
     }
@@ -202,9 +203,10 @@ export class LocalPlayer {
     }
     this.vel[1] -= P.gravity * dt;
 
-    const before = [this.pos[0], this.pos[2]];
+    const before = [this.pos[0], this.pos[2]], fall = -this.vel[1];
     const res = moveBody(this.map, this.pos, this.vel, dt, this.height, this.onGround);
     ev.landed = !this.onGround && res.onGround;
+    ev.hard = ev.landed && fall > 4;
     if (ev.landed && this.jumped) this.landT = P.landRecover; // stepping off a ledge or stairs doesn't count
     if (this.onGround) { this.jumped = false; this.groundY = this.pos[1]; }
     this.onGround = res.onGround;
@@ -239,10 +241,28 @@ export class LocalPlayer {
     return true;
   }
 
+  // Starts climbing through a window (or over a wall too low to stand under): up onto the sill,
+  // ducked, then across and down on the far side.
+  tryVault(wish) {
+    const len = Math.hypot(wish[0], wish[1]);
+    if (!len) return false;
+    const base = this.onGround ? this.pos[1] : this.groundY;
+    const dir = [wish[0] / len, wish[1] / len];
+    const v = findVault(this.map, this.pos, dir[0], dir[1], base + PLAYER.climbHeight, PLAYER.crouchHeight);
+    if (!v) return false;
+    this.climb = { from: this.pos.slice(), via: v.over, to: v.to, dir, t: 0, dur: 0.45 + (v.over[1] - this.pos[1]) * 0.2 };
+    this.vel = [0, 0, 0];
+    this.sprinting = this.sliding = false;
+    this.crouching = true;
+    this.height = PLAYER.crouchHeight;
+    return true;
+  }
+
   // Up first (hands on the edge), then forward onto the top.
   updateClimb(dt, ev) {
     const c = this.climb;
     c.t = Math.min(1, c.t + dt / c.dur);
+    if (c.via) return this.updateVault(c, dt, ev);
     const up = Math.min(1, c.t / 0.7), across = Math.max(0, (c.t - 0.55) / 0.45);
     const ease = k => k * k * (3 - 2 * k);
     this.pos[1] = c.from[1] + (c.to[1] - c.from[1]) * (1 - (1 - up) * (1 - up));
@@ -255,6 +275,25 @@ export class LocalPlayer {
       this.onGround = true;
       this.groundY = this.pos[1];
       ev.landed = true;
+    }
+    return ev;
+  }
+
+  updateVault(c, dt, ev) {
+    const ease = k => k * k * (3 - 2 * k);
+    const a = Math.min(1, c.t / 0.45), b = Math.max(0, (c.t - 0.45) / 0.55);
+    const [p, q] = c.t < 0.45 ? [c.from, c.via] : [c.via, c.to];
+    const k = ease(c.t < 0.45 ? a : b);
+    this.pos[0] = p[0] + (q[0] - p[0]) * k;
+    this.pos[2] = p[2] + (q[2] - p[2]) * k;
+    this.pos[1] = c.t < 0.45 ? c.from[1] + (c.via[1] - c.from[1]) * (1 - (1 - a) * (1 - a)) : c.via[1];
+    this.eyeHeight += (PLAYER.crouchEye - this.eyeHeight) * Math.min(1, dt * 12);
+    if (c.t >= 1) {
+      this.pos = c.to.slice();
+      this.climb = null;
+      this.vel = [c.dir[0] * 2, 0, c.dir[1] * 2]; // keep going and drop down on the far side
+      this.onGround = false;
+      ev.climb = true;
     }
     return ev;
   }

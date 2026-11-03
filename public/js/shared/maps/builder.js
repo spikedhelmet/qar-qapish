@@ -2,9 +2,14 @@
 // north→south, y is up. Every solid is an axis-aligned box: { min: [x,y,z], max: [x,y,z], mat }.
 export function builder() {
   const boxes = [];
+  const decals = []; // flat ground cover (lawn, paths, floorboards): drawn, but not solid
   // Box by center x/z, footprint size, height and base y.
   function box(x, z, sx, sz, h, mat, y = 0) {
     boxes.push({ min: [x - sx / 2, y, z - sz / 2], max: [x + sx / 2, y + h, z + sz / 2], mat });
+  }
+  // Ground cover over x/z, its top `top` meters up (a few mm; overlapping layers need different tops).
+  function decal(x, z, sx, sz, mat, top = 0.01, y = 0) {
+    decals.push({ min: [x - sx / 2, y, z - sz / 2], max: [x + sx / 2, y + top, z + sz / 2], mat });
   }
   // Same box on both halves of the map (mirrored across x = 0).
   function both(x, z, sx, sz, h, mat, y = 0) {
@@ -24,5 +29,5 @@ export function builder() {
   function spawnColumn(side, x, zs) {
     return zs.map(z => ({ x: side * x, z, yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2 }));
   }
-  return { boxes, box, both, arena, spawnColumn };
+  return { boxes, decals, box, decal, both, arena, spawnColumn };
 }

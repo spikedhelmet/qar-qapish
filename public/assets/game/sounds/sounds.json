@@ -1,0 +1,174 @@
+{
+ "shot_rifle": [
+  "shot_rifle_0.m4a",
+  "shot_rifle_1.m4a",
+  "shot_rifle_2.m4a"
+ ],
+ "far_rifle": [
+  "far_rifle_0.m4a",
+  "far_rifle_1.m4a",
+  "far_rifle_2.m4a"
+ ],
+ "shot_vsk": [
+  "shot_vsk_0.m4a",
+  "shot_vsk_1.m4a",
+  "shot_vsk_2.m4a"
+ ],
+ "far_vsk": [
+  "far_vsk_0.m4a",
+  "far_vsk_1.m4a",
+  "far_vsk_2.m4a"
+ ],
+ "shot_sniper": [
+  "shot_sniper_0.m4a",
+  "shot_sniper_1.m4a",
+  "shot_sniper_2.m4a"
+ ],
+ "far_sniper": [
+  "far_sniper_0.m4a",
+  "far_sniper_1.m4a",
+  "far_sniper_2.m4a"
+ ],
+ "shot_pistol": [
+  "shot_pistol_0.m4a",
+  "shot_pistol_1.m4a",
+  "shot_pistol_2.m4a"
+ ],
+ "far_pistol": [
+  "far_pistol_0.m4a",
+  "far_pistol_1.m4a",
+  "far_pistol_2.m4a"
+ ],
+ "shot_makarov": [
+  "shot_makarov_0.m4a",
+  "shot_makarov_1.m4a",
+  "shot_makarov_2.m4a"
+ ],
+ "far_makarov": [
+  "far_makarov_0.m4a",
+  "far_makarov_1.m4a",
+  "far_makarov_2.m4a"
+ ],
+ "shot_smg": [
+  "shot_smg_0.m4a",
+  "shot_smg_1.m4a",
+  "shot_smg_2.m4a"
+ ],
+ "far_smg": [
+  "far_smg_0.m4a",
+  "far_smg_1.m4a",
+  "far_smg_2.m4a"
+ ],
+ "shot_shotgun": [
+  "shot_shotgun_0.m4a",
+  "shot_shotgun_1.m4a",
+  "shot_shotgun_2.m4a"
+ ],
+ "far_shotgun": [
+  "far_shotgun_0.m4a",
+  "far_shotgun_1.m4a",
+  "far_shotgun_2.m4a"
+ ],
+ "magOut": [
+  "magOut_0.m4a"
+ ],
+ "magIn": [
+  "magIn_0.m4a"
+ ],
+ "rack": [
+  "rack_0.m4a"
+ ],
+ "pump": [
+  "pump_0.m4a"
+ ],
+ "shell": [
+  "shell_0.m4a"
+ ],
+ "empty": [
+  "empty_0.m4a"
+ ],
+ "swish": [
+  "swish_0.m4a",
+  "swish_1.m4a",
+  "swish_2.m4a",
+  "swish_3.m4a"
+ ],
+ "clink": [
+  "clink_0.m4a",
+  "clink_1.m4a",
+  "clink_2.m4a"
+ ],
+ "frag": [
+  "frag_0.m4a",
+  "frag_1.m4a"
+ ],
+ "charge": [
+  "charge_0.m4a"
+ ],
+ "flash": [
+  "flash_0.m4a"
+ ],
+ "step_concrete": [
+  "step_concrete_0.m4a",
+  "step_concrete_1.m4a",
+  "step_concrete_2.m4a",
+  "step_concrete_3.m4a",
+  "step_concrete_4.m4a"
+ ],
+ "step_wood": [
+  "step_wood_0.m4a",
+  "step_wood_1.m4a",
+  "step_wood_2.m4a",
+  "step_wood_3.m4a",
+  "step_wood_4.m4a"
+ ],
+ "step_grass": [
+  "step_grass_0.m4a",
+  "step_grass_1.m4a",
+  "step_grass_2.m4a",
+  "step_grass_3.m4a",
+  "step_grass_4.m4a"
+ ],
+ "step_metal": [
+  "step_metal_0.m4a",
+  "step_metal_1.m4a",
+  "step_metal_2.m4a",
+  "step_metal_3.m4a",
+  "step_metal_4.m4a"
+ ],
+ "land": [
+  "land_0.m4a",
+  "land_1.m4a",
+  "land_2.m4a",
+  "land_3.m4a",
+  "land_4.m4a"
+ ],
+ "hit_concrete": [
+  "hit_concrete_0.m4a",
+  "hit_concrete_1.m4a",
+  "hit_concrete_2.m4a",
+  "hit_concrete_3.m4a",
+  "hit_concrete_4.m4a"
+ ],
+ "hit_wood": [
+  "hit_wood_0.m4a",
+  "hit_wood_1.m4a",
+  "hit_wood_2.m4a",
+  "hit_wood_3.m4a",
+  "hit_wood_4.m4a"
+ ],
+ "hit_metal": [
+  "hit_metal_0.m4a",
+  "hit_metal_1.m4a",
+  "hit_metal_2.m4a",
+  "hit_metal_3.m4a",
+  "hit_metal_4.m4a"
+ ],
+ "hit_body": [
+  "hit_body_0.m4a",
+  "hit_body_1.m4a",
+  "hit_body_2.m4a",
+  "hit_body_3.m4a",
+  "hit_body_4.m4a"
+ ]
+}

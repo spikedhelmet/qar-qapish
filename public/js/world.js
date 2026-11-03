@@ -70,7 +70,7 @@ export function showMap(scene, map) {
 
   // Merge all boxes that share a surface into one mesh.
   const groups = {};
-  for (const b of map.boxes) (groups[b.mat] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
+  for (const b of [...map.boxes, ...(map.decals || [])]) (groups[b.mat] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
   for (const [mat, geos] of Object.entries(groups)) {
     const mesh = new THREE.Mesh(mergeGeometries(geos), w.surfaces[mat].material);
     mesh.castShadow = mat !== 'asphalt';

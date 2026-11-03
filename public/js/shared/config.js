@@ -17,7 +17,7 @@ export const PLAYER = {
   crouchEye: 1.26,
   maxHp: 100,
   runSpeed: 5.2,
-  sprintSpeed: 7.0,
+  sprintSpeed: 6.2,
   walkSpeed: 2.6,
   crouchSpeed: 2.1,
   slideSpeed: 9.0,      // initial slide speed (or current speed if faster)

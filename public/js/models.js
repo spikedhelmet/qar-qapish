@@ -741,7 +741,7 @@ export class ViewModel {
       const r = this.reload, t = Math.min(1, reloadT), crossed = at => r.last < at && t >= at;
       if (this.kind === 'shotgun') {
         for (let j = 0; j < r.shells; j++) if (crossed(0.15 + 0.65 * (j + 0.5) / r.shells)) playMech('shell');
-        if (crossed(0.9)) playMech('rack');
+        if (crossed(0.9)) playMech('pump');
       } else {
         if (crossed(0.25)) playMech('magOut');
         if (crossed(0.6)) playMech('magIn');
@@ -870,7 +870,7 @@ export class ViewModel {
         this.holder.remove(r.shellMesh); r.shellMesh = null;
         if (this.support) this.support.position.copy(this.supportBase);
       }
-      if (crossed(0.9)) { this.cycle = 0.45; playMech('rack'); }
+      if (crossed(0.9)) { this.cycle = 0.45; playMech('pump'); }
       r.last = t;
       return out;
     }

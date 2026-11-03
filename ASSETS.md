@@ -15,7 +15,7 @@ Everything listed is free for games; **CC-BY** items need credit, which the game
 3. With the server running, open **http://localhost:3000/dev/build.html** on the host Mac and click **Build all assets**. It shrinks textures (2K for your own gun, 1K for everything else), converts characters and animations, sizes every gun the same way, reads each model's licence, and writes everything to `public/assets/game/`. That's what gets committed (about 50 MB, no Git LFS needed).
 4. **http://localhost:3000/dev/viewer.html** previews any raw character, animation or weapon if you want to check a download first.
 
-Sounds and announcer lines don't need building. They go straight into `public/assets/sounds/`.
+Sound effects are built by script: `bash scripts/fetch-sounds.sh` downloads the CC0 packs into `assets-src/sounds/` (about 610 MB unpacked), and `node scripts/build-sounds.mjs` cuts, levels and converts the ones the game uses into `public/assets/game/sounds/` (1.2 MB, committed). See section 4. Announcer lines and your own hit sounds don't need building; they go straight into `public/assets/sounds/`.
 
 Priority: **P1** = first swap, the biggest visual and audio jump · **P2** = needed for milestones 2 to 4 · **P3** = polish.
 
@@ -141,35 +141,31 @@ Save into `public/assets/sounds/announcer/`. The **file name** must match the ID
 
 ---
 
-## 4. Sound effects (you; Freesound needs a free account)
+## 4. Sound effects (done: CC0 packs, fetched and built by script)
 
-Save into `public/assets/sounds/sfx/` as `.mp3`, `.ogg` or `.wav`. Good free sources:
+In the game now (all CC0, from OpenGameArt and a GitHub mirror of Kenney's impact sounds):
+
+| Sound | Source |
+|---|---|
+| Gunshots, close and mid distance, 3 shots each | "The Free Firearm Sound Library" (Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney). Rifle: AK-47 · battle rifle: SKS, muffled in game · sniper: Mosin Nagant · pistol: Walther PPQ · Makarov: Bersa .380 · SMG: Carl Gustav M45 · shotgun: Benelli Nova |
+| Magazine out / in, slide | "Handgun reload sound effect" |
+| Pump, shells | "Shotgun reload sound effects" |
+| Dry-fire click | "Equipment clicks II" |
+| Knife, grenade throw | "Swishes sound pack" |
+| Grenade bounce | "Metal impact sounds" (Brian MacIntosh) |
+| Frag, charge explosion | "150 combat sound effects" |
+| Flashbang | "Flash bang sound" |
+| Footsteps (concrete, wood, grass; metal from plate impacts), landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
+
+To change one: edit `SOUNDS` in `scripts/build-sounds.mjs` (source file, which shot or which part of a recording, length, level) and run `node scripts/build-sounds.mjs`. `node scripts/build-sounds.mjs --segments <file>` lists the separate sounds inside a recording. Anything missing falls back to the built-in synthesized sound.
+
+Still stand-ins: grenade pin, smoke hiss, bolt cycling (uses the slide), weapon draw, metal footsteps (plate impacts), shell casings. Better recordings for these: Sonniss GDC bundles (sonniss.com/gameaudiogdc, manual download, royalty-free) or Freesound (account needed).
+
+Other free sources:
 - **Freesound.org:** filter by licence **CC0** (no credit) or **Attribution**. Avoid "Noncommercial".
 - **Sonniss GDC Game Audio Bundles** (sonniss.com/gameaudiogdc): huge royalty-free packs, no credit needed.
 - **Kenney.nl** (CC0): UI clicks and impacts.
 
-| File | Sound | Priority |
-|---|---|---|
-| `rifle_fire.*` | Rifle shot, close | P1 |
-| `pistol_fire.*` | Pistol shot, close | P1 |
-| `rifle_reload.*`, `pistol_reload.*` | Mag out, mag in, charge | P1 |
-| `dry_fire.*` | Click on empty | P2 |
-| `draw.*` | Weapon raise / cloth | P3 |
-| `knife_swing.*`, `knife_hit.*` | Whoosh, stab | P2 |
-| `sniper_fire.*`, `shotgun_fire.*`, `smg_fire.*` | New weapons (milestone 2) | P2 |
-| `shotgun_pump.*`, `sniper_bolt.*` | Cycle actions | P2 |
-| `distant_shot.*` | Far-away gunfire tail (one generic is fine) | P3 |
-| `step_concrete_1..4.*` | Footsteps on concrete, 4 variations | P1 |
-| `step_metal_1..4.*` | Footsteps on containers / metal | P3 |
-| `land.*` | Landing from a jump | P2 |
-| `slide.*` | Clothing / gravel scrape, about 0.8 s | P2 |
-| `impact_concrete.*`, `impact_metal.*`, `impact_wood.*` | Bullet impacts | P2 |
-| `impact_body.*` | Bullet hitting a player | P2 |
-| `hitmarker.*`, `headshot.*`, `kill_confirm.*` | Your hit feedback | P1 |
-| `hurt_1..3.*` | Grunts when you take damage | P3 |
-| `grenade_pin.*`, `grenade_bounce.*`, `frag_explode.*`, `smoke_hiss.*`, `flash_bang.*`, `ear_ring.*` | Grenades (milestone 4) | P2 |
-| `charge_plant.*`, `charge_beep.*`, `charge_defuse.*`, `charge_explode.*` | Objective mode (milestone 3) | P2 |
-| `ui_click.*`, `round_horn.*` | Menu click, round start | P3 |
 
 ---
 
@@ -246,3 +242,4 @@ Shown in the game's menu (built from each model's licence data). Currently:
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
 - Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster006, Grass005), CC0
+- Sounds (all CC0; see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others

@@ -1,4 +1,5 @@
-// Synthesized stand-in sounds with 3D positioning. Recorded sounds can replace these later.
+// Game sounds with 3D positioning: recorded ones from public/assets/game/sounds/ (built by
+// scripts/build-sounds.mjs), with synthesized stand-ins for anything not there.
 import * as THREE from 'three';
 
 let ctx = null, master = null, noise = null;
@@ -13,6 +14,47 @@ export function initAudio(volume) {
   const data = noise.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
   loadUiSounds();
+  loadSamples();
+}
+
+// Recorded sounds: id → decoded variants (see sounds.json). Missing ones fall back to synthesis.
+const samples = {};
+async function loadSamples() {
+  try {
+    const list = await (await fetch('/assets/game/sounds/sounds.json')).json();
+    await Promise.all(Object.entries(list).map(async ([id, files]) => {
+      const bufs = await Promise.all(files.map(async f =>
+        ctx.decodeAudioData(await (await fetch('/assets/game/sounds/' + f)).arrayBuffer()).catch(() => null)));
+      if (bufs.every(Boolean)) samples[id] = bufs;
+    }));
+  } catch { /* not built: synthesized sounds only */ }
+}
+
+// Plays a random variant of a recorded sound into dest. Returns false if there's no such recording.
+// opts: gain, rate (playback speed, picked ±4% around it), lowpass (Hz), delay (s).
+function sample(id, dest, { gain = 1, rate = 1, lowpass = 0, delay = 0 } = {}) {
+  const list = samples[id];
+  if (!list) return false;
+  const src = ctx.createBufferSource();
+  src.buffer = list[Math.floor(Math.random() * list.length)];
+  src.playbackRate.value = rate * (0.96 + Math.random() * 0.08);
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  let node = src;
+  if (lowpass) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lowpass; node = node.connect(f); }
+  node.connect(g).connect(dest);
+  src.start(ctx.currentTime + delay);
+  return true;
+}
+
+// What a surface sounds like underfoot and when a bullet hits it.
+const SURFACE = { grass: 'grass', hedge: 'grass', floor: 'wood', crate: 'wood', container_red: 'metal', container_blue: 'metal', container_green: 'metal' };
+const surface = mat => SURFACE[mat] || 'concrete';
+
+const _lp = new THREE.Vector3();
+function listenerDistance(pos) {
+  const l = ctx.listener;
+  return l.positionX ? _lp.set(l.positionX.value, l.positionY.value, l.positionZ.value).distanceTo(pos) : 0;
 }
 
 // Hit / headshot / kill confirmations: your own files in public/assets/sounds/ui/ (hit, head, kill:
@@ -117,6 +159,10 @@ export function playShot(weapon, pos) {
   if (weapon === 'knife') { playSwish(pos); return; }
   const s = SHOTS[weapon] || SHOTS.rifle;
   const out = output(pos);
+  // Recorded: the close-up take nearby, the mid-distance take further off. The VSK is suppressed.
+  const far = pos && listenerDistance(pos) > 30;
+  const opts = { gain: pos ? 1.2 : 0.55, lowpass: weapon === 'vsk' ? 1600 : 0 };
+  if (sample(`${far ? 'far' : 'shot'}_${weapon}`, out, opts) || sample(`shot_${weapon}`, out, opts)) return;
   burst(out, { dur: s.dur, freq: s.crack, q: 0.5, gain: s.gain, sweep: 0.15 });
   burst(out, { dur: s.dur * 2.5, freq: 900, q: 0.3, gain: s.gain * 0.35, sweep: 0.3 }); // tail
   thump(out, { freq: s.boom, dur: 0.18, gain: s.gain * 0.8 });
@@ -124,14 +170,25 @@ export function playShot(weapon, pos) {
 
 export function playSwish(pos) {
   if (!ctx) return;
+  if (sample('swish', output(pos), { gain: 0.8 })) return;
   burst(output(pos), { dur: 0.18, freq: 1800, q: 2, type: 'bandpass', gain: 0.35, attack: 0.06, sweep: 0.4 });
 }
 
-export function playStep(pos, loud = 1) {
+// mat: the surface underfoot (a map material), for the recorded steps.
+export function playStep(pos, loud = 1, mat) {
   if (!ctx) return;
   const out = output(pos);
+  if (sample('step_' + surface(mat), out, { gain: 0.55 * loud })) return;
   burst(out, { dur: 0.09, freq: 420, q: 1.2, gain: 0.25 * loud });
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });
+}
+
+// Landing from a jump or a drop.
+export function playLand(pos, mat) {
+  if (!ctx) return;
+  const out = output(pos);
+  if (sample('land', out, { gain: 0.5 })) { sample('step_' + surface(mat), out, { gain: 0.4 }); return; }
+  playStep(pos, 1.1, mat);
 }
 
 // Charge beep: a short tone from where the charge is.
@@ -152,6 +209,7 @@ export function playBeep(pos, urgent = false) {
 export function playExplosion(pos) {
   if (!ctx) return;
   const out = output(pos);
+  if (sample('charge', out, { gain: 2.2 })) return;
   burst(out, { dur: 2.2, freq: 900, q: 0.4, gain: 1.6, attack: 0.004, sweep: 0.08 });
   burst(out, { dur: 0.35, freq: 3000, q: 0.3, gain: 1.0, sweep: 0.2 });
   thump(out, { freq: 70, dur: 1.2, gain: 1.6 });
@@ -161,12 +219,14 @@ export function playExplosion(pos) {
 
 export function playThrow() {
   if (!ctx) return;
+  if (sample('swish', master, { gain: 0.5, rate: 0.8 })) return;
   burst(master, { dur: 0.25, freq: 1200, q: 1.5, type: 'bandpass', gain: 0.3, attack: 0.08, sweep: 0.5 });
 }
 
 export function playClink(pos, strength = 1) {
   if (!ctx) return;
   const t = ctx.currentTime, out = output(pos);
+  if (sample('clink', out, { gain: 0.8 * strength })) return;
   for (const f of [2900, 4300]) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.frequency.value = f * (0.95 + Math.random() * 0.1);
@@ -180,6 +240,7 @@ export function playClink(pos, strength = 1) {
 export function playFrag(pos) {
   if (!ctx) return;
   const out = output(pos);
+  if (sample('frag', out, { gain: 2 })) return;
   burst(out, { dur: 1.2, freq: 1100, q: 0.4, gain: 1.3, attack: 0.003, sweep: 0.1 });
   burst(out, { dur: 0.25, freq: 3500, q: 0.3, gain: 0.8, sweep: 0.2 });
   thump(out, { freq: 85, dur: 0.6, gain: 1.3 });
@@ -203,6 +264,7 @@ export function playSmoke(pos, duration) {
 export function playFlashBang(pos) {
   if (!ctx) return;
   const out = output(pos);
+  if (sample('flash', out, { gain: 1.6 })) return;
   burst(out, { dur: 0.5, freq: 4000, q: 0.3, gain: 1.4, attack: 0.002, sweep: 0.3 });
   thump(out, { freq: 140, dur: 0.3, gain: 1.0 });
 }
@@ -230,9 +292,11 @@ export function playEarRing(amount, seconds) {
   o.start(t); o.stop(t + seconds + 0.05);
 }
 
-// Reload steps: magazine out / in, bolt or slide rack, shotgun shell.
-export function playMech(kind) {
+// Reload steps: magazine out / in, bolt or slide rack, shotgun shell and pump. delay: seconds from now.
+export function playMech(kind, delay = 0) {
   if (!ctx) return;
+  if (sample(kind, master, { gain: 0.6, delay })) return;
+  if (kind === 'pump') kind = 'rack';
   const presets = {
     magOut: [{ dur: 0.06, freq: 1800, q: 3, type: 'bandpass', gain: 0.35 }, { dur: 0.12, freq: 600, q: 1, gain: 0.2 }],
     magIn:  [{ dur: 0.05, freq: 2600, q: 4, type: 'bandpass', gain: 0.45 }, { dur: 0.08, freq: 900, q: 1, gain: 0.3 }],
@@ -268,6 +332,8 @@ export function playConfirm(kind) {
 
 export function playClick(kind) {
   if (!ctx) return;
+  if (kind === 'empty' && sample('empty', master, { gain: 0.6 })) return;
+  if (kind === 'hurt' && sample('hit_body', master, { gain: 0.6, rate: 0.85 })) return;
   const presets = {
     reload: { dur: 0.04, freq: 3000, q: 4, type: 'bandpass', gain: 0.35 },
     empty: { dur: 0.03, freq: 5000, q: 6, type: 'bandpass', gain: 0.3 },
@@ -276,7 +342,9 @@ export function playClick(kind) {
   burst(master, presets[kind]);
 }
 
-export function playImpact(pos) {
+// A bullet hitting the map; mat: the material it hit.
+export function playImpact(pos, mat) {
   if (!ctx) return;
+  if (sample('hit_' + (surface(mat) === 'grass' ? 'concrete' : surface(mat)), output(pos), { gain: 0.5 })) return;
   burst(output(pos), { dur: 0.06, freq: 1800, q: 1.5, type: 'bandpass', gain: 0.25 });
 }
