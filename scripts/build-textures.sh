@@ -21,6 +21,7 @@ SURFACES=(
   "plaster PaintedPlaster017"
   "grass Ground037"
   "hedge Moss002"
+  "bark Bark012"
 )
 
 mkdir -p "$OUT"
@@ -36,5 +37,10 @@ for entry in "${SURFACES[@]}"; do
   size=$(sips -g pixelWidth -g pixelHeight "$SRC/$id/${id}_1K-JPG_Color.jpg" | awk '/pixel/ {print $2}' | paste -sd, -)
   json="$json\"$name\":{\"id\":\"$id\",\"size\":[$size],\"source\":\"https://ambientcg.com/view?id=$id\"},"
 done
+# Leaves for the trees: a sheet of single leaves (color, and opacity for the cut-out).
+for map in Color Opacity; do
+  sips -s format jpeg -s formatOptions "$QUALITY" "$SRC/LeafSet005/LeafSet005_1K-JPG_${map}.jpg" --out "$OUT/leaves_$(echo $map | tr '[:upper:]' '[:lower:]').jpg" > /dev/null
+done
+json="$json\"leaves\":{\"id\":\"LeafSet005\",\"size\":[1024,512],\"source\":\"https://ambientcg.com/view?id=LeafSet005\"},"
 echo "${json%,}}" > "$OUT/textures.json"
 du -sh "$OUT"

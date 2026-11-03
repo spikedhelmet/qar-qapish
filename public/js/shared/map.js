@@ -13,6 +13,6 @@ export const MAP = { ...YARD };
 
 export function setMap(id) {
   if (!MAPS[id]) return false;
-  Object.assign(MAP, { decals: [] }, MAPS[id]); // maps without ground cover mustn't keep the last one's
+  Object.assign(MAP, { decals: [], props: [] }, MAPS[id]); // maps without ground cover or props mustn't keep the last one's
   return true;
 }

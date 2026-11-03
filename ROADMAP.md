@@ -37,6 +37,16 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-03 · Real trees (`feature/milestone-5`)
+- The cube trees are gone. Trees are now built in code (`public/js/trees.js`, original):
+  - A tapered, slightly bent trunk with a flared foot, 5–7 branches off the upper trunk, each with two side branches.
+  - About 170 leaf cards in crossed clusters at the branch ends. Their normals point out from the crown, so it shades as one rounded mass.
+  - Photo bark (ambientCG Bark012). Leaves are painted onto the cards at load time from ambientCG's LeafSet005 sheet of single leaves, some darkened as if in shade.
+  - About 1,600 triangles a tree; all of a map's trees draw in two calls. A seed picks each tree's shape, so every player sees the same trees.
+- Maps place them with `tree(x, z, height)` in the map builder. Only the trunk is solid (an invisible box): you can't walk or shoot through it, but leaves don't stop bullets.
+- Free downloadable tree models were too heavy (Poly Haven's lightest is 312k triangles). The ez-tree generator (MIT) would have meant installing outside code, so this is a small builder of our own instead.
+- Villa: seven trees, in the front lawn, the back yard, the alley and by the storehouse.
+
 ### 2026-11-03 · Sound and texture pass from play-testing (`feature/milestone-5`)
 - **Why some guns sounded hollow or weird:** the recordings are stereo from two mics, and for most guns the mics are partly out of phase (correlation −0.3 to 0), so mixing them to mono cancels part of the sound. All guns except the AK (which mixes well and sounded right) now use the louder mic alone.
 - **Pistol:** now a Colt 1911 (.45). **Shotgun:** now a Winchester Model 12. **Pump:** a game-ready shotgun-cock sound instead of the old rack.

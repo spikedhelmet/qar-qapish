@@ -192,7 +192,9 @@ Other free sources:
 | Plaza walls | Tiles143 | Limestone blocks |
 | Plastered walls (pavilions, houses) | PaintedPlaster017 | Warm white paint (was PaintedPlaster006, too blotchy) |
 | Lawns | Ground037 | Worn lawn with bare patches (was Grass005, too bright and even) |
-| Hedges, tree tops | Moss002 | Clipped box hedge, toned down |
+| Hedges | Moss002 | Clipped box hedge, toned down |
+| Tree trunks and branches | Bark012 | Darkened toward brown |
+| Tree leaves | LeafSet005 (an atlas: color + opacity) | The game paints leaf cards from its single leaves, some darkened as if in shade |
 | Trims, doors | Metal plates / rusted metal | P3, not yet |
 
 To swap a texture:
@@ -246,5 +248,5 @@ Shown in the game's menu (built from each model's licence data). Currently:
   - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
-- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002), CC0
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002, Bark012, LeafSet005), CC0
 - Sounds (all CC0; see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others

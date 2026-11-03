@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createSurfaces, siteDecal } from './textures.js';
+import { treeMeshes } from './trees.js';
 
 // Box geometry in world space with UVs in meters projected from world coordinates (each texture's
 // repeat sets its tile size), so textures keep the same density and line up across neighbouring boxes.
@@ -70,13 +71,15 @@ export function showMap(scene, map) {
 
   // Merge all boxes that share a surface into one mesh.
   const groups = {};
-  for (const b of [...map.boxes, ...(map.decals || [])]) (groups[b.mat] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
+  for (const b of [...map.boxes, ...(map.decals || [])]) if (!b.hidden) (groups[b.mat] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
   for (const [mat, geos] of Object.entries(groups)) {
     const mesh = new THREE.Mesh(mergeGeometries(geos), w.surfaces[mat].material);
     mesh.castShadow = mat !== 'asphalt';
     mesh.receiveShadow = true;
     level.add(mesh);
   }
+
+  for (const mesh of treeMeshes(map.props || [], w.renderer)) level.add(mesh);
 
   for (const site of map.sites) {
     const sx = site.max[0] - site.min[0], sz = site.max[1] - site.min[1];

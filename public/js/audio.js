@@ -48,7 +48,7 @@ function sample(id, dest, { gain = 1, rate = 1, lowpass = 0, delay = 0 } = {}) {
 }
 
 // What a surface sounds like underfoot and when a bullet hits it.
-const SURFACE = { grass: 'grass', hedge: 'grass', floor: 'wood', crate: 'wood', container_red: 'metal', container_blue: 'metal', container_green: 'metal' };
+const SURFACE = { grass: 'grass', hedge: 'grass', floor: 'wood', crate: 'wood', bark: 'wood', container_red: 'metal', container_blue: 'metal', container_green: 'metal' };
 const surface = mat => SURFACE[mat] || 'concrete';
 
 const _lp = new THREE.Vector3();

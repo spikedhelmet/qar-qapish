@@ -8,7 +8,7 @@
 // Not mirrored: the attackers start right behind the bedroom, the defenders across the road at the front.
 import { builder } from './builder.js';
 
-const { boxes, decals, box, decal, arena } = builder();
+const { boxes, decals, props, box, decal, tree, arena } = builder();
 
 const W = 31, D = 30;
 const T = 0.4;   // wall thickness
@@ -44,7 +44,6 @@ const wallZ = (x, z0, z1, h, mat, holes = [], y = 0) => pieces(z0, z1, y, h, hol
 const win = (c, w = 1.6) => [c, w, 0.9, 2.5];
 const open = (c, w) => [c, w, 0, 99];
 const lawn = (x0, x1, z0, z1) => decal((x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0, 'grass', 0.01);
-const tree = (x, z) => { box(x, z, 0.5, 0.5, 2.6, 'floor'); box(x, z, 3, 3, 2.2, 'hedge', 2.6); };
 
 // ---- ground cover: lawns everywhere but the road, the driveway and the carport (asphalt)
 lawn(-W, -22.5, -D, -14.5);                     // alley, north of the road
@@ -109,7 +108,7 @@ box(23, -28, 1.2, 2.4, 1.2, 'crate');           // yard behind it
 
 // ---- front lawn
 box(-6, -6, 1.2, 1.2, 0.9, 'stone');            // urn
-tree(-16, -5); tree(17, -5.5);
+tree(-16, -5, 8); tree(17, -5.5, 7);
 
 // ---- pool: sunk 1.4 m, steps at the south end, a diving board at the north end
 const PX = (POOL.x0 + POOL.x1) / 2, PZ = (POOL.z0 + POOL.z1) / 2, PW = POOL.x1 - POOL.x0, PD = POOL.z1 - POOL.z0;
@@ -172,7 +171,7 @@ box(19.9, D - 0.1, 9, 0.2, 2.8, 'floor');        // the back gate (shut)
 box(6, 24, 2.4, 1.2, 1.2, 'crate');
 box(-4, 23, 1.2, 1.2, 1.2, 'crate');
 box(-14, 22, 3, 0.8, 1.4, 'hedge');
-tree(-17, 26); tree(9, 27.5);
+tree(-17, 26, 8.5); tree(9, 27.5, 6.5); tree(-27, -26, 7.5); tree(-29, 2, 7); tree(15.5, -27.5, 6);
 
 export const VILLA = {
   id: 'villa',
@@ -180,6 +179,7 @@ export const VILLA = {
   bounds: { min: [-W, -2, -D], max: [W, 20, D] },
   boxes,
   decals,
+  props,
   spawns: {
     A: [[15.5, 22.5], [18, 22.5], [20.5, 22.5], [23, 22.5], [16.5, 25], [23, 25.5]].map(([x, z]) => ({ x, z, yaw: 0 })),          // back yard
     B: [[2, -27], [4.5, -27], [2, -24], [4.5, -24], [2, -21], [4.5, -21]].map(([x, z]) => ({ x, z, yaw: Math.PI })),           // carport
