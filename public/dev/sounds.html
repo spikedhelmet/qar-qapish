@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sound Board</title>
+  <style>
+    body { margin: 0; padding: 16px 20px 40px; background: #2a2e34; color: #eee; font: 13px Helvetica, Arial, sans-serif; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    p { color: #aaa; margin: 0 0 16px; max-width: 720px; line-height: 1.45; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ab; margin: 22px 0 6px; }
+    .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 5px 0; border-bottom: 1px solid #353a42; }
+    .name { width: 260px; flex: none; }
+    .name small { display: block; color: #8a929c; }
+    .now .name { color: #ffd38a; }
+    button { background: #3d4450; color: #eee; border: 0; border-radius: 3px; padding: 5px 10px; font: inherit; cursor: pointer; }
+    button:hover { background: #4d5664; }
+    button.all { background: #55606f; }
+  </style>
+</head>
+<body>
+  <!-- Dev tool: listen to every recorded sound in the game, and alternatives to compare. Open /dev/sounds.html -->
+  <h1>Sound board</h1>
+  <p>Every recorded sound in the game, each variant on its own button (the game picks one at random, a little faster or slower each time). In yellow: what the game uses now. Under it: alternatives built from other recordings. Tell Claude which you prefer, or move its variants into <code>SOUNDS</code> in <code>scripts/build-sounds.mjs</code> and rebuild.</p>
+  <div id="list">Loading…</div>
+  <script type="module">
+    const ctx = new AudioContext();
+    const cache = new Map();
+    async function buffer(url) {
+      if (!cache.has(url)) cache.set(url, fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b)));
+      return cache.get(url);
+    }
+    async function play(url, at = 0) {
+      await ctx.resume();
+      const src = ctx.createBufferSource();
+      src.buffer = await buffer(url);
+      src.connect(ctx.destination);
+      src.start(ctx.currentTime + at);
+    }
+    function row(title, note, urls, now) {
+      const div = document.createElement('div');
+      div.className = 'row' + (now ? ' now' : '');
+      div.innerHTML = `<div class="name">${title}<small>${note}</small></div>`;
+      const all = document.createElement('button');
+      all.className = 'all'; all.textContent = 'All in turn';
+      all.onclick = () => urls.forEach((u, i) => play(u, i * 0.7));
+      div.append(all);
+      urls.forEach((u, i) => {
+        const b = document.createElement('button');
+        b.textContent = i + 1;
+        b.onclick = () => play(u);
+        div.append(b);
+      });
+      return div;
+    }
+    const [game, alts] = await Promise.all([
+      fetch('/assets/game/sounds/sounds.json').then(r => r.json()),
+      fetch('/dev/sounds/alts.json').then(r => r.json()).catch(() => ({})),
+    ]);
+    const list = document.getElementById('list');
+    list.textContent = '';
+    const groups = { 'Guns': /^(shot|far)_/, 'Reloads': /^(magOut|magIn|rack|pump|shell|empty)$/, 'Footsteps and landing': /^(step_|land)/, 'Hits and kill': /^(hit_|kill)/, 'Knife and grenades': /./ };
+    const done = new Set();
+    for (const [group, test] of Object.entries(groups)) {
+      const ids = Object.keys(game).filter(id => test.test(id) && !done.has(id));
+      if (!ids.length) continue;
+      const h = document.createElement('h2'); h.textContent = group; list.append(h);
+      for (const id of ids) {
+        done.add(id);
+        list.append(row(id, alts[id] ? 'in the game now' : '', game[id].map(f => '/assets/game/sounds/' + f), !!alts[id]));
+        for (const alt of alts[id] || []) list.append(row(`↳ ${alt.label}`, 'alternative', alt.files.map(f => '/dev/sounds/' + f)));
+      }
+    }
+  </script>
+</body>
+</html>

@@ -311,7 +311,8 @@ export function playSlide(pos) {
   burst(output(pos), { dur: 0.7, freq: 900, q: 0.7, gain: 0.3, attack: 0.04, sweep: 0.35 });
 }
 
-// Hit confirmation: a short dry tick. Headshot: a bright metallic tink on top. Kill: a clear ding.
+// Hit confirmation: a short dry tick. Headshot: a bright metallic tink on top. Kill: a heavy body hit
+// (recorded; a clear ding if the recordings aren't built).
 export function playConfirm(kind) {
   if (!ctx) return;
   if (uiSounds[kind]) {
@@ -324,6 +325,7 @@ export function playConfirm(kind) {
   burst(master, { dur: 0.018, freq: 5200, q: 0.7, type: 'highpass', gain: 0.18 });
   ping(master, 1850, 0.045, 0.22);
   if (kind === 'head') { ping(master, 3150, 0.22, 0.14); ping(master, 4730, 0.16, 0.08); }
+  if (kind === 'kill' && sample('kill', master, { gain: 1.1 })) return;
   if (kind === 'kill') {
     ping(master, 1320, 0.55, 0.2, 0.03); ping(master, 2650, 0.32, 0.09, 0.03); ping(master, 3960, 0.18, 0.05, 0.03);
     thump(master, { freq: 150, dur: 0.09, gain: 0.25 });

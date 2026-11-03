@@ -37,6 +37,19 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-03 · Sound and texture pass from play-testing (`feature/milestone-5`)
+- **Why some guns sounded hollow or weird:** the recordings are stereo from two mics, and for most guns the mics are partly out of phase (correlation −0.3 to 0), so mixing them to mono cancels part of the sound. All guns except the AK (which mixes well and sounded right) now use the louder mic alone.
+- **Pistol:** now a Colt 1911 (.45). **Shotgun:** now a Winchester Model 12. **Pump:** a game-ready shotgun-cock sound instead of the old rack.
+- **Shot detection:** gunshot variants are now picked by loudness, so a pump racked between shots in a recording isn't mistaken for a shot.
+- **Footsteps** softened: low-passed, a slower start (the click at the front was the crispness), and quieter.
+- **Kill confirmation:** a heavy body hit instead of the ding. Hits and headshots keep their tick.
+- **Sound board** at `/dev/sounds.html`: every sound in the game, plus alternatives for pistol, shotgun, pump, footsteps and kill, to pick by ear.
+- **Textures:**
+  - Lawns: a photo-scanned worn lawn (Ground037) instead of a bright, even synthetic one.
+  - Hedges and tree tops: clipped box hedge (Moss002).
+  - Plastered walls: clean warm-white paint (PaintedPlaster017) instead of the blotchy one.
+  - Pool water: darker.
+
 ### 2026-11-03 · Villa rebuilt after the schematic; no more getting stuck; window climbing; recorded sounds (`feature/milestone-5`)
 - **Getting stuck, found and fixed.** Two causes:
   - The thin ground layers (lawn, paths, floorboards) were solid boxes a few millimeters high, and players stood inside them.

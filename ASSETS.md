@@ -147,15 +147,19 @@ In the game now (all CC0, from OpenGameArt and a GitHub mirror of Kenney's impac
 
 | Sound | Source |
 |---|---|
-| Gunshots, close and mid distance, 3 shots each | "The Free Firearm Sound Library" (Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney). Rifle: AK-47 · battle rifle: SKS, muffled in game · sniper: Mosin Nagant · pistol: Walther PPQ · Makarov: Bersa .380 · SMG: Carl Gustav M45 · shotgun: Benelli Nova |
+| Gunshots, close and mid distance, 3 shots each | "The Free Firearm Sound Library" (Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney). Rifle: AK-47 · battle rifle: SKS, muffled in game · sniper: Mosin Nagant · pistol: Colt 1911 · Makarov: Bersa .380 · SMG: Carl Gustav M45 · shotgun: Winchester Model 12. Each is two-mic stereo; all but the AK use one mic, since mixing the two cancels part of the sound |
 | Magazine out / in, slide | "Handgun reload sound effect" |
-| Pump, shells | "Shotgun reload sound effects" |
+| Pump | "Gun reload sounds" (SpringySpringo) |
+| Shotgun shells | "Shotgun reload sound effects" |
+| Kill confirmation | "150 combat sound effects": heavy punch, low-passed (your own `kill.*` in `public/assets/sounds/ui/` still wins) |
 | Dry-fire click | "Equipment clicks II" |
 | Knife, grenade throw | "Swishes sound pack" |
 | Grenade bounce | "Metal impact sounds" (Brian MacIntosh) |
 | Frag, charge explosion | "150 combat sound effects" |
 | Flashbang | "Flash bang sound" |
-| Footsteps (concrete, wood, grass; metal from plate impacts), landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
+| Footsteps (concrete, wood, grass; metal from plate impacts), softened; landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
+
+**Comparing:** open **http://localhost:3000/dev/sounds.html** on the host Mac to hear every sound in the game, with alternatives from other recordings under the ones being tuned (pistol, shotgun, pump, footsteps, kill). The alternatives are listed in `ALTS` in the build script.
 
 To change one: edit `SOUNDS` in `scripts/build-sounds.mjs` (source file, which shot or which part of a recording, length, level) and run `node scripts/build-sounds.mjs`. `node scripts/build-sounds.mjs --segments <file>` lists the separate sounds inside a recording. Anything missing falls back to the built-in synthesized sound.
 
@@ -186,8 +190,9 @@ Other free sources:
 | Containers | CorrugatedSteel005 | One grey steel, tinted red / blue / green |
 | Plaza floor | PavingStones136 | Warmed up (olive in the photo) |
 | Plaza walls | Tiles143 | Limestone blocks |
-| Pavilion walls, Villa house | PaintedPlaster006 | Whitewashed plaster |
-| Lawns, hedges, tree tops | Grass005 | Hedges darker and coarser |
+| Plastered walls (pavilions, houses) | PaintedPlaster017 | Warm white paint (was PaintedPlaster006, too blotchy) |
+| Lawns | Ground037 | Worn lawn with bare patches (was Grass005, too bright and even) |
+| Hedges, tree tops | Moss002 | Clipped box hedge, toned down |
 | Trims, doors | Metal plates / rusted metal | P3, not yet |
 
 To swap a texture:
@@ -241,5 +246,5 @@ Shown in the game's menu (built from each model's licence data). Currently:
   - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
-- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster006, Grass005), CC0
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002), CC0
 - Sounds (all CC0; see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others

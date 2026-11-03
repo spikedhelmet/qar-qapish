@@ -1,0 +1,147 @@
+{
+ "shot_pistol": [
+  {
+   "label": "Walther PPQ (before)",
+   "files": [
+    "shot_pistol-0_0.m4a",
+    "shot_pistol-0_1.m4a",
+    "shot_pistol-0_2.m4a"
+   ]
+  },
+  {
+   "label": "Walther PPQ, one mic",
+   "files": [
+    "shot_pistol-1_0.m4a",
+    "shot_pistol-1_1.m4a",
+    "shot_pistol-1_2.m4a"
+   ]
+  },
+  {
+   "label": "S&W 642 revolver",
+   "files": [
+    "shot_pistol-2_0.m4a",
+    "shot_pistol-2_1.m4a",
+    "shot_pistol-2_2.m4a"
+   ]
+  },
+  {
+   "label": "Bersa .380",
+   "files": [
+    "shot_pistol-3_0.m4a",
+    "shot_pistol-3_1.m4a",
+    "shot_pistol-3_2.m4a"
+   ]
+  }
+ ],
+ "shot_shotgun": [
+  {
+   "label": "Benelli Nova (before)",
+   "files": [
+    "shot_shotgun-0_0.m4a",
+    "shot_shotgun-0_1.m4a",
+    "shot_shotgun-0_2.m4a"
+   ]
+  },
+  {
+   "label": "Benelli Nova, one mic",
+   "files": [
+    "shot_shotgun-1_0.m4a",
+    "shot_shotgun-1_1.m4a",
+    "shot_shotgun-1_2.m4a"
+   ]
+  },
+  {
+   "label": "Charles Daly pump",
+   "files": [
+    "shot_shotgun-2_0.m4a",
+    "shot_shotgun-2_1.m4a",
+    "shot_shotgun-2_2.m4a"
+   ]
+  },
+  {
+   "label": "Mossberg 190",
+   "files": [
+    "shot_shotgun-3_0.m4a",
+    "shot_shotgun-3_1.m4a",
+    "shot_shotgun-3_2.m4a"
+   ]
+  }
+ ],
+ "pump": [
+  {
+   "label": "Rack (before)",
+   "files": [
+    "pump-0_0.m4a"
+   ]
+  },
+  {
+   "label": "Model 12, from the gunshot recording",
+   "files": [
+    "pump-1_0.m4a"
+   ]
+  },
+  {
+   "label": "Shell in chamber",
+   "files": [
+    "pump-2_0.m4a"
+   ]
+  }
+ ],
+ "step_concrete": [
+  {
+   "label": "Kenney, unsoftened (before)",
+   "files": [
+    "step_concrete-0_0.m4a",
+    "step_concrete-0_1.m4a",
+    "step_concrete-0_2.m4a",
+    "step_concrete-0_3.m4a",
+    "step_concrete-0_4.m4a"
+   ]
+  },
+  {
+   "label": "Fantozzi stone",
+   "files": [
+    "step_concrete-1_0.m4a",
+    "step_concrete-1_1.m4a",
+    "step_concrete-1_2.m4a",
+    "step_concrete-1_3.m4a",
+    "step_concrete-1_4.m4a",
+    "step_concrete-1_5.m4a"
+   ]
+  }
+ ],
+ "step_grass": [
+  {
+   "label": "Fantozzi sand",
+   "files": [
+    "step_grass-0_0.m4a",
+    "step_grass-0_1.m4a",
+    "step_grass-0_2.m4a",
+    "step_grass-0_3.m4a",
+    "step_grass-0_4.m4a",
+    "step_grass-0_5.m4a"
+   ]
+  }
+ ],
+ "kill": [
+  {
+   "label": "Kenney heavy punch",
+   "files": [
+    "kill-0_0.m4a",
+    "kill-0_1.m4a",
+    "kill-0_2.m4a",
+    "kill-0_3.m4a",
+    "kill-0_4.m4a"
+   ]
+  },
+  {
+   "label": "Recorded hits",
+   "files": [
+    "kill-1_0.m4a",
+    "kill-1_1.m4a",
+    "kill-1_2.m4a",
+    "kill-1_3.m4a"
+   ]
+  }
+ ]
+}
