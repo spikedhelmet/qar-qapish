@@ -481,7 +481,6 @@ function frame(now) {
       const ground = ev.step || ev.hard ? surfaceUnder(MAP, me.pos) : null;
       if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6, ground);
       if (ev.hard) audio.playLand(null, ground);
-      if (ev.jump) audio.playJump();
       if (ev.slide) audio.playSlide(null);
       if (ev.climb) audio.playStep(null, 1.1);
     }

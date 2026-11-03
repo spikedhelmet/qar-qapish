@@ -12,9 +12,7 @@ const SRC = 'assets-src/sounds', OUT = 'public/assets/game/sounds', RATE = 44100
 const GUNS = `${SRC}/firearms/Prepared SFX Library`;
 const KENNEY = `${SRC}/kenney-impact/kenney-impact-sounds-for-godot-main/addons/kenney impact sounds`;
 const MELEE = `${SRC}/combat-150/01_combat_melee`, BOOM = `${SRC}/combat-150/03_explosions_destruction`;
-// The team's own downloads (assets-src/sounds/new/, not fetched by script): "FREE FPS SFX" by LMGLolo and others.
-// That pack is CC BY-ND 4.0 (no modified copies), so its files are only converted (`whole: true`):
-// any filtering or level changes happen in the game as they play (audio.js).
+// The team's own downloads (assets-src/sounds/new/, not fetched by script): "FREE FPS SFX Pack" and others.
 const NEW = `${SRC}/new`, FPS = `${NEW}/fps-pack`;
 const nums = (n, f) => Array.from({ length: n }, (_, i) => f(String(i + 1).padStart(3, '0')));
 const five = (name) => [0, 1, 2, 3, 4].map(i => `${KENNEY}/${name}_00${i}.ogg`);
@@ -41,13 +39,14 @@ const SOUNDS = {
   far_makarov: gun('Bersa/F_41P.wav', 1.2, -3),
   shot_smg: gun('Carl Gustav M45/G_31P.wav', 0.9, -2),
   far_smg: gun('Carl Gustav M45/G_20P.wav', 1.2, -2),
-  shot_shotgun: nums(4, n => ({ src: `${FPS}/Shotgun_Shot-${n}.wav`, whole: true })), // far away: muffled as it plays
+  shot_shotgun: nums(4, n => ({ src: `${FPS}/Shotgun_Shot-${n}.wav`, len: 0.75 })),
+  far_shotgun: nums(4, n => ({ src: `${FPS}/Shotgun_Shot-${n}.wav`, len: 0.75, lowpass: 2200, gain: -4 })),
   // Reloads
   magOut: [{ src: `${SRC}/handgun-reload/reload.wav`, seg: 0, len: 0.5, gain: -4 }],
   magIn: [{ src: `${SRC}/handgun-reload/reload.wav`, seg: 1, len: 0.5, gain: -4 }],
   rack: [{ src: `${SRC}/handgun-reload/reload.wav`, seg: 2, len: 0.6, gain: -4 }],
-  pump: [{ src: `${FPS}/Shotgun_Pump.wav`, whole: true }],
-  scope: [{ src: `${FPS}/Sniper_Scope .wav`, whole: true }],
+  pump: [{ src: `${FPS}/Shotgun_Pump.wav`, len: 0.72, gain: -3 }],
+  scope: [{ src: `${FPS}/Sniper_Scope .wav`, len: 0.54, gain: -6 }],
   shell: [{ src: `${SRC}/shotgun-reload/ShotgunSounds/Subsequent Shells.mp3`, len: 0.5, gain: -6 }],
   empty: [{ src: `${SRC}/equipment-clicks/equipmentclicks.wav`, seg: 0, len: 0.15, gain: -8 }],
   // Knife, grenades, explosions
@@ -58,12 +57,10 @@ const SOUNDS = {
   flash: [{ src: `${SRC}/flash-bang/flash_bang.wav`, len: 1.6, gain: -2 }],
   // Footsteps by surface, landing, bullet impacts
   // Footsteps are softened: the click at the start of each step is cut down (lowpass, slower fade-in).
-  step_concrete: nums(17, n => ({ src: `${FPS}/Footstep_Boot_Concrete-${n}.wav`, whole: true })),
+  step_concrete: nums(17, n => ({ src: `${FPS}/Footstep_Boot_Concrete-${n}.wav`, len: 0.32, gain: -8, lowpass: 3500, fadeIn: 0.004 })),
   step_wood: five('footstep_wood').map(src => ({ src, len: 0.3, gain: -9, lowpass: 1600, fadeIn: 0.008 })),
   step_grass: five('footstep_grass').map(src => ({ src, len: 0.3, gain: -9, lowpass: 1800, fadeIn: 0.008 })),
   step_metal: five('impact_plate_light').map(src => ({ src, len: 0.25, gain: -14, lowpass: 2500, fadeIn: 0.006 })),
-  land: five('impact_soft_heavy').map(src => ({ src, len: 0.4, gain: -6 })),
-  jump: [{ src: `${FPS}/Player_Jump.wav`, whole: true }],
   hit_concrete: five('impact_mining').map(src => ({ src, len: 0.35, gain: -8 })),
   hit_wood: five('impact_wood_light').map(src => ({ src, len: 0.35, gain: -8 })),
   hit_metal: five('impact_metal_light').map(src => ({ src, len: 0.35, gain: -10 })),
@@ -79,13 +76,13 @@ const HITS = `${SRC}/hits-punches/hits`;
 const ALTS = {
   shot_pistol: { 'Walther PPQ (before)': gun('Walther PPQ/X_39P.wav', 1.0, -2, 'mix'), 'Walther PPQ, one mic': gun('Walther PPQ/X_39P.wav', 1.0, -2), 'S&W 642 revolver': gun('Smith & Wesson 642/V_27P.wav', 1.1, -2), 'Bersa .380': gun('Bersa/F_47P.wav', 1.0, -2) },
   shot_sniper: {
-    'FPS pack sniper': nums(4, n => ({ src: `${FPS}/Sniper_Shot-${n}.wav`, whole: true })),
+    'FPS pack sniper': nums(4, n => ({ src: `${FPS}/Sniper_Shot-${n}.wav`, len: 1.8 })),
     'SPR-208': [{ src: `${NEW}/SPR - 208.mp3`, at: 0.47, to: 2.0, gain: 0 }],
   },
   rack: { 'Hammer cocking back': [{ src: `${NEW}/Hammer Cocking Back On Pistol.mp3`, len: 0.5, gain: -4 }] },
   frag: {
     'Small explosion': [{ src: `${NEW}/Small Explosion.mp3`, len: 1.2 }],
-    'FPS pack rocket explosion': nums(4, n => ({ src: `${FPS}/Rocket_Explosion-${n}.wav`, whole: true })),
+    'FPS pack rocket explosion': nums(4, n => ({ src: `${FPS}/Rocket_Explosion-${n}.wav`, len: 1.7 })),
   },
   shot_shotgun: { 'Winchester Model 12 (before)': gun('Model 12/K_22P.wav', 1.6), 'Benelli Nova (older)': gun('Nova/O_21P.wav', 1.6, 0, 'mix'), 'Benelli Nova, one mic': gun('Nova/O_21P.wav', 1.6), 'Charles Daly pump': gun('CD/H_21P.wav', 1.6), 'Mossberg 190': gun('Mossberg/N_30P.wav', 1.6) },
   pump: {
@@ -177,10 +174,6 @@ function cut(x, { seg = 0, shot, len = 1, at, to, gain = 0, lowpass: lp, fadeIn 
   return y;
 }
 
-// A recording converted as it is (same length, level and channels), for packs that allow no changes.
-const convert = (src, file) => execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '128000', src, file]);
-const build = (spec, file) => spec.whole ? convert(spec.src, file) : encode(cut(decode(spec.src, spec.ch), spec), file);
-
 function encode(y, file) {
   const wav = join(tmp, 'out.wav'), buf = Buffer.alloc(44 + y.length * 2);
   buf.write('RIFF', 0); buf.writeUInt32LE(36 + y.length * 2, 4); buf.write('WAVEfmt ', 8);
@@ -205,7 +198,7 @@ const manifest = {};
 for (const [id, list] of Object.entries(SOUNDS)) {
   manifest[id] = list.map((v, i) => {
     const spec = typeof v === 'string' ? { src: v } : v, file = `${id}_${i}.m4a`;
-    build(spec, join(OUT, file));
+    encode(cut(decode(spec.src, spec.ch), spec), join(OUT, file));
     return file;
   });
 }
@@ -221,7 +214,7 @@ for (const [id, options] of Object.entries(ALTS)) {
     label,
     files: list.map((spec, i) => {
       const file = `${id}-${k}_${i}.m4a`;
-      build(spec, join(ALT_OUT, file));
+      encode(cut(decode(spec.src, spec.ch), spec), join(ALT_OUT, file));
       return file;
     }),
   }));

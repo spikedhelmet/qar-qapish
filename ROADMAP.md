@@ -42,6 +42,10 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-03 · Jump and landing sounds (`feature/milestone-5`)
+- **Jump:** no sound. The pack's jump was a whoosh.
+- **Landing:** was a soft-impact recording that sounded like a bounce. It's now both feet on the surface you land on (two footsteps 35 ms apart, slightly deeper and louder than a step).
+
 ### 2026-11-03 · Play-test notes: smooth stairs, fall damage, stagger, crates, new sounds (`feature/milestone-5`)
 - **Smooth camera on stairs and ladders.** Two parts:
   - Walking down steps now keeps you on the ground. You used to fall off each step for a few frames.

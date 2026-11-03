@@ -157,8 +157,8 @@ In the game now (all CC0, from OpenGameArt and a GitHub mirror of Kenney's impac
 | Grenade bounce | "Metal impact sounds" (Brian MacIntosh) |
 | Frag, charge explosion | "150 combat sound effects" |
 | Flashbang | "Flash bang sound" |
-| Footsteps (wood, grass; metal from plate impacts), softened; landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
-| Shotgun shots and pump, concrete (boot) footsteps, jump, sniper scope | "FREE FPS SFX" by LMGLolo (lmglolo.itch.io/free-fps-sfx), **CC BY-ND 4.0**: credit required, no modified copies. So these files are only converted to AAC, same length, level and channels; muffling and volume are applied in the game as they play. Downloaded by the team into `assets-src/sounds/new/` |
+| Footsteps (wood, grass; metal from plate impacts), softened; bullet impacts, bullet hitting you | Kenney "Impact Sounds". Landing plays two footsteps of the surface, a little heavier |
+| Shotgun shots and pump, concrete (boot) footsteps, sniper scope | "FREE FPS SFX" by LMGLolo (lmglolo.itch.io/free-fps-sfx), **CC BY-ND 4.0**: credit required, no modified copies. So these files are only converted to AAC, same length, level and channels; muffling and volume are applied in the game as they play. Downloaded by the team into `assets-src/sounds/new/` |
 
 **The team's own downloads** go in `assets-src/sounds/new/` (not fetched by script). The build uses "FREE FPS SFX" (LMGLolo, CC BY-ND 4.0) from there, unmodified, and lists the other files on the sound board as alternatives: SPR-208, "Hammer Cocking Back On Pistol", "Small Explosion", the pack's sniper shots and rocket explosions.
 

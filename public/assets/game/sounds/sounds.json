@@ -65,6 +65,12 @@
   "shot_shotgun_2.m4a",
   "shot_shotgun_3.m4a"
  ],
+ "far_shotgun": [
+  "far_shotgun_0.m4a",
+  "far_shotgun_1.m4a",
+  "far_shotgun_2.m4a",
+  "far_shotgun_3.m4a"
+ ],
  "magOut": [
   "magOut_0.m4a"
  ],
@@ -146,16 +152,6 @@
   "step_metal_2.m4a",
   "step_metal_3.m4a",
   "step_metal_4.m4a"
- ],
- "land": [
-  "land_0.m4a",
-  "land_1.m4a",
-  "land_2.m4a",
-  "land_3.m4a",
-  "land_4.m4a"
- ],
- "jump": [
-  "jump_0.m4a"
  ],
  "hit_concrete": [
   "hit_concrete_0.m4a",

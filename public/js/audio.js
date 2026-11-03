@@ -184,16 +184,11 @@ export function playStep(pos, loud = 1, mat) {
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });
 }
 
-// Jumping: a breath and a scuff.
-export function playJump() {
-  if (ctx) sample('jump', master, { gain: 0.5 });
-}
-
-// Landing from a jump or a drop.
+// Landing from a jump or a drop: both feet on the surface, a little heavier than a step.
 export function playLand(pos, mat) {
   if (!ctx) return;
-  const out = output(pos);
-  if (sample('land', out, { gain: 0.5 })) { sample('step_' + surface(mat), out, { gain: 0.4 }); return; }
+  const out = output(pos), id = 'step_' + surface(mat);
+  if (sample(id, out, { gain: 0.75, rate: 0.88 })) { sample(id, out, { gain: 0.6, rate: 0.9, delay: 0.035 }); return; }
   playStep(pos, 1.1, mat);
 }
 
