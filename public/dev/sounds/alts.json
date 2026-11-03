@@ -33,9 +33,51 @@
    ]
   }
  ],
+ "shot_sniper": [
+  {
+   "label": "FPS pack sniper",
+   "files": [
+    "shot_sniper-0_0.m4a",
+    "shot_sniper-0_1.m4a",
+    "shot_sniper-0_2.m4a",
+    "shot_sniper-0_3.m4a"
+   ]
+  },
+  {
+   "label": "SPR-208",
+   "files": [
+    "shot_sniper-1_0.m4a"
+   ]
+  }
+ ],
+ "rack": [
+  {
+   "label": "Hammer cocking back",
+   "files": [
+    "rack-0_0.m4a"
+   ]
+  }
+ ],
+ "frag": [
+  {
+   "label": "Small explosion",
+   "files": [
+    "frag-0_0.m4a"
+   ]
+  },
+  {
+   "label": "FPS pack rocket explosion",
+   "files": [
+    "frag-1_0.m4a",
+    "frag-1_1.m4a",
+    "frag-1_2.m4a",
+    "frag-1_3.m4a"
+   ]
+  }
+ ],
  "shot_shotgun": [
   {
-   "label": "Benelli Nova (before)",
+   "label": "Winchester Model 12 (before)",
    "files": [
     "shot_shotgun-0_0.m4a",
     "shot_shotgun-0_1.m4a",
@@ -43,7 +85,7 @@
    ]
   },
   {
-   "label": "Benelli Nova, one mic",
+   "label": "Benelli Nova (older)",
    "files": [
     "shot_shotgun-1_0.m4a",
     "shot_shotgun-1_1.m4a",
@@ -51,7 +93,7 @@
    ]
   },
   {
-   "label": "Charles Daly pump",
+   "label": "Benelli Nova, one mic",
    "files": [
     "shot_shotgun-2_0.m4a",
     "shot_shotgun-2_1.m4a",
@@ -59,37 +101,51 @@
    ]
   },
   {
-   "label": "Mossberg 190",
+   "label": "Charles Daly pump",
    "files": [
     "shot_shotgun-3_0.m4a",
     "shot_shotgun-3_1.m4a",
     "shot_shotgun-3_2.m4a"
    ]
+  },
+  {
+   "label": "Mossberg 190",
+   "files": [
+    "shot_shotgun-4_0.m4a",
+    "shot_shotgun-4_1.m4a",
+    "shot_shotgun-4_2.m4a"
+   ]
   }
  ],
  "pump": [
   {
-   "label": "Rack (before)",
+   "label": "Shotgun cock (before)",
    "files": [
     "pump-0_0.m4a"
    ]
   },
   {
-   "label": "Model 12, from the gunshot recording",
+   "label": "Rack (older)",
    "files": [
     "pump-1_0.m4a"
    ]
   },
   {
-   "label": "Shell in chamber",
+   "label": "Model 12, from the gunshot recording",
    "files": [
     "pump-2_0.m4a"
+   ]
+  },
+  {
+   "label": "Shell in chamber",
+   "files": [
+    "pump-3_0.m4a"
    ]
   }
  ],
  "step_concrete": [
   {
-   "label": "Kenney, unsoftened (before)",
+   "label": "Kenney, softened (before)",
    "files": [
     "step_concrete-0_0.m4a",
     "step_concrete-0_1.m4a",
@@ -99,14 +155,24 @@
    ]
   },
   {
-   "label": "Fantozzi stone",
+   "label": "Kenney, unsoftened (older)",
    "files": [
     "step_concrete-1_0.m4a",
     "step_concrete-1_1.m4a",
     "step_concrete-1_2.m4a",
     "step_concrete-1_3.m4a",
-    "step_concrete-1_4.m4a",
-    "step_concrete-1_5.m4a"
+    "step_concrete-1_4.m4a"
+   ]
+  },
+  {
+   "label": "Fantozzi stone",
+   "files": [
+    "step_concrete-2_0.m4a",
+    "step_concrete-2_1.m4a",
+    "step_concrete-2_2.m4a",
+    "step_concrete-2_3.m4a",
+    "step_concrete-2_4.m4a",
+    "step_concrete-2_5.m4a"
    ]
   }
  ],

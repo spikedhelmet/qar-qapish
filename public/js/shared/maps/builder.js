@@ -39,7 +39,7 @@ export function builder() {
   }
   // A ladder up a wall to height `top`. (x, z): the middle of its top, against the wall's face; side:
   // which way the wall is from the ladder ('n', 's', 'e', 'w'). Behind it are hidden steep steps
-  // (0.4 m rise, 0.2 m deep) that you walk up like stairs; the game slows you on them.
+  // (0.4 m rise, 0.2 m deep) that you walk up like stairs; the game slows you to 30% on them.
   function ladder(x, z, side, top, width = 0.8) {
     const [dx, dz] = { n: [0, -1], s: [0, 1], w: [-1, 0], e: [1, 0] }[side];
     const n = Math.ceil(top / 0.4), rise = top / n, tread = 0.2;

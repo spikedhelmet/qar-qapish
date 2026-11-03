@@ -1,0 +1,362 @@
+[
+ {
+  "file": "announcer/warlord-0.m4a",
+  "pack": "warlord",
+  "at": 0.234,
+  "to": 1.09
+ },
+ {
+  "file": "announcer/warlord-1.m4a",
+  "pack": "warlord",
+  "at": 2.483,
+  "to": 3.874
+ },
+ {
+  "file": "announcer/warlord-2.m4a",
+  "pack": "warlord",
+  "at": 5.363,
+  "to": 6.565
+ },
+ {
+  "file": "announcer/warlord-3.m4a",
+  "pack": "warlord",
+  "at": 7.981,
+  "to": 9.36
+ },
+ {
+  "file": "announcer/warlord-4.m4a",
+  "pack": "warlord",
+  "at": 10.751,
+  "to": 11.863
+ },
+ {
+  "file": "announcer/warlord-5.m4a",
+  "pack": "warlord",
+  "at": 13.201,
+  "to": 14.7
+ },
+ {
+  "file": "announcer/warlord-6.m4a",
+  "pack": "warlord",
+  "at": 16.121,
+  "to": 17.427
+ },
+ {
+  "file": "announcer/warlord-7.m4a",
+  "pack": "warlord",
+  "at": 18.879,
+  "to": 20.263
+ },
+ {
+  "file": "announcer/warlord-8.m4a",
+  "pack": "warlord",
+  "at": 21.647,
+  "to": 22.842
+ },
+ {
+  "file": "announcer/warlord-9.m4a",
+  "pack": "warlord",
+  "at": 24.39,
+  "to": 25.623
+ },
+ {
+  "file": "announcer/warlord-10.m4a",
+  "pack": "warlord",
+  "at": 27.138,
+  "to": 28.584
+ },
+ {
+  "file": "announcer/warlord-11.m4a",
+  "pack": "warlord",
+  "at": 29.991,
+  "to": 31.739
+ },
+ {
+  "file": "announcer/warlord-12.m4a",
+  "pack": "warlord",
+  "at": 33.17,
+  "to": 34.642
+ },
+ {
+  "file": "announcer/warlord-13.m4a",
+  "pack": "warlord",
+  "at": 36.177,
+  "to": 37.611
+ },
+ {
+  "file": "announcer/warlord-14.m4a",
+  "pack": "warlord",
+  "at": 39.068,
+  "to": 41.071
+ },
+ {
+  "file": "announcer/warlord-15.m4a",
+  "pack": "warlord",
+  "at": 42.626,
+  "to": 44.165
+ },
+ {
+  "file": "announcer/warlord-16.m4a",
+  "pack": "warlord",
+  "at": 45.812,
+  "to": 47.6
+ },
+ {
+  "file": "announcer/warlord-17.m4a",
+  "pack": "warlord",
+  "at": 49.212,
+  "to": 51.113
+ },
+ {
+  "file": "announcer/warlord-18.m4a",
+  "pack": "warlord",
+  "at": 52.73,
+  "to": 54.258
+ },
+ {
+  "file": "announcer/warlord-19.m4a",
+  "pack": "warlord",
+  "at": 55.827,
+  "to": 57.34
+ },
+ {
+  "file": "announcer/warlord-20.m4a",
+  "pack": "warlord",
+  "at": 58.942,
+  "to": 60.216
+ },
+ {
+  "file": "announcer/warlord-21.m4a",
+  "pack": "warlord",
+  "at": 61.71,
+  "to": 63.289
+ },
+ {
+  "file": "announcer/warlord-22.m4a",
+  "pack": "warlord",
+  "at": 64.865,
+  "to": 66.349
+ },
+ {
+  "file": "announcer/warlord-23.m4a",
+  "pack": "warlord",
+  "at": 67.931,
+  "to": 69.625
+ },
+ {
+  "file": "announcer/warlord-24.m4a",
+  "pack": "warlord",
+  "at": 71.13,
+  "to": 72.152
+ },
+ {
+  "file": "announcer/warlord-25.m4a",
+  "pack": "warlord",
+  "at": 73.698,
+  "to": 75.238
+ },
+ {
+  "file": "announcer/warlord-26.m4a",
+  "pack": "warlord",
+  "at": 76.833,
+  "to": 78.32
+ },
+ {
+  "file": "announcer/warlord-27.m4a",
+  "pack": "warlord",
+  "at": 79.848,
+  "to": 81.391
+ },
+ {
+  "file": "announcer/warlord-28.m4a",
+  "pack": "warlord",
+  "at": 82.834,
+  "to": 84.426
+ },
+ {
+  "file": "announcer/pack2-0.m4a",
+  "pack": "pack2",
+  "at": 0.854,
+  "to": 3.712
+ },
+ {
+  "file": "announcer/pack2-1.m4a",
+  "pack": "pack2",
+  "at": 5.871,
+  "to": 7.209
+ },
+ {
+  "file": "announcer/pack2-2.m4a",
+  "pack": "pack2",
+  "at": 9.077,
+  "to": 10.404
+ },
+ {
+  "file": "announcer/pack2-3.m4a",
+  "pack": "pack2",
+  "at": 12.483,
+  "to": 14.106
+ },
+ {
+  "file": "announcer/pack2-4.m4a",
+  "pack": "pack2",
+  "at": 16.039,
+  "to": 17.394
+ },
+ {
+  "file": "announcer/pack2-5.m4a",
+  "pack": "pack2",
+  "at": 19.329,
+  "to": 20.699
+ },
+ {
+  "file": "announcer/pack2-6.m4a",
+  "pack": "pack2",
+  "at": 22.682,
+  "to": 23.939
+ },
+ {
+  "file": "announcer/pack2-7.m4a",
+  "pack": "pack2",
+  "at": 25.781,
+  "to": 26.935
+ },
+ {
+  "file": "announcer/pack2-8.m4a",
+  "pack": "pack2",
+  "at": 28.888,
+  "to": 30.399
+ },
+ {
+  "file": "announcer/pack2-9.m4a",
+  "pack": "pack2",
+  "at": 32.283,
+  "to": 33.643
+ },
+ {
+  "file": "announcer/pack2-10.m4a",
+  "pack": "pack2",
+  "at": 35.561,
+  "to": 36.953
+ },
+ {
+  "file": "announcer/pack2-11.m4a",
+  "pack": "pack2",
+  "at": 38.811,
+  "to": 40.17
+ },
+ {
+  "file": "announcer/pack2-12.m4a",
+  "pack": "pack2",
+  "at": 42.015,
+  "to": 43.539
+ },
+ {
+  "file": "announcer/pack2-13.m4a",
+  "pack": "pack2",
+  "at": 45.378,
+  "to": 47.239
+ },
+ {
+  "file": "announcer/pack2-14.m4a",
+  "pack": "pack2",
+  "at": 49.09,
+  "to": 50.533
+ },
+ {
+  "file": "announcer/pack2-15.m4a",
+  "pack": "pack2",
+  "at": 52.685,
+  "to": 54.329
+ },
+ {
+  "file": "announcer/pack2-16.m4a",
+  "pack": "pack2",
+  "at": 56.271,
+  "to": 57.746
+ },
+ {
+  "file": "announcer/pack2-17.m4a",
+  "pack": "pack2",
+  "at": 59.733,
+  "to": 60.924
+ },
+ {
+  "file": "announcer/pack2-18.m4a",
+  "pack": "pack2",
+  "at": 62.901,
+  "to": 64.654
+ },
+ {
+  "file": "announcer/pack2-19.m4a",
+  "pack": "pack2",
+  "at": 66.67,
+  "to": 68.235
+ },
+ {
+  "file": "announcer/pack2-20.m4a",
+  "pack": "pack2",
+  "at": 70.273,
+  "to": 71.682
+ },
+ {
+  "file": "announcer/pack2-21.m4a",
+  "pack": "pack2",
+  "at": 73.783,
+  "to": 75.75
+ },
+ {
+  "file": "announcer/pack2-22.m4a",
+  "pack": "pack2",
+  "at": 77.657,
+  "to": 79.01
+ },
+ {
+  "file": "announcer/pack2-23.m4a",
+  "pack": "pack2",
+  "at": 80.928,
+  "to": 82.433
+ },
+ {
+  "file": "announcer/pack2-24.m4a",
+  "pack": "pack2",
+  "at": 84.368,
+  "to": 85.729
+ },
+ {
+  "file": "announcer/pack2-25.m4a",
+  "pack": "pack2",
+  "at": 87.687,
+  "to": 89.176
+ },
+ {
+  "file": "announcer/pack2-26.m4a",
+  "pack": "pack2",
+  "at": 91.03,
+  "to": 92.423
+ },
+ {
+  "file": "announcer/pack2-27.m4a",
+  "pack": "pack2",
+  "at": 94.474,
+  "to": 96.134
+ },
+ {
+  "file": "announcer/pack2-28.m4a",
+  "pack": "pack2",
+  "at": 98.131,
+  "to": 99.818
+ },
+ {
+  "file": "announcer/pack2-29.m4a",
+  "pack": "pack2",
+  "at": 101.778,
+  "to": 102.959
+ },
+ {
+  "file": "announcer/pack2-30.m4a",
+  "pack": "pack2",
+  "at": 104.788,
+  "to": 105.993
+ }
+]

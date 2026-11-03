@@ -12,6 +12,9 @@ const SRC = 'assets-src/sounds', OUT = 'public/assets/game/sounds', RATE = 44100
 const GUNS = `${SRC}/firearms/Prepared SFX Library`;
 const KENNEY = `${SRC}/kenney-impact/kenney-impact-sounds-for-godot-main/addons/kenney impact sounds`;
 const MELEE = `${SRC}/combat-150/01_combat_melee`, BOOM = `${SRC}/combat-150/03_explosions_destruction`;
+// The team's own downloads (assets-src/sounds/new/, not fetched by script): "FREE FPS SFX Pack" and others.
+const NEW = `${SRC}/new`, FPS = `${NEW}/fps-pack`;
+const nums = (n, f) => Array.from({ length: n }, (_, i) => f(String(i + 1).padStart(3, '0')));
 const five = (name) => [0, 1, 2, 3, 4].map(i => `${KENNEY}/${name}_00${i}.ogg`);
 // Up to three of the separate shots in a gun recording (they're seconds apart), as variants. The
 // recordings are stereo from two mics; most guns use the louder mic alone, because mixing the two
@@ -36,13 +39,14 @@ const SOUNDS = {
   far_makarov: gun('Bersa/F_41P.wav', 1.2, -3),
   shot_smg: gun('Carl Gustav M45/G_31P.wav', 0.9, -2),
   far_smg: gun('Carl Gustav M45/G_20P.wav', 1.2, -2),
-  shot_shotgun: gun('Model 12/K_22P.wav', 1.6),
-  far_shotgun: gun('Model 12/K_17P.wav', 1.8),
+  shot_shotgun: nums(4, n => ({ src: `${FPS}/Shotgun_Shot-${n}.wav`, len: 0.75 })),
+  far_shotgun: nums(4, n => ({ src: `${FPS}/Shotgun_Shot-${n}.wav`, len: 0.75, lowpass: 2200, gain: -4 })),
   // Reloads
   magOut: [{ src: `${SRC}/handgun-reload/reload.wav`, seg: 0, len: 0.5, gain: -4 }],
   magIn: [{ src: `${SRC}/handgun-reload/reload.wav`, seg: 1, len: 0.5, gain: -4 }],
   rack: [{ src: `${SRC}/handgun-reload/reload.wav`, seg: 2, len: 0.6, gain: -4 }],
-  pump: [{ src: `${SRC}/gun-reload-sounds/shotguncock_0.wav`, len: 0.45, gain: -3 }],
+  pump: [{ src: `${FPS}/Shotgun_Pump.wav`, len: 0.72, gain: -3 }],
+  scope: [{ src: `${FPS}/Sniper_Scope .wav`, len: 0.54, gain: -6 }],
   shell: [{ src: `${SRC}/shotgun-reload/ShotgunSounds/Subsequent Shells.mp3`, len: 0.5, gain: -6 }],
   empty: [{ src: `${SRC}/equipment-clicks/equipmentclicks.wav`, seg: 0, len: 0.15, gain: -8 }],
   // Knife, grenades, explosions
@@ -53,11 +57,12 @@ const SOUNDS = {
   flash: [{ src: `${SRC}/flash-bang/flash_bang.wav`, len: 1.6, gain: -2 }],
   // Footsteps by surface, landing, bullet impacts
   // Footsteps are softened: the click at the start of each step is cut down (lowpass, slower fade-in).
-  step_concrete: five('footstep_concrete').map(src => ({ src, len: 0.3, gain: -9, lowpass: 1600, fadeIn: 0.008 })),
+  step_concrete: nums(17, n => ({ src: `${FPS}/Footstep_Boot_Concrete-${n}.wav`, len: 0.32, gain: -8, lowpass: 3500, fadeIn: 0.004 })),
   step_wood: five('footstep_wood').map(src => ({ src, len: 0.3, gain: -9, lowpass: 1600, fadeIn: 0.008 })),
   step_grass: five('footstep_grass').map(src => ({ src, len: 0.3, gain: -9, lowpass: 1800, fadeIn: 0.008 })),
   step_metal: five('impact_plate_light').map(src => ({ src, len: 0.25, gain: -14, lowpass: 2500, fadeIn: 0.006 })),
   land: five('impact_soft_heavy').map(src => ({ src, len: 0.4, gain: -6 })),
+  jump: [{ src: `${FPS}/Player_Jump.wav`, len: 0.6, gain: -6 }],
   hit_concrete: five('impact_mining').map(src => ({ src, len: 0.35, gain: -8 })),
   hit_wood: five('impact_wood_light').map(src => ({ src, len: 0.35, gain: -8 })),
   hit_metal: five('impact_metal_light').map(src => ({ src, len: 0.35, gain: -10 })),
@@ -72,14 +77,25 @@ const STEPS_F = `${SRC}/footsteps-fantozzi/Fantozzi-footsteps/ogg/Fantozzi`;
 const HITS = `${SRC}/hits-punches/hits`;
 const ALTS = {
   shot_pistol: { 'Walther PPQ (before)': gun('Walther PPQ/X_39P.wav', 1.0, -2, 'mix'), 'Walther PPQ, one mic': gun('Walther PPQ/X_39P.wav', 1.0, -2), 'S&W 642 revolver': gun('Smith & Wesson 642/V_27P.wav', 1.1, -2), 'Bersa .380': gun('Bersa/F_47P.wav', 1.0, -2) },
-  shot_shotgun: { 'Benelli Nova (before)': gun('Nova/O_21P.wav', 1.6, 0, 'mix'), 'Benelli Nova, one mic': gun('Nova/O_21P.wav', 1.6), 'Charles Daly pump': gun('CD/H_21P.wav', 1.6), 'Mossberg 190': gun('Mossberg/N_30P.wav', 1.6) },
+  shot_sniper: {
+    'FPS pack sniper': nums(4, n => ({ src: `${FPS}/Sniper_Shot-${n}.wav`, len: 1.8 })),
+    'SPR-208': [{ src: `${NEW}/SPR - 208.mp3`, at: 0.47, to: 2.0, gain: 0 }],
+  },
+  rack: { 'Hammer cocking back': [{ src: `${NEW}/Hammer Cocking Back On Pistol.mp3`, len: 0.5, gain: -4 }] },
+  frag: {
+    'Small explosion': [{ src: `${NEW}/Small Explosion.mp3`, len: 1.2 }],
+    'FPS pack rocket explosion': nums(4, n => ({ src: `${FPS}/Rocket_Explosion-${n}.wav`, len: 1.7 })),
+  },
+  shot_shotgun: { 'Winchester Model 12 (before)': gun('Model 12/K_22P.wav', 1.6), 'Benelli Nova (older)': gun('Nova/O_21P.wav', 1.6, 0, 'mix'), 'Benelli Nova, one mic': gun('Nova/O_21P.wav', 1.6), 'Charles Daly pump': gun('CD/H_21P.wav', 1.6), 'Mossberg 190': gun('Mossberg/N_30P.wav', 1.6) },
   pump: {
-    'Rack (before)': [{ src: `${SRC}/shotgun-reload/ShotgunSounds/Rack.mp3`, len: 0.8, gain: -4 }],
+    'Shotgun cock (before)': [{ src: `${SRC}/gun-reload-sounds/shotguncock_0.wav`, len: 0.45, gain: -3 }],
+    'Rack (older)': [{ src: `${SRC}/shotgun-reload/ShotgunSounds/Rack.mp3`, len: 0.8, gain: -4 }],
     'Model 12, from the gunshot recording': [{ src: `${GUNS}/Model 12/K_22P.wav`, ch: 'loud', at: 4.2, to: 5.05, gain: -3, lowpass: 6000 }],
     'Shell in chamber': [{ src: `${SRC}/shotgun-reload/ShotgunSounds/Shell in Chamber.mp3`, seg: 1, len: 0.7, gain: -4 }],
   },
   step_concrete: {
-    'Kenney, unsoftened (before)': five('footstep_concrete').map(src => ({ src, len: 0.3, gain: -6 })),
+    'Kenney, softened (before)': five('footstep_concrete').map(src => ({ src, len: 0.3, gain: -9, lowpass: 1600, fadeIn: 0.008 })),
+    'Kenney, unsoftened (older)': five('footstep_concrete').map(src => ({ src, len: 0.3, gain: -6 })),
     'Fantozzi stone': ['L1', 'L2', 'L3', 'R1', 'R2', 'R3'].map(n => ({ src: `${STEPS_F}-Stone${n}.ogg`, len: 0.35, gain: -9, lowpass: 2500 })),
   },
   step_grass: { 'Fantozzi sand': ['L1', 'L2', 'L3', 'R1', 'R2', 'R3'].map(n => ({ src: `${STEPS_F}-Sand${n}.ogg`, len: 0.35, gain: -9, lowpass: 2500 })) },
@@ -143,7 +159,7 @@ function shots(x) {
   return out;
 }
 
-function cut(x, { seg = 0, shot, len = 1, at, to, gain = 0, lowpass: lp, fadeIn = 0.002 }) {
+function cut(x, { seg = 0, shot, len = 1, at, to, gain = 0, lowpass: lp, fadeIn = 0.002, fadeOut = 0.35 }) {
   let a, b;
   if (at !== undefined) { a = Math.round(at * RATE); b = Math.round((to ?? at + len) * RATE); }
   else {
@@ -152,7 +168,7 @@ function cut(x, { seg = 0, shot, len = 1, at, to, gain = 0, lowpass: lp, fadeIn 
   }
   const y = x.slice(a, Math.min(x.length, b));
   if (lp) lowpass(y, lp);
-  const fade = Math.min(y.length, Math.round(y.length * 0.35)), fin = Math.min(y.length, Math.round(RATE * fadeIn));
+  const fade = Math.min(y.length, Math.round(y.length * fadeOut)), fin = Math.min(y.length, Math.round(RATE * fadeIn));
   for (let i = 0; i < fin; i++) y[i] *= i / fin;
   for (let i = 0; i < fade; i++) y[y.length - 1 - i] *= (i / fade) ** 2;
   const peak = y.reduce((m, v) => Math.max(m, Math.abs(v)), 1e-9), k = (0.89 / peak) * 10 ** (gain / 20); // -1 dB peak, then gain
@@ -206,5 +222,41 @@ for (const [id, options] of Object.entries(ALTS)) {
   }));
 }
 writeFileSync(join(ALT_OUT, 'alts.json'), JSON.stringify(alts, null, 1) + '\n');
+
+// Announcer recordings: every line in them, for labelling on /dev/sounds.html (lines: sounds less than
+// 0.6 s apart belong together). The labels are saved to public/assets/game/announcer-map.json, and the
+// lines labelled there are cut into public/assets/sounds/announcer/<line id>.m4a for the game.
+const PACKS = {
+  warlord: `${NEW}/voicebosch-warlord-fps-game-announcer-pack-186108.mp3`,
+  pack2: `${NEW}/Announcer Pack 2.mp3`,
+};
+const lines = [];
+mkdirSync(join(ALT_OUT, 'announcer'), { recursive: true });
+for (const [pack, src] of Object.entries(PACKS)) {
+  let x;
+  try { x = decode(src); } catch { continue; }
+  const merged = [];
+  for (const [a, b] of segments(x)) {
+    const last = merged[merged.length - 1];
+    if (last && a - last[1] < RATE * 0.6) last[1] = b; else merged.push([a, b]);
+  }
+  merged.forEach(([a, b], i) => {
+    const spec = { at: Math.max(0, a / RATE - 0.05), to: b / RATE + 0.15, fadeOut: 0.08 }, file = `announcer/${pack}-${i}.m4a`;
+    encode(cut(x, spec), join(ALT_OUT, file));
+    lines.push({ file, pack, at: +spec.at.toFixed(3), to: +spec.to.toFixed(3) });
+  });
+}
+writeFileSync(join(ALT_OUT, 'announcer.json'), JSON.stringify(lines, null, 1) + '\n');
+const MAP_FILE = 'public/assets/game/announcer-map.json', VOICE = 'public/assets/sounds/announcer';
+let labelled = 0;
+try {
+  const map = JSON.parse(readFileSync(MAP_FILE, 'utf8'));  // { line id: { pack, at, to } }
+  for (const [id, { pack, at, to }] of Object.entries(map)) {
+    if (!PACKS[pack] || !/^\w+$/.test(id)) continue;
+    encode(cut(decode(PACKS[pack]), { at, to, fadeOut: 0.08 }), join(VOICE, `${id}.m4a`));
+    labelled++;
+  }
+} catch { /* nothing labelled yet */ }
+console.log(`announcer: ${lines.length} lines to label, ${labelled} labelled lines written to ${VOICE}`);
 const bytes = readdirSync(OUT).reduce((n, f) => n + readFileSync(join(OUT, f)).length, 0);
 console.log(`${Object.keys(manifest).length} sounds, ${Object.values(manifest).flat().length} files, ${(bytes / 1e6).toFixed(1)} MB in ${OUT}`);

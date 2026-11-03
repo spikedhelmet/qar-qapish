@@ -203,6 +203,7 @@ function spawn(p) {
   p.pos = [s.x, s.y || 0, s.z]; // spawns on raised ground (Plaza's terraces) give their height
   p.yaw = s.yaw; p.pitch = 0;
   p.crouch = false;
+  p.air = false; p.fallTop = undefined;
   p.hp = PLAYER.maxHp;
   p.alive = true;
   p.life++;
@@ -508,6 +509,7 @@ function handleState(p, msg) {
   if (![x, y, z].every(Number.isFinite)) return;
   p.history.unshift({ pos: p.pos, crouch: p.crouch, t: now() });
   if (p.history.length > 12) p.history.pop();
+  const prevY = p.pos[1];
   const b = MAP.bounds;
   p.pos = [Math.min(b.max[0], Math.max(b.min[0], x)), Math.max(Math.min(-1, b.min[1]), y), Math.min(b.max[2], Math.max(b.min[2], z))]; // Villa's pool goes below 0
   p.yaw = Number(msg.yw) || 0;
@@ -516,7 +518,20 @@ function handleState(p, msg) {
   p.slide = !!msg.sl;
   p.sprint = !!msg.ru;
   p.air = !!msg.ar;
+  // Falls: the highest point while off the ground, against where you land.
+  if (p.air) p.fallTop = Math.max(p.fallTop ?? prevY, p.pos[1]);
+  else if (p.fallTop !== undefined) {
+    const drop = p.fallTop - p.pos[1];
+    p.fallTop = undefined;
+    if (drop > PLAYER.fallSafe) fallHurt(p, drop);
+  }
   if (loadoutFor(p.cls).includes(msg.w)) p.weapon = msg.w;
+}
+
+function fallHurt(p, drop) {
+  p.hp -= Math.round((drop - PLAYER.fallSafe) * PLAYER.fallDamage);
+  send(p, { t: 'hurt', hp: Math.max(0, p.hp), from: p.pos, fall: true });
+  if (p.hp <= 0) kill(p, null, 'fall', false);
 }
 
 function switchTeam(p) {

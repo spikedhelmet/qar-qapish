@@ -1,6 +1,6 @@
 // Local player: keyboard/mouse input and client-side movement physics.
 import { PLAYER } from './shared/config.js';
-import { moveBody, canStand, findLedge, findVault, surfaceUnder } from './shared/collision.js';
+import { moveBody, canStand, findLedge, findVault, touchingMat } from './shared/collision.js';
 import { translate } from './keys.js';
 
 export class Input {
@@ -91,6 +91,8 @@ export class LocalPlayer {
     this.jumped = false;
     this.climb = null;    // pulling up onto a ledge: { from, to, t, dur }, or through a window: also { via }
     this.groundY = this.pos ? this.pos[1] : 0;
+    this.stepOffset = 0;  // camera lag behind a step up or down, eased out (see viewEye)
+    this.slowT = 0; this.slowK = 0; // stagger after being hit: seconds left, how much slower
   }
 
   spawn(pos, yaw, life) {
@@ -114,10 +116,10 @@ export class LocalPlayer {
   get climbing() { return !!this.climb; }
 
   // opts: { speedMult, sprintMult, aiming, firing }. Returns sound events: { step, loud, landed, hard (a real
-  // drop, not a stair), slide, climb }.
+  // drop, not a stair), slide, climb, jump }.
   update(dt, input, { speedMult = 1, sprintMult = 1, aiming = false, firing = false } = {}) {
     const P = PLAYER;
-    const ev = { step: false, loud: false, landed: false, hard: false, slide: false, climb: false };
+    const ev = { step: false, loud: false, landed: false, hard: false, slide: false, climb: false, jump: false };
     if (this.climb) return this.updateClimb(dt, ev);
 
     let fx = 0, fz = 0;
@@ -169,7 +171,9 @@ export class LocalPlayer {
     const fresh = 1 - P.landSlow * (this.landT / P.landRecover);
     const base = this.crouching ? P.crouchSpeed : walking ? P.walkSpeed : this.sprinting ? P.sprintSpeed : P.runSpeed;
     let maxSpeed = base * (this.sprinting ? sprintMult : speedMult) * fresh;
-    if (this.onGround && surfaceUnder(this.map, this.pos) === 'ladder') maxSpeed *= 0.4; // climbing a ladder
+    if (this.onGround && touchingMat(this.map, this.pos, 'ladder')) maxSpeed *= 0.3; // climbing a ladder
+    this.slowT = Math.max(0, this.slowT - dt);
+    maxSpeed *= 1 - this.slowK * (this.slowT / P.staggerTime);                          // staggered after a hit
     if (!this.onGround) maxSpeed = Math.min(maxSpeed, P.jumpMaxSpeed); // no speeding up mid-air
     const wishSpeed = (fx || fz) && !this.sliding ? maxSpeed : 0;
 
@@ -201,15 +205,20 @@ export class LocalPlayer {
       this.onGround = false;
       this.sliding = false;
       this.jumped = true;
+      ev.jump = true;
     }
     this.vel[1] -= P.gravity * dt;
 
-    const before = [this.pos[0], this.pos[2]], fall = -this.vel[1];
+    const before = [this.pos[0], this.pos[2]], fall = -this.vel[1], yBefore = this.pos[1];
     const res = moveBody(this.map, this.pos, this.vel, dt, this.height, this.onGround);
     ev.landed = !this.onGround && res.onGround;
     ev.hard = ev.landed && fall > 4;
     if (ev.landed && this.jumped) this.landT = P.landRecover; // stepping off a ledge or stairs doesn't count
     if (this.onGround) { this.jumped = false; this.groundY = this.pos[1]; }
+    // Stairs and ladders move the body up or down a step at a time; the camera eases over each one.
+    const dy = this.pos[1] - yBefore;
+    if (this.onGround && res.onGround && Math.abs(dy) > 1e-3 && Math.abs(dy) <= P.stepHeight + 0.01) this.stepOffset -= dy;
+    this.stepOffset = Math.max(-0.9, Math.min(0.9, this.stepOffset * Math.exp(-dt * 16)));
     this.onGround = res.onGround;
     if (this.pos[1] < -20) this.pos = [0, 2, 0]; // safety net
 
@@ -302,4 +311,15 @@ export class LocalPlayer {
   speed() { return Math.hypot(this.vel[0], this.vel[2]); }
 
   eye() { return [this.pos[0], this.pos[1] + this.eyeHeight, this.pos[2]]; }
+
+  // Where the camera goes: the eye, eased over steps (shots still come from eye()).
+  viewEye() { return [this.pos[0], this.pos[1] + this.eyeHeight + this.stepOffset, this.pos[2]]; }
+
+  // Being hit slows you for a moment (k: 0…1, how hard): you lose speed at once and get it back.
+  stagger(k) {
+    k = Math.max(0, Math.min(1, k));
+    this.vel[0] *= 1 - 0.55 * k; this.vel[2] *= 1 - 0.55 * k;
+    this.slowT = PLAYER.staggerTime;
+    this.slowK = Math.max(this.slowK * (this.slowT / PLAYER.staggerTime), PLAYER.staggerSlow * k);
+  }
 }

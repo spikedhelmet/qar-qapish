@@ -157,7 +157,12 @@ In the game now (all CC0, from OpenGameArt and a GitHub mirror of Kenney's impac
 | Grenade bounce | "Metal impact sounds" (Brian MacIntosh) |
 | Frag, charge explosion | "150 combat sound effects" |
 | Flashbang | "Flash bang sound" |
-| Footsteps (concrete, wood, grass; metal from plate impacts), softened; landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
+| Footsteps (wood, grass; metal from plate impacts), softened; landing, bullet impacts, bullet hitting you | Kenney "Impact Sounds" |
+| Shotgun shots and pump, concrete (boot) footsteps, jump, sniper scope | "FREE FPS SFX Pack", downloaded by the team into `assets-src/sounds/new/` (licence and author to confirm for the credits) |
+
+**The team's own downloads** go in `assets-src/sounds/new/` (not fetched by script). The build uses the "FREE FPS SFX Pack" from there, and lists the other files on the sound board as alternatives: SPR-208, "Hammer Cocking Back On Pistol", "Small Explosion", the pack's sniper shots and rocket explosions.
+
+**Announcer from recordings:** the two announcer recordings in `assets-src/sounds/new/` ("voicebosch warlord" and "Announcer Pack 2"; "Annoucer Pack 1" is the same file as the voicebosch one) are split into 60 lines on the sound board. Pick what each one says and **Save labels**; the next `node scripts/build-sounds.mjs` cuts the labelled ones into `public/assets/sounds/announcer/<line>.m4a`. Lines you haven't labelled keep the placeholder voice.
 
 **Comparing:** open **http://localhost:3000/dev/sounds.html** on the host Mac to hear every sound in the game, with alternatives from other recordings under the ones being tuned (pistol, shotgun, pump, footsteps, kill). The alternatives are listed in `ALTS` in the build script.
 
@@ -186,7 +191,7 @@ Other free sources:
 | Outer walls, decks, hall roof | Concrete036 | Darkened, contrast flattened (it looked like marble close up) |
 | Ground | Road012A | |
 | Lane dividers, hall | Bricks085 | |
-| Crates | Planks020 | A corner of the photo, with a painted frame and brace on top |
+| Crates | Planks012 | Weathered boards; the frame and diagonal brace are cut from the same photo, with soft shadows. Repeats about every 1.25 m along a long box |
 | Containers | CorrugatedSteel005 | One grey steel, tinted red / blue / green |
 | Plaza floor | PavingStones136 | Warmed up (olive in the photo) |
 | Plaza walls | Tiles143 | Limestone blocks |
@@ -254,5 +259,5 @@ Shown in the game's menu (built from each model's licence data). Currently:
   - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
-- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002, Bark012, LeafSet005, LeafSet030, Foliage001, Bricks066, WoodSiding011, Rock030), CC0
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002, Bark012, LeafSet005, LeafSet030, Foliage001, Bricks066, WoodSiding011, Rock030, Planks012), CC0
 - Sounds (all CC0; see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others

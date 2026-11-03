@@ -1,8 +1,7 @@
 // "Bastion" — a walled courtyard with four stone towers, laid out after the team's screenshots.
 // Each tower has a door, stairs inside up to a hatch, a ladder outside, and a roofed wooden lookout
 // on top. An H-shaped wooden walkway at lookout height joins the four towers. A small stone outpost
-// stands against the north wall and another against the south; low walls with a rope between them,
-// fences, pines, dry bushes, boulders and tall grass fill the yard. Teams spawn inside the west and
+// stands against the north wall and another against the south; low walls, fences, pines, dry bushes, boulders and tall grass fill the yard. Teams spawn inside the west and
 // east gates. Mirrored both ways (team A west).
 import { builder } from './builder.js';
 
@@ -120,7 +119,7 @@ two(sz => {
   box(-sz * 2, z0 - sz * 1.6, 1.1, 1.1, 1.1, 'crate');
 });
 
-// ---- low stone walls between the towers on the north and south sides, a rope between them, fences
+// ---- low stone walls between the towers on the north and south sides, and fences
 four((sx, sz) => {
   box(sx * 11.3, sz * 15.2, 1.8, 3.6, 2.4, 'castle');
   box(sx * 11.3 - sx * 1.5, sz * 15.2, 1.2, 1.8, 1.2, 'castle');            // a step down on the inner side
@@ -130,13 +129,12 @@ four((sx, sz) => {
   bush(sx * 9.9, sz * 12.2, 1.2, true);
   decal(sx * 4, sz * 16.6, 4.2, 0.35, 'floor', 0.06);                      // a plank lying in the grass
 });
-two(sz => decal(0, sz * 16.2, 20.8, 0.05, 'container_red', 0.05, 0.95)); // the rope (only drawn)
 
 // ---- trees: pines in the corners, by the low walls and either side of the middle
 four((sx, sz) => {
   pine(sx * 26.3, sz * 19.4, 8.5);
   pine(sx * 13.4, sz * 18.6, 7.5);
-  pine(sx * 15.2, sz * 1.6, 6.5);
+  pine(sx * 12.6, sz * 2.6, 6.5);
   bush(sx * 26.8, sz * 17.2, 1.4, true);
 });
 two(s => pine(s * 10.5, s * 0.6, 7));

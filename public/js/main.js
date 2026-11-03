@@ -213,8 +213,9 @@ function onMessage(msg) {
       const dx = msg.from[0] - me.pos[0], dz = msg.from[2] - me.pos[2];
       const fwd = -dx * Math.sin(me.yaw) - dz * Math.cos(me.yaw);
       const right = dx * Math.cos(me.yaw) - dz * Math.sin(me.yaw);
-      hud.hurt(Math.atan2(right, fwd));
-      if (msg.hp < prevHp) audio.playClick('hurt');
+      if (!msg.fall) hud.hurt(Math.atan2(right, fwd));
+      if (msg.hp < prevHp && !msg.fall) audio.playClick('hurt');
+      if (msg.hp < prevHp && !msg.fall) me.stagger((prevHp - msg.hp) / 30); // a 30 HP hit staggers fully
       break;
     }
     case 'hitok':
@@ -480,6 +481,7 @@ function frame(now) {
       const ground = ev.step || ev.hard ? surfaceUnder(MAP, me.pos) : null;
       if (ev.step) audio.playStep(null, ev.loud ? 0.9 : 0.6, ground);
       if (ev.hard) audio.playLand(null, ground);
+      if (ev.jump) audio.playJump();
       if (ev.slide) audio.playSlide(null);
       if (ev.climb) audio.playStep(null, 1.1);
     }
@@ -617,7 +619,7 @@ function updateThrow(dt, canAct) {
 function updateCamera(dt, playing) {
   remotes.hiddenId = null;
   if (me.alive) {
-    const eye = me.eye();
+    const eye = me.viewEye();
     camera.position.set(eye[0], eye[1], eye[2]);
     game.roll += ((me.sliding ? 0.07 : 0) - game.roll) * Math.min(1, dt * 10);
     const jolt = viewModel ? viewModel.shake.x : { x: 0, y: 0, z: 0 };
@@ -661,7 +663,10 @@ function updateHud() {
   // Dynamic crosshair: the gap shows the current spread. Static: always the same.
   const px = settings.crosshair === 'dynamic' ? (spread / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * (innerHeight / 2) : 0;
   hud.crosshair(px, me.alive && !WEAPONS[arsenal.current].melee && arsenal.adsT < 0.3 && !me.sprinting);
-  hud.scope(me.alive && !!arsenal.def.ads?.scope && arsenal.adsT > 0.9);
+  const scopedIn = me.alive && !!arsenal.def.ads?.scope && arsenal.adsT > 0.9;
+  if (scopedIn && !game.scopedIn) audio.playMech('scope');
+  game.scopedIn = scopedIn;
+  hud.scope(scopedIn);
   hud.reticle(me.alive && hasOptic(arsenal.current) && arsenal.adsT > 0.85 && arsenal.reloadT < 0);
   hud.scoreboard(input.down('Tab') || game.phase === 'over', game.players, game.myId, game.score);
   hud.classPicker(game.picker, settings.cls);

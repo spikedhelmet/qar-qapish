@@ -62,12 +62,14 @@
  "shot_shotgun": [
   "shot_shotgun_0.m4a",
   "shot_shotgun_1.m4a",
-  "shot_shotgun_2.m4a"
+  "shot_shotgun_2.m4a",
+  "shot_shotgun_3.m4a"
  ],
  "far_shotgun": [
   "far_shotgun_0.m4a",
   "far_shotgun_1.m4a",
-  "far_shotgun_2.m4a"
+  "far_shotgun_2.m4a",
+  "far_shotgun_3.m4a"
  ],
  "magOut": [
   "magOut_0.m4a"
@@ -80,6 +82,9 @@
  ],
  "pump": [
   "pump_0.m4a"
+ ],
+ "scope": [
+  "scope_0.m4a"
  ],
  "shell": [
   "shell_0.m4a"
@@ -113,7 +118,19 @@
   "step_concrete_1.m4a",
   "step_concrete_2.m4a",
   "step_concrete_3.m4a",
-  "step_concrete_4.m4a"
+  "step_concrete_4.m4a",
+  "step_concrete_5.m4a",
+  "step_concrete_6.m4a",
+  "step_concrete_7.m4a",
+  "step_concrete_8.m4a",
+  "step_concrete_9.m4a",
+  "step_concrete_10.m4a",
+  "step_concrete_11.m4a",
+  "step_concrete_12.m4a",
+  "step_concrete_13.m4a",
+  "step_concrete_14.m4a",
+  "step_concrete_15.m4a",
+  "step_concrete_16.m4a"
  ],
  "step_wood": [
   "step_wood_0.m4a",
@@ -142,6 +159,9 @@
   "land_2.m4a",
   "land_3.m4a",
   "land_4.m4a"
+ ],
+ "jump": [
+  "jump_0.m4a"
  ],
  "hit_concrete": [
   "hit_concrete_0.m4a",

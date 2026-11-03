@@ -16,6 +16,9 @@
     button { background: #3d4450; color: #eee; border: 0; border-radius: 3px; padding: 5px 10px; font: inherit; cursor: pointer; }
     button:hover { background: #4d5664; }
     button.all { background: #55606f; }
+    select { background: #1f2329; color: #eee; border: 1px solid #4d5664; border-radius: 3px; padding: 4px; font: inherit; }
+    #save { background: #c28a2c; color: #111; font-weight: bold; margin: 10px 0; }
+    #saved { color: #9c9; margin-left: 10px; }
   </style>
 </head>
 <body>
@@ -59,8 +62,9 @@
     ]);
     const list = document.getElementById('list');
     list.textContent = '';
-    const groups = { 'Guns': /^(shot|far)_/, 'Reloads': /^(magOut|magIn|rack|pump|shell|empty)$/, 'Footsteps and landing': /^(step_|land)/, 'Hits and kill': /^(hit_|kill)/, 'Knife and grenades': /./ };
+    const groups = { 'Guns': /^(shot|far)_/, 'Reloads': /^(magOut|magIn|rack|pump|shell|empty)$/, 'Footsteps and landing': /^(step_|land)/, 'Hits and kill': /^(hit_|kill)/, 'Knife, grenades and the rest': /./ };
     const done = new Set();
+    const { LINES } = await import('/js/announcer.js');
     for (const [group, test] of Object.entries(groups)) {
       const ids = Object.keys(game).filter(id => test.test(id) && !done.has(id));
       if (!ids.length) continue;
@@ -70,6 +74,36 @@
         list.append(row(id, alts[id] ? 'in the game now' : '', game[id].map(f => '/assets/game/sounds/' + f), !!alts[id]));
         for (const alt of alts[id] || []) list.append(row(`↳ ${alt.label}`, 'alternative', alt.files.map(f => '/dev/sounds/' + f)));
       }
+    }
+    // Announcer: label each recorded line with the game line it says, then save. Claude (or
+    // `node scripts/build-sounds.mjs`) then cuts the labelled ones into the game.
+    const recorded = await fetch('/dev/sounds/announcer.json').then(r => r.json()).catch(() => []);
+    if (recorded.length) {
+      const h = document.createElement('h2'); h.textContent = 'Announcer: label each line'; list.append(h);
+      const note = document.createElement('p');
+      note.textContent = 'Pick what each line says (leave the rest at "—"). Only one recording per game line is kept. Then Save.';
+      list.append(note);
+      const saved = await fetch('/assets/game/announcer-map.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+      const selects = [];
+      for (const line of recorded) {
+        const div = row(`${line.pack} · ${line.at.toFixed(1)} s`, '', ['/dev/sounds/' + line.file]);
+        const sel = document.createElement('select');
+        sel.innerHTML = '<option value="">—</option>' + Object.entries(LINES).map(([id, l]) => `<option value="${id}">${l.text} (${id})</option>`).join('');
+        const was = Object.entries(saved).find(([, v]) => v.pack === line.pack && Math.abs(v.at - line.at) < 0.01);
+        if (was) sel.value = was[0];
+        div.append(sel);
+        selects.push([sel, line]);
+        list.append(div);
+      }
+      const save = document.createElement('button'), ok = document.createElement('span');
+      save.id = 'save'; save.textContent = 'Save labels'; ok.id = 'saved';
+      save.onclick = async () => {
+        const map = {};
+        for (const [sel, line] of selects) if (sel.value) map[sel.value] = { pack: line.pack, at: line.at, to: line.to };
+        const res = await fetch('/api/dev/save?path=game/announcer-map.json', { method: 'POST', body: JSON.stringify(map, null, 1) });
+        ok.textContent = res.ok ? `Saved ${Object.keys(map).length} lines. Tell Claude, or run: node scripts/build-sounds.mjs` : 'Could not save (open this page on the host Mac).';
+      };
+      list.append(save, ok);
     }
   </script>
 </body>

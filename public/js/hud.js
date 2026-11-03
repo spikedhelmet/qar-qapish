@@ -146,7 +146,7 @@ export class Hud {
     const row = document.createElement('div');
     row.className = 'kf' + (involvesMe ? ' me' : '');
     const name = p => p ? `<span style="color:${TEAMS[p.tm].css}">${esc(p.n)}</span>` : '<span>world</span>';
-    row.innerHTML = `${name(killer)}<span class="wpn">${esc(WEAPONS[weapon]?.name || weapon)}</span>${headshot ? '<span class="hs">HS</span>' : ''}${name(victim)}`;
+    row.innerHTML = `${name(killer)}<span class="wpn">${esc(WEAPONS[weapon]?.name || { fall: 'Fall' }[weapon] || weapon)}</span>${headshot ? '<span class="hs">HS</span>' : ''}${name(victim)}`;
     const feed = $('killfeed');
     feed.appendChild(row);
     while (feed.children.length > 5) feed.firstChild.remove();

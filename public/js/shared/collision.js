@@ -88,6 +88,14 @@ export function surfaceUnder(map, pos) {
   return best?.mat;
 }
 
+// Whether a body at pos stands on or against a box of material `mat` (by its whole footprint, so a
+// steep ladder step just ahead counts).
+export function touchingMat(map, pos, mat) {
+  const r = PLAYER.radius + 0.05;
+  return map.boxes.some(b => b.mat === mat && b.max[1] > pos[1] - 0.3 && b.max[1] < pos[1] + PLAYER.stepHeight + 0.05 &&
+    pos[0] + r > b.min[0] && pos[0] - r < b.max[0] && pos[2] + r > b.min[2] && pos[2] - r < b.max[2]);
+}
+
 // A ledge to climb onto in direction (dx, dz) (unit): the top of a box just in front, higher than a
 // step and no higher than `maxTop`, with room to stand on it and nothing overhead on the way up.
 // Returns the standing position on top, or null.
@@ -185,5 +193,15 @@ export function moveBody(map, pos, vel, dt, height, wasOnGround) {
   }
   // Treat a tiny gap below the feet as ground so walking down stairs stays smooth.
   if (!onGround && vel[1] <= 0 && overlapsAny(map, pos[0], pos[1] - 0.02, pos[2], r, height)) onGround = true;
+  // Walking down steps: stay on the ground (drop onto the next step down) instead of falling off each one.
+  if (!onGround && wasOnGround && vel[1] <= 0) {
+    const below = overlapsAll(map, pos[0], pos[1] - PLAYER.stepHeight, pos[2], r, height).filter(b => b.max[1] <= pos[1] + EPS);
+    const top = Math.max(...below.map(b => b.max[1]));
+    if (below.length && top < pos[1] && !overlapsAny(map, pos[0], top + EPS, pos[2], r, height)) {
+      pos[1] = top + EPS;
+      vel[1] = 0;
+      onGround = true;
+    }
+  }
   return { onGround };
 }

@@ -37,6 +37,22 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-03 · Play-test notes: smooth stairs, fall damage, stagger, crates, new sounds (`feature/milestone-5`)
+- **Smooth camera on stairs and ladders.** Two parts:
+  - Walking down steps now keeps you on the ground. You used to fall off each step for a few frames.
+  - The camera eases over each step up or down instead of jumping. It lags a step behind and catches up in a fraction of a second.
+  - Measured by script on Bastion's tower stairs: the camera moved at most 0.12 m a frame, which is just the climbing speed; before, it jumped 0.42 m at every step. Ladders: 0.13 m (was 0.39 m).
+  - The random-wandering check caught a fall-through-the-floor bug while this was being written, fixed before commit.
+- **Ladders** slow you to 30% (the check now looks at your whole footprint, so it notices the steep step just ahead).
+- **Fall damage.** The server tracks the highest point while you're in the air and compares it with where you land. Free up to 3.5 m, then 18 HP per meter. Walking off Bastion's walkway (5 m) costs 27; a 12 m fall kills ("Fall" in the kill feed). Tested end to end on the server.
+- **Stagger.** A hit cuts your speed at once and slows you for half a second, scaled by damage (a 30 HP hit fully: half speed). Falls don't stagger.
+- **Crates:** weathered boards (Planks012), with the frame and brace cut from the photo instead of painted flat. Long crate boxes repeat the face about every 1.25 m.
+- **Bastion:** the ropes are gone; the pine by each tower door moved out of the way.
+- **Sounds from the team's downloads:**
+  - Shotgun shots and pump, 17 boot footsteps on concrete, a jump sound, and a scope sound when the sniper scopes in.
+  - More alternatives on the sound board: SPR-208, the pack's sniper shots, the hammer cock, explosions.
+  - The two announcer recordings are split into 60 lines to label on the board; the build cuts labelled lines into the announcer folder.
+
 ### 2026-11-03 · Bastion map; pines, bushes, grass, boulders, roofs and ladders (`feature/milestone-5`)
 - **New map "Bastion"**, built after the team's screenshots of a towered courtyard. 58 × 44 m, mirrored both ways.
   - **Four stone towers** (9 × 9 m, 5 m): a door toward the middle, stairs inside up to a hatch, a ladder outside, and a wooden lookout on top with posts, a railing and a hip roof.

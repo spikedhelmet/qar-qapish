@@ -37,6 +37,10 @@ export const PLAYER = {
   stepHeight: 0.45,
   climbHeight: 1.9,     // highest ledge you can pull yourself onto, measured from the ground you jumped from
   climbReach: 0.45,     // how close (meters past your body) the ledge's edge has to be
+  fallSafe: 3.5,        // meters you can drop without being hurt…
+  fallDamage: 18,       // …and HP lost per meter beyond that (a jump off Bastion's walkway: about 50)
+  staggerTime: 0.5,     // seconds a hit slows you down for…
+  staggerSlow: 0.5,     // …starting this much slower (for a 30+ HP hit; less for smaller ones)
   respawnTime: 3,       // seconds
   spawnProtection: 2,   // seconds, ends early when the player fires
 };

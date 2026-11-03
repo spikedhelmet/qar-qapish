@@ -25,6 +25,7 @@ SURFACES=(
   "castle Bricks066"
   "shingles WoodSiding011"
   "rock Rock030"
+  "crate Planks012"
 )
 
 mkdir -p "$OUT"

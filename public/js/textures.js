@@ -130,35 +130,54 @@ function brick(size) {
 // photo: plank image to build the crate from (a corner of it, about six planks); painted if absent.
 function crate(size, photo) {
   const c = canvas(size), ctx = c.getContext('2d');
-  if (photo) {
-    const crop = photo.width * 0.3;
-    ctx.drawImage(photo, 0, 0, crop, crop, 0, 0, size, size);
-  } else {
+  if (!photo) {
     paintNoise(ctx, size, [150, 112, 70], fbm(size, 31, [[2, 0.3], [32, 0.4], [128, 0.3]]), 0.4, 0.05, 17);
+    const r = rng(19);
+    for (let i = 0; i < 220; i++) { // grain streaks
+      ctx.strokeStyle = `rgba(70,45,20,${0.05 + r() * 0.12})`;
+      ctx.lineWidth = 1 + r() * 2;
+      const y = r() * size;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.bezierCurveTo(size / 3, y + (r() - 0.5) * 8, size * 2 / 3, y + (r() - 0.5) * 8, size, y); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(45,28,12,0.7)';
+    ctx.lineWidth = 3;
+    for (let i = 1; i < 5; i++) { ctx.beginPath(); ctx.moveTo(0, i * size / 5); ctx.lineTo(size, i * size / 5); ctx.stroke(); }
   }
-  // grain streaks
-  const r = rng(19);
-  for (let i = 0; i < (photo ? 0 : 220); i++) {
-    ctx.strokeStyle = `rgba(70,45,20,${0.05 + r() * 0.12})`;
-    ctx.lineWidth = 1 + r() * 2;
-    const y = r() * size;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.bezierCurveTo(size / 3, y + (r() - 0.5) * 8, size * 2 / 3, y + (r() - 0.5) * 8, size, y); ctx.stroke();
+  const f = size * 0.11, src = photo ? photo.width : 0;
+  // A board from the photo, grain along its length, laid from (x, y) w × h (rotated when tall).
+  const board = (x, y, w, h, from) => {
+    if (!photo) { ctx.fillStyle = 'rgba(115,82,48,1)'; ctx.fillRect(x, y, w, h); return; }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    if (w >= h) ctx.drawImage(photo, 0, from * src, src, src * 0.12, x, y, w, h);
+    else { ctx.translate(x + w, y); ctx.rotate(Math.PI / 2); ctx.drawImage(photo, 0, from * src, src, src * 0.12, 0, 0, h, w); }
+    ctx.restore();
+  };
+  // The face: boards from the photo (a darker stretch, as the inside of a frame sits in shadow).
+  if (photo) {
+    ctx.drawImage(photo, 0, src * 0.2, src * 0.6, src * 0.6, 0, 0, size, size);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(0, 0, size, size);
   }
-  // plank seams
-  ctx.strokeStyle = 'rgba(45,28,12,0.7)';
-  ctx.lineWidth = 3;
-  for (let i = 1; i < (photo ? 0 : 5); i++) { ctx.beginPath(); ctx.moveTo(0, i * size / 5); ctx.lineTo(size, i * size / 5); ctx.stroke(); }
-  // frame and diagonal brace (a lighter board over the planks)
-  const f = size * 0.1;
-  ctx.fillStyle = photo ? 'rgba(140,104,66,1)' : 'rgba(115,82,48,1)';
-  ctx.fillRect(0, 0, size, f); ctx.fillRect(0, size - f, size, f); ctx.fillRect(0, 0, f, size); ctx.fillRect(size - f, 0, f, size);
+  // Diagonal brace, then the frame over it, each with a soft shadow along its edges.
+  const shadow = (draw) => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = size * 0.02; ctx.shadowOffsetY = size * 0.006; draw(); ctx.restore(); };
+  shadow(() => {
+    ctx.save();
+    ctx.translate(size / 2, size / 2); ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle = '#000'; ctx.fillRect(-size * 0.7, -f / 2, size * 1.4, f);
+    ctx.restore();
+  });
   ctx.save();
-  ctx.translate(size / 2, size / 2); ctx.rotate(Math.PI / 4);
-  ctx.fillRect(-size * 0.7, -f / 2, size * 1.4, f);
+  ctx.translate(size / 2, size / 2); ctx.rotate(-Math.PI / 4);
+  board(-size * 0.7, -f / 2, size * 1.4, f, 0.55);
   ctx.restore();
-  ctx.strokeStyle = 'rgba(40,25,10,0.8)'; ctx.lineWidth = 3;
+  shadow(() => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, size, f); ctx.fillRect(0, size - f, size, f); ctx.fillRect(0, 0, f, size); ctx.fillRect(size - f, 0, f, size); });
+  board(0, 0, size, f, 0.05); board(0, size - f, size, f, 0.3);
+  board(0, f, f, size - 2 * f, 0.68); board(size - f, f, f, size - 2 * f, 0.82);
+  // Worn edges: a dark line where the boards meet.
+  ctx.strokeStyle = 'rgba(25,15,6,0.55)'; ctx.lineWidth = 2;
   ctx.strokeRect(f, f, size - 2 * f, size - 2 * f);
-  ctx.strokeRect(1.5, 1.5, size - 3, size - 3);
+  ctx.strokeRect(1, 1, size - 2, size - 2);
   return c;
 }
 
@@ -333,9 +352,9 @@ async function loadPhotos(surfaces, renderer) {
     m.needsUpdate = true;
   }));
 
-  // Crates: a square of the plank photo with the painted frame and brace on top.
-  if (list.wood) {
-    const img = (await load('wood_color.jpg', true)).image;
+  // Crates: weathered boards from the photo, with a frame and a diagonal brace cut from the same boards.
+  if (list.crate || list.wood) {
+    const img = (await load(list.crate ? 'crate_color.jpg' : 'wood_color.jpg', true)).image;
     const m = surfaces.crate.material;
     const c = crate(512, img);
     m.map.dispose();

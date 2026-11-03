@@ -21,6 +21,14 @@ function boxGeometry(b, scale) {
       else if (ny > 0.5) uv.setXY(i, x, z);
       else uv.setXY(i, x, y);
     }
+  } else {
+    // One picture per face (crates): repeated about every 1.25 m, so a long box is a row of crates.
+    const uv = g.attributes.uv, nrm = g.attributes.normal, n = v => Math.max(1, Math.round(v / 1.25));
+    for (let i = 0; i < uv.count; i++) {
+      const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i));
+      const [a, b] = nx > 0.5 ? [sz, sy] : ny > 0.5 ? [sx, sz] : [sx, sy];
+      uv.setXY(i, uv.getX(i) * n(a), uv.getY(i) * n(b));
+    }
   }
   return g;
 }
