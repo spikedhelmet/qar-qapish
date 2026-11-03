@@ -148,9 +148,15 @@ function tube(points, radii) {
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
     _t.subVectors(points[Math.min(i + 1, points.length - 1)], points[Math.max(i - 1, 0)]).normalize();
-    _up.set(0, 1, 0);
-    if (Math.abs(_t.y) > 0.95) _up.set(1, 0, 0);
-    _n.crossVectors(_t, _up).normalize();
+    // Each ring's orientation carries on from the one before (picking it fresh can flip it, which
+    // twists that stretch of the tube inside out).
+    if (i === 0) {
+      _up.set(0, 1, 0);
+      if (Math.abs(_t.y) > 0.9) _up.set(1, 0, 0);
+      _n.crossVectors(_t, _up).normalize();
+    } else {
+      _n.addScaledVector(_t, -_n.dot(_t)).normalize();
+    }
     _b.crossVectors(_t, _n).normalize();
     if (i > 0) along += p.distanceTo(points[i - 1]);
     for (let j = 0; j <= sides; j++) {
@@ -164,7 +170,7 @@ function tube(points, radii) {
   for (let i = 0; i < points.length - 1; i++) {
     for (let j = 0; j < sides; j++) {
       const a = i * (sides + 1) + j, b = a + sides + 1;
-      index.push(a, b, a + 1, b, b + 1, a + 1);
+      index.push(a, a + 1, b, b, a + 1, b + 1); // counter-clockwise seen from outside
     }
   }
   const g = new THREE.BufferGeometry();
@@ -218,7 +224,11 @@ export function treeGeometry(seed, height) {
   const lean = new THREE.Vector3((rand() - 0.5) * 0.25, 1, (rand() - 0.5) * 0.25);
   const trunk = limb(new THREE.Vector3(), lean, height * 0.78, r0, r0 * 0.25, rand, { rise: 0.05, steps: 8, bend: 0.12 });
   trunk.radii[0] *= 1.35;
+  // Root it below the ground, straight down, so the open bottom of the tube never shows.
+  trunk.pts.unshift(new THREE.Vector3(0, -0.5, 0));
+  trunk.radii.unshift(r0 * 1.45);
   bark.push(tube(trunk.pts, trunk.radii));
+  trunk.pts.shift(); trunk.radii.shift();
   const leaderTop = trunk.pts[trunk.pts.length - 1];
   for (let k = 0; k < 6; k++) {
     cluster(leaves, leaderTop.clone().add(new THREE.Vector3((rand() - 0.5) * 1.6, (rand() - 0.6) * 1.4, (rand() - 0.5) * 1.6)), height * 0.24, crown, rand);

@@ -46,6 +46,7 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Maps place them with `tree(x, z, height)` in the map builder. Only the trunk is solid (an invisible box): you can't walk or shoot through it, but leaves don't stop bullets.
 - Free downloadable tree models were too heavy (Poly Haven's lightest is 312k triangles). The ez-tree generator (MIT) would have meant installing outside code, so this is a small builder of our own instead.
 - Villa: seven trees, in the front lawn, the back yard, the alley and by the storehouse.
+- Fix: the trunk and branch tubes were wound inside out, so you saw the inner side of the far wall and the trunk's foot looked hollow. Faces now point outward (checked over 400 generated trees), rings keep a steady orientation, and the trunk is rooted 0.5 m into the ground.
 
 ### 2026-11-03 · Sound and texture pass from play-testing (`feature/milestone-5`)
 - **Why some guns sounded hollow or weird:** the recordings are stereo from two mics, and for most guns the mics are partly out of phase (correlation −0.3 to 0), so mixing them to mono cancels part of the sound. All guns except the AK (which mixes well and sounded right) now use the louder mic alone.
