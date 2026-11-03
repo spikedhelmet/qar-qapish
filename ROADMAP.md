@@ -42,6 +42,26 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-03 · Freight map (`feature/milestone-5`)
+- **New map "Freight"**, an original warehouse-assault layout, 80 × 60 m, not mirrored. The team's references (a callout overview and a model of an existing game's level) were used only for the kind of map: a defended warehouse with a ramp and an upstairs office, streets and yards outside. Nothing was traced or imported.
+  - **Warehouse** (32 × 24 m, 8 m high, concrete to 3.2 m, corrugated cladding above, high window strips):
+    - two roller doors onto the loading yard, a dock door to the south lot, doors north and east;
+    - pallet rows of different heights with gaps between them;
+    - a long ramp along the south wall and a stair on the north, both up to a mezzanine along the east wall;
+    - a glass-fronted office on the mezzanine;
+    - a hatch in the roof that drops onto the mezzanine (a 4.7 m drop: a little fall damage).
+  - **Outside:**
+    - A fire escape up the south wall to the roof; vents on the roof for cover.
+    - The attackers' rail yard has tracks, two freight wagons and a signal hut. A loading yard with containers and pallets leads to the roller doors.
+    - The defenders' truck depot is fenced from the warehouse's corners, with gates north and south, a truck, an office cabin and stairs up to the mezzanine's back door.
+    - A street along the north (parked trucks, barriers, a booth); a truck lot along the south (loading docks, trailers, dumpsters).
+  - Objective sites: under the mezzanine, and in the truck depot.
+- New surface: corrugated metal (the container photo, untinted grey-brown).
+- Checks:
+  - Map check: no open spawn lines, all ground reachable.
+  - 60 random wandering runs never got stuck.
+  - Walking by script: yard → roller door → ramp → mezzanine → office; the north stair; fire escape → roof → down the hatch; depot stairs → mezzanine door.
+
 ### 2026-11-03 · Jump and landing sounds (`feature/milestone-5`)
 - **Jump:** no sound. The pack's jump was a whoosh.
 - **Landing:** was a soft-impact recording that sounded like a bounce. It's now both feet on the surface you land on (two footsteps 35 ms apart, slightly deeper and louder than a step).

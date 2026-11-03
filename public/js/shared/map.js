@@ -6,9 +6,10 @@ import { PLAZA } from './maps/plaza.js';
 import { OLDTOWN } from './maps/oldtown.js';
 import { VILLA } from './maps/villa.js';
 import { BASTION } from './maps/bastion.js';
+import { FREIGHT } from './maps/freight.js';
 
-export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA, oldtown: OLDTOWN, villa: VILLA, bastion: BASTION };
-export const MAP_ORDER = ['yard', 'depot', 'plaza', 'oldtown', 'villa', 'bastion'];
+export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA, oldtown: OLDTOWN, villa: VILLA, bastion: BASTION, freight: FREIGHT };
+export const MAP_ORDER = ['yard', 'depot', 'plaza', 'oldtown', 'villa', 'bastion', 'freight'];
 
 export const MAP = { ...YARD };
 
