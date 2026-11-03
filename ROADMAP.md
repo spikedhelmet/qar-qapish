@@ -42,6 +42,25 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-03 · Freight reworked: a tight city block (`feature/milestone-5`)
+- **Why:** play-testing found the first version an open field: wide yards and long sightlines around a lone warehouse.
+- **Now 56 × 44 m** (was 80 × 60). The warehouse fills the middle, and solid buildings 6–11 m tall close in on every side.
+  - **Streets:** 6 m along the north and west, 4 m alleys along the south and east. The fire escape narrows the south alley to 2.4 m.
+  - **Attackers** start in a walled back yard (south-west), with three ways out: the west street, the south alley, and a covered hallway through the west buildings to the north street. The hallway has a side room with a window onto the west street.
+  - **Defenders** start in a loading court (north-east), reached from the north street and the east alley.
+  - **Warehouse** (20 × 18 m, 7 m high):
+    - a roller door and a side door onto the west street, a dock door onto the south alley, a door north;
+    - a back door east into a storeroom under the mezzanine;
+    - a mezzanine door with stairs down the east alley;
+    - two pallet rows; the ramp along the south wall and a stair along the north up to the mezzanine and its office;
+    - a roof hatch.
+  - Cover in the streets: a van, a car, dumpsters, barriers, crates.
+- **Checks:**
+  - Map check: no open spawn lines, all ground reachable.
+  - 60 random wandering runs never got stuck.
+  - Walking by script: yard → west street → roller door → ramp → office; yard → hallway → north street → north door → stair; south alley → fire escape → roof → hatch; court → east alley → back door → storeroom; east alley stairs → mezzanine door.
+  - That walk found two bugs, now fixed: the fire escape's top landing overlapped its last steps, and the east-alley stairs started against a building.
+
 ### 2026-11-03 · Freight map (`feature/milestone-5`)
 - **New map "Freight"**, an original warehouse-assault layout, 80 × 60 m, not mirrored. The team's references (a callout overview and a model of an existing game's level) were used only for the kind of map: a defended warehouse with a ramp and an upstairs office, streets and yards outside. Nothing was traced or imported.
   - **Warehouse** (32 × 24 m, 8 m high, concrete to 3.2 m, corrugated cladding above, high window strips):

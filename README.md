@@ -94,9 +94,11 @@ Class changes apply instantly during freeze time or right after spawning, otherw
   - **Old Town:** close quarters. Narrow alleys between solid buildings, and rooms you fight through: a hall onto a small courtyard with a well, two houses with inner rooms, and a chapel. Each team spawns in a walled yard at its end, with four ways out. Mirrored east/west.
   - **Villa** (laid out after the team's schematic): a walled estate around a one-storey house. Defenders start in the carport at the front, across the road from the lawn; attackers start in the back yard behind the bedroom. The house has a lounge, dining room and study across the front, and a back room and a bedroom behind. Its windows can be climbed through. Around it: a sunken pool you can jump into, a barn, a storehouse with a corridor and a front room, and a long walled alley along the west side, reached through the road gate. Not mirrored.
   - **Bastion** (after the team's screenshots): a walled courtyard with four stone towers. Each tower has a door, stairs up to a hatch, a ladder outside, and a roofed wooden lookout on top; an H-shaped walkway joins the four lookouts. Stone outposts on the north and south walls (climb the crates to their roofs), low walls, fences, pines, dry bushes, boulders and tall grass. Teams spawn inside the west and east gates, behind a barricade. Mirrored both ways.
-  - **Freight:** a warehouse assault. Defenders hold a big warehouse and the fenced truck depot behind it; attackers come from a rail yard across a loading yard.
-    - The warehouse has two roller doors, pallet rows, a ramp and a stair up to a mezzanine with a glass-fronted office, and a roof hatch.
-    - A fire escape outside climbs to the roof. A street runs along the north and a truck lot with loading docks along the south.
+  - **Freight:** a warehouse assault in a tight city block (56 × 44 m). The warehouse fills the middle, with tall buildings close on every side.
+    - Around it: 6 m streets on the north and west, 4 m alleys on the south and east.
+    - Attackers start in a walled back yard. Its ways out are the west street, the south alley, and a covered hallway through the west buildings to the north street.
+    - Defenders start in a loading court off the north street and the east alley.
+    - Inside the warehouse: a roller door, a side door and a dock door; pallet rows; a ramp and a stair up to a mezzanine with a glass-fronted office; a storeroom by the back door; a roof hatch. A fire escape in the south alley climbs to the roof.
     - Not mirrored.
   - All but Villa and Freight are mirrored so neither team has an edge.
   - All seven have plant sites A and B for objective mode.
