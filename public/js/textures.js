@@ -266,6 +266,7 @@ export function createSurfaces(renderer) {
     water: make(lawn(size, [34, 92, 120], 89), 3, 0.08, 0.1), // painted only: glossy, deep pool water
     castle: make(slabs(size, [150, 152, 150], 4, 2, true, 97), 3, 0.92),
     corrugated: make(container(size, [118, 122, 126], 53), 2.6, 0.6, 0.4),
+    glass: make(lawn(size, [28, 36, 44], 107), 2, 0.08, 0.6),            // painted only: dark window glass
     shingles: make(slabs(size, [120, 108, 92], 10, 3, true, 101), 2, 0.9),
     rock: make(lawn(size, [118, 116, 110], 103), 3, 0.95),
   };
@@ -299,8 +300,10 @@ const PHOTO = {
 const PHOTO_DIR = '/assets/game/textures/';
 
 // Resolves to the list of photo textures in use ({ name: { id, source } }), or null without them.
-let resolvePhotos;
+let resolvePhotos, resolveLoaded;
 export const photoTextures = new Promise(r => { resolvePhotos = r; });
+// Resolves once the photos are on the surfaces' materials (or there are none).
+export const photosLoaded = new Promise(r => { resolveLoaded = r; });
 
 // Copy of a texture with its contrast scaled toward the average color.
 function flatten(texture, k, renderer) {
@@ -316,6 +319,10 @@ function flatten(texture, k, renderer) {
 }
 
 async function loadPhotos(surfaces, renderer) {
+  try { await applyPhotos(surfaces, renderer); } finally { resolveLoaded(); }
+}
+
+async function applyPhotos(surfaces, renderer) {
   let list = null;
   try {
     const res = await fetch(PHOTO_DIR + 'textures.json', { cache: 'no-cache' });

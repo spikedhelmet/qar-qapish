@@ -42,6 +42,35 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-03 · Model kits for maps; Freight rebuilt with them; indoor lighting (`feature/milestone-5`)
+- **Why:** play-testing found boxes with tiling textures too small and fake, not a real place. The team downloaded 21 model kits from Sketchfab into `assets-src/textures/`.
+- **Kit pipeline:**
+  - `public/dev/kits.config.js` lists the pieces to use from each kit.
+  - `/dev/kitbuild.html` exports them to `public/assets/game/kits/<kit>.glb`:
+    - at game scale: meters, standing on the ground, centered;
+    - with textures shrunk;
+    - with fixes for kits authored in centimeters, lying down, or the wrong size.
+  - Collision for each piece goes in `kits.json`: its bounding box for props, or for walls with doorways and windows, boxes fitted to the model on a 10 cm grid so the openings are walkable.
+  - Maps place pieces with `piece(kit, name, x, z, quarterTurns, y)`, which adds the collision turned with it. The client draws every copy of a piece as one instanced mesh.
+  - `/dev/kits.html` lays out any downloaded kit's pieces with their sizes.
+- **Kits used:** the abandoned-building modular kit (walls, doorways, windows, floors, ceilings), graffiti fences, crates, barrels, concrete pillars, a concrete wall, doors, a street lamp, vents.
+- **Kits not used:**
+  - Their style or scale doesn't match: the suburban house, garage and pool kit (2 m walls, roof pieces up to 200k triangles), the modern house, the Mediterranean, horror-house and living-room kits.
+  - Some kits merge several objects into one mesh: the fortification kit's slabs, stair truss and generator, and the concrete barriers.
+  - The car is 647k triangles.
+- **Indoor lighting:**
+  - The sky light used to fill roofed spaces as if outdoors, so the warehouse looked flat and bright.
+  - Maps can now mark `interiors`: anything inside gets only `indoorAmbient` of the sky light (each indoor material gets the environment map explicitly, since the scene-wide strength overrides per-material settings).
+  - Maps can add `lights` (hanging lamps) and set `ambient` and `hemi` for the outdoors.
+  - The warehouse has a thin lining inside its walls, so the outside faces stay lit like the street.
+- **Freight rebuilt** at 70 × 50 m:
+  - Brick and concrete building fronts with real window frames, dark glass and old doors.
+  - A covered arcade on concrete pillars along the south street, and a graffiti fence around the attackers' lot.
+  - Street lamps, crate stacks and barrels.
+  - The warehouse: dim inside, with four hanging lamps; two offices on the mezzanine built from the room kit's walls, windows and doorways, each with its own light; two stairs.
+  - The box "vehicles" are gone (crate stacks and a container instead).
+- Checks: map check (no open spawn lines, all ground reachable); 60 random wandering runs; all other maps re-checked.
+
 ### 2026-11-03 · Freight reworked: a tight city block (`feature/milestone-5`)
 - **Why:** play-testing found the first version an open field: wide yards and long sightlines around a lone warehouse.
 - **Now 56 × 44 m** (was 80 × 60). The warehouse fills the middle, and solid buildings 6–11 m tall close in on every side.

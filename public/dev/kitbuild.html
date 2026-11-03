@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Kit Build</title>
+  <style>
+    body { margin: 0; padding: 16px 20px; background: #2a2e34; color: #eee; font: 13px Menlo, monospace; }
+    button { background: #c28a2c; color: #111; border: 0; border-radius: 3px; padding: 8px 14px; font: bold 13px Helvetica, sans-serif; cursor: pointer; }
+    #log { white-space: pre-wrap; margin-top: 12px; color: #ccc; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js", "three/addons/": "/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <!-- Dev tool: builds the map kits listed in kits.config.js into public/assets/game/kits/. Open
+       /dev/kitbuild.html on the host Mac (with the server running) and click Build. -->
+  <button id="build">Build kits</button>
+  <div id="log"></div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+    import { KITS } from './kits.config.js';
+
+    const logEl = document.getElementById('log');
+    const log = s => { logEl.textContent += s + '\n'; };
+    const VOXEL = 0.1;
+
+    async function save(rel, data) {
+      const body = data instanceof ArrayBuffer ? data : JSON.stringify(data);
+      const res = await fetch(`/api/dev/save?path=${encodeURIComponent(rel)}`, { method: 'POST', body });
+      if (!res.ok) throw new Error('save failed: ' + rel);
+      return body.byteLength ?? body.length;
+    }
+
+    // A piece at game scale: meters, standing on y = 0, centered on x/z.
+    function normalize(node, unit, { rotX = 0, height }) {
+      const holder = new THREE.Group(), wrap = new THREE.Group(), copy = node.clone(true);
+      node.updateWorldMatrix(true, false);
+      copy.matrixAutoUpdate = true;
+      node.parent.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), new THREE.Vector3());
+      copy.applyMatrix4(node.parent.matrixWorld);           // bake the file's own transforms in
+      wrap.add(copy);
+      wrap.scale.setScalar(unit);
+      wrap.rotation.x = THREE.MathUtils.degToRad(rotX);
+      holder.add(wrap);
+      holder.updateMatrixWorld(true);
+      let box = new THREE.Box3().setFromObject(holder);
+      if (height) {
+        wrap.scale.multiplyScalar(height / (box.max.y - box.min.y));
+        holder.updateMatrixWorld(true);
+        box = new THREE.Box3().setFromObject(holder);
+      }
+      const c = box.getCenter(new THREE.Vector3());
+      wrap.position.set(-c.x, -box.min.y, -c.z);
+      holder.updateMatrixWorld(true);
+      return holder;
+    }
+
+    // Solid boxes fitted to the model: mark every 10 cm cell a triangle passes through, fill whatever
+    // can't be reached from outside, then merge the solid cells into as few boxes as possible.
+    function shapeBoxes(holder) {
+      const box = new THREE.Box3().setFromObject(holder).expandByScalar(VOXEL);
+      const n = [0, 1, 2].map(i => Math.ceil((box.max.getComponent(i) - box.min.getComponent(i)) / VOXEL));
+      const idx = (x, y, z) => (x * n[1] + y) * n[2] + z;
+      const solid = new Uint8Array(n[0] * n[1] * n[2]);
+      const tri = new THREE.Triangle(), cell = new THREE.Box3(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+      holder.traverse(o => {
+        if (!o.isMesh) return;
+        const pos = o.geometry.attributes.position, index = o.geometry.index, count = index ? index.count : pos.count;
+        for (let i = 0; i < count; i += 3) {
+          const [i0, i1, i2] = index ? [index.getX(i), index.getX(i + 1), index.getX(i + 2)] : [i, i + 1, i + 2];
+          a.fromBufferAttribute(pos, i0).applyMatrix4(o.matrixWorld);
+          b.fromBufferAttribute(pos, i1).applyMatrix4(o.matrixWorld);
+          c.fromBufferAttribute(pos, i2).applyMatrix4(o.matrixWorld);
+          tri.set(a, b, c);
+          const lo = [0, 1, 2].map(k => Math.max(0, Math.floor((Math.min(a.getComponent(k), b.getComponent(k), c.getComponent(k)) - box.min.getComponent(k)) / VOXEL)));
+          const hi = [0, 1, 2].map(k => Math.min(n[k] - 1, Math.floor((Math.max(a.getComponent(k), b.getComponent(k), c.getComponent(k)) - box.min.getComponent(k)) / VOXEL)));
+          for (let x = lo[0]; x <= hi[0]; x++) for (let y = lo[1]; y <= hi[1]; y++) for (let z = lo[2]; z <= hi[2]; z++) {
+            if (solid[idx(x, y, z)]) continue;
+            cell.min.set(box.min.x + x * VOXEL, box.min.y + y * VOXEL, box.min.z + z * VOXEL);
+            cell.max.set(cell.min.x + VOXEL, cell.min.y + VOXEL, cell.min.z + VOXEL);
+            if (cell.intersectsTriangle(tri)) solid[idx(x, y, z)] = 1;
+          }
+        }
+      });
+      // Outside: flood from the border through empty cells. Everything else is solid.
+      const outside = new Uint8Array(solid.length), stack = [];
+      for (let x = 0; x < n[0]; x++) for (let y = 0; y < n[1]; y++) for (let z = 0; z < n[2]; z++) {
+        if ((x && y && z && x < n[0] - 1 && y < n[1] - 1 && z < n[2] - 1) || solid[idx(x, y, z)]) continue;
+        outside[idx(x, y, z)] = 1; stack.push([x, y, z]);
+      }
+      while (stack.length) {
+        const [x, y, z] = stack.pop();
+        for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) {
+          const p = x + dx, q = y + dy, r = z + dz;
+          if (p < 0 || q < 0 || r < 0 || p >= n[0] || q >= n[1] || r >= n[2]) continue;
+          const i = idx(p, q, r);
+          if (outside[i] || solid[i]) continue;
+          outside[i] = 1; stack.push([p, q, r]);
+        }
+      }
+      const fill = new Uint8Array(solid.length);
+      for (let i = 0; i < fill.length; i++) fill[i] = outside[i] ? 0 : 1;
+      // Greedy merge: grow each box along x, then z, then y.
+      const used = new Uint8Array(fill.length), boxes = [];
+      const free = (x, y, z) => fill[idx(x, y, z)] && !used[idx(x, y, z)];
+      for (let y = 0; y < n[1]; y++) for (let z = 0; z < n[2]; z++) for (let x = 0; x < n[0]; x++) {
+        if (!free(x, y, z)) continue;
+        let x1 = x; while (x1 + 1 < n[0] && free(x1 + 1, y, z)) x1++;
+        let z1 = z; grow: while (z1 + 1 < n[2]) { for (let i = x; i <= x1; i++) if (!free(i, y, z1 + 1)) break grow; z1++; }
+        let y1 = y; up: while (y1 + 1 < n[1]) { for (let i = x; i <= x1; i++) for (let k = z; k <= z1; k++) if (!free(i, y1 + 1, k)) break up; y1++; }
+        for (let i = x; i <= x1; i++) for (let j = y; j <= y1; j++) for (let k = z; k <= z1; k++) used[idx(i, j, k)] = 1;
+        const r = v => +v.toFixed(3);
+        boxes.push([r(box.min.x + x * VOXEL), r(box.min.y + y * VOXEL), r(box.min.z + z * VOXEL),
+          r(box.min.x + (x1 + 1) * VOXEL), r(box.min.y + (y1 + 1) * VOXEL), r(box.min.z + (z1 + 1) * VOXEL)]);
+      }
+      return boxes;
+    }
+
+    document.getElementById('build').onclick = async () => {
+      logEl.textContent = '';
+      const exporter = new GLTFExporter(), loader = new GLTFLoader(), data = {};
+      for (const [id, kit] of Object.entries(KITS)) {
+        const t0 = performance.now();
+        const gltf = await loader.loadAsync('/assets-src/' + kit.src);
+        gltf.scene.updateMatrixWorld(true);
+        const out = new THREE.Group(), pieces = {};
+        for (const [pid, spec] of Object.entries(kit.pieces)) {
+          const node = gltf.scene.getObjectByName(spec.node);
+          if (!node) { log(`  ! ${id}.${pid}: no node "${spec.node}"`); continue; }
+          const holder = normalize(node, kit.unit, spec);
+          holder.name = pid;
+          const b = new THREE.Box3().setFromObject(holder), s = b.getSize(new THREE.Vector3());
+          const r = v => +v.toFixed(3);
+          const boxes = spec.collide === 'none' ? [] : spec.collide === 'shape' ? shapeBoxes(holder)
+            : [[r(b.min.x), r(b.min.y), r(b.min.z), r(b.max.x), r(b.max.y), r(b.max.z)]];
+          pieces[pid] = { size: [r(s.x), r(s.y), r(s.z)], boxes };
+          out.add(holder);
+        }
+        const glb = await exporter.parseAsync(out, { binary: true, maxTextureSize: kit.tex });
+        const bytes = await save(`game/kits/${id}.glb`, glb);
+        data[id] = { file: `kits/${id}.glb`, credit: kit.credit, pieces };
+        log(`${id.padEnd(8)} ${(bytes / 1e6).toFixed(1)} MB · ${Object.keys(pieces).length} pieces · ${Object.values(pieces).reduce((a, p) => a + p.boxes.length, 0)} collision boxes · ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+      }
+      await save('game/kits/kits.json', data);
+      log('done: public/assets/game/kits/kits.json');
+      window.kitsBuilt = data;
+    };
+  </script>
+</body>
+</html>

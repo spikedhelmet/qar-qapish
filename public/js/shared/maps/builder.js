@@ -1,5 +1,10 @@
+import KITS from '../../../assets/game/kits/kits.json' with { type: 'json' };
+
 // Helpers for writing maps. Units are meters. x runs west→east (team A spawns west), z runs
 // north→south, y is up. Every solid is an axis-aligned box: { min: [x,y,z], max: [x,y,z], mat }.
+// What a kit's pieces sound like when hit or walked on (a map material; see SURFACE in audio.js).
+const KIT_MAT = { room: 'plaster', fence: 'corrugated', crates: 'crate', barrels: 'container_red', pillars: 'concrete', fort: 'concrete', doors: 'floor', lamp: 'container_blue', vents: 'container_blue' };
+
 export function builder() {
   const boxes = [];
   const decals = []; // flat ground cover (lawn, paths, floorboards): drawn, but not solid
@@ -64,6 +69,22 @@ export function builder() {
     }
     props.push({ kind: 'grass', points });
   }
+  // A piece of a model kit (public/dev/kits.config.js; built by /dev/kitbuild.html) standing at x, z
+  // (its center) on height y, turned by rot quarter turns (0 … 3, counter-clockwise seen from above).
+  // Its collision boxes go into the map, turned with it; the model is drawn by public/js/props.js.
+  function piece(kit, name, x, z, rot = 0, y = 0) {
+    const p = KITS[kit]?.pieces[name];
+    if (!p) throw new Error(`no kit piece ${kit}.${name}`);
+    const r = ((rot % 4) + 4) % 4;
+    const turn = (px, pz) => [[px, pz], [pz, -px], [-px, -pz], [-pz, px]][r]; // rotation about y by r × 90°
+    for (const [x0, y0, z0, x1, y1, z1] of p.boxes) {
+      const [ax, az] = turn(x0, z0), [bx, bz] = turn(x1, z1);
+      boxes.push({ min: [x + Math.min(ax, bx), y + y0, z + Math.min(az, bz)], max: [x + Math.max(ax, bx), y + y1, z + Math.max(az, bz)], mat: KIT_MAT[kit] || 'concrete', hidden: true });
+    }
+    props.push({ kind: 'piece', kit, name, x, y, z, rot: r });
+  }
+  // Size of a kit piece [x, y, z] in meters, before turning.
+  const pieceSize = (kit, name) => KITS[kit].pieces[name].size;
   // Same box on both halves of the map (mirrored across x = 0).
   function both(x, z, sx, sz, h, mat, y = 0) {
     box(x, z, sx, sz, h, mat, y);
@@ -82,5 +103,5 @@ export function builder() {
   function spawnColumn(side, x, zs) {
     return zs.map(z => ({ x: side * x, z, yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2 }));
   }
-  return { boxes, decals, props, box, decal, tree, pine, bush, rock, roof, ladder, grass, both, arena, spawnColumn };
+  return { boxes, decals, props, box, decal, tree, pine, bush, rock, roof, ladder, grass, piece, pieceSize, both, arena, spawnColumn };
 }

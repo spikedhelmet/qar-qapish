@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { createSurfaces, siteDecal } from './textures.js';
+import { createSurfaces, siteDecal, photosLoaded } from './textures.js';
 import { propMeshes } from './props.js';
 
 // Box geometry in world space with UVs in meters projected from world coordinates (each texture's
@@ -55,11 +55,12 @@ export function buildWorld(renderer, map) {
   sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
 
-  scene.add(new THREE.HemisphereLight(0xbcd3ee, 0x5a5146, 0.5));
+  const hemi = new THREE.HemisphereLight(0xbcd3ee, 0x5a5146, 0.5);
+  scene.add(hemi);
   scene.fog = new THREE.Fog(0xc6d3df, 70, 260);
   scene.environmentIntensity = 0.55;
 
-  scene.userData.world = { renderer, surfaces: createSurfaces(renderer), sky, sun, level: null };
+  scene.userData.world = { renderer, surfaces: createSurfaces(renderer), sky, sun, hemi, level: null };
   showMap(scene, map);
   return scene;
 }
@@ -77,17 +78,41 @@ export function showMap(scene, map) {
   }
   const level = w.level = new THREE.Group();
 
-  // Merge all boxes that share a surface into one mesh.
+  // Indoors (map.interiors: [x0, y0, z0, x1, y1, z1] boxes) the sky light is turned down to
+  // map.indoorAmbient: big roofed spaces are dim, lit by their openings and their lamps.
+  const interiors = map.interiors || [];
+  const inside = (x, y, z) => interiors.some(([x0, y0, z0, x1, y1, z1]) => x > x0 && x < x1 && y > y0 && y < y1 && z > z0 && z < z1);
+  const indoorMats = [];                 // [copy, original, from a kit]
+  const indoor = (m, kit = false) => {
+    const c = m.clone();
+    indoorMats.push([c, m, kit]);
+    return c;
+  };
+
+  // Merge all boxes that share a surface (and are on the same side of a wall) into one mesh.
   const groups = {};
-  for (const b of [...map.boxes, ...(map.decals || [])]) if (!b.hidden) (groups[b.mat] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
-  for (const [mat, geos] of Object.entries(groups)) {
-    const mesh = new THREE.Mesh(mergeGeometries(geos), w.surfaces[mat].material);
+  for (const b of [...map.boxes, ...(map.decals || [])]) {
+    if (b.hidden) continue;
+    const c = [0, 1, 2].map(i => (b.min[i] + b.max[i]) / 2);
+    (groups[b.mat + (inside(...c) ? '|in' : '')] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
+  }
+  for (const [key, geos] of Object.entries(groups)) {
+    const [mat, where] = key.split('|');
+    const mesh = new THREE.Mesh(mergeGeometries(geos), where ? indoor(w.surfaces[mat].material) : w.surfaces[mat].material);
     mesh.castShadow = mat !== 'asphalt';
     mesh.receiveShadow = true;
     level.add(mesh);
   }
 
-  for (const mesh of propMeshes(map.props || [], w.surfaces, w.renderer)) level.add(mesh);
+  for (const mesh of propMeshes(map.props || [], w.surfaces, w.renderer, interiors.length ? { inside, material: indoor } : null)) {
+    mesh.userData.onLoad = () => w.refreshIndoor?.();     // kit pieces arrive later
+    level.add(mesh);
+  }
+  for (const [x, y, z, intensity, distance] of map.lights || []) {
+    const lamp = new THREE.PointLight(0xffe2b8, intensity, distance, 2);
+    lamp.position.set(x, y, z);
+    level.add(lamp);
+  }
 
   for (const site of map.sites) {
     const sx = site.max[0] - site.min[0], sz = site.max[1] - site.min[1];
@@ -113,5 +138,21 @@ export function showMap(scene, map) {
   envScene.add(w.sky.clone());
   scene.environment?.dispose();
   scene.environment = pmrem.fromScene(envScene, 0.04).texture;
+  scene.environmentIntensity = map.ambient ?? 0.55;
+  w.hemi.intensity = map.hemi ?? 0.5;
+  // Indoor materials: the same sky light, but only map.indoorAmbient of it. (A material without its
+  // own environment map gets the scene's strength, so each one gets the map explicitly.) Copies of
+  // the box surfaces are refreshed once the photo textures are on them.
+  const refresh = () => {
+    for (const [m, base, kit] of indoorMats) {
+      if (!kit) m.copy(base);
+      m.envMap = scene.environment;
+      m.envMapIntensity = map.indoorAmbient ?? 0.2;
+      m.needsUpdate = true;
+    }
+  };
+  refresh();
+  photosLoaded.then(refresh);
+  w.refreshIndoor = refresh;
   pmrem.dispose();
 }

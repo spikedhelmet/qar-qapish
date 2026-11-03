@@ -954,4 +954,4 @@ function renderCredits(manifest) {
 }
 
 // Handy for poking at the game from the browser console.
-window.qapishma = { THREE, game, me, arsenal, input, remotes, camera, viewCamera, viewScene, effects, get viewModel() { return viewModel; }, get objective() { return objective; }, grenadeView };
+window.qapishma = { THREE, game, me, arsenal, input, remotes, scene, camera, viewCamera, viewScene, effects, get viewModel() { return viewModel; }, get objective() { return objective; }, grenadeView };

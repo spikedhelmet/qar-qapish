@@ -3,7 +3,52 @@
 // are hidden boxes in the map, added by the helpers in shared/maps/builder.js.
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { plantMeshes, rng } from './trees.js';
+
+// Kit pieces (props of kind 'piece': { kit, name, x, y, z, rot }): each kit's GLB loads once; every
+// copy of a piece is drawn as one instanced mesh per part. The group fills in when the kit has loaded.
+const kitFiles = new Map();
+const loadKit = kit => {
+  if (!kitFiles.has(kit)) kitFiles.set(kit, new GLTFLoader().loadAsync(`/assets/game/kits/${kit}.glb`).then(g => g.scene));
+  return kitFiles.get(kit);
+};
+function kitPieces(props, indoor) {
+  const group = new THREE.Group(), byKit = new Map();
+  for (const p of props) if (p.kind === 'piece') (byKit.get(p.kit) || byKit.set(p.kit, []).get(p.kit)).push(p);
+  for (const [kit, list] of byKit) {
+    loadKit(kit).then(scene => {
+      scene.updateMatrixWorld(true);
+      const byPiece = new Map();
+      for (const p of list) (byPiece.get(p.name) || byPiece.set(p.name, []).get(p.name)).push(p);
+      for (const [name, places] of byPiece) {
+        const holder = scene.getObjectByName(name);
+        if (!holder) { console.warn(`kit ${kit}: no piece ${name}`); continue; }
+        const inv = holder.matrixWorld.clone().invert(), at = new THREE.Matrix4(), part = new THREE.Matrix4();
+        // Indoors and outdoors get separate meshes: indoor ones use a dimmer copy of the material.
+        const sides = indoor ? [places.filter(p => !indoor.inside(p.x, (p.y || 0) + 0.5, p.z)), places.filter(p => indoor.inside(p.x, (p.y || 0) + 0.5, p.z))] : [places, []];
+        holder.traverse(o => {
+          if (!o.isMesh) return;
+          part.multiplyMatrices(inv, o.matrixWorld);                 // the part, relative to the piece
+          sides.forEach((list, k) => {
+            if (!list.length) return;
+            const mat = k ? indoor.material(o.material, true) : o.material;
+            const mesh = new THREE.InstancedMesh(o.geometry, mat, list.length);
+            list.forEach((p, i) => {
+              at.makeRotationY(p.rot * Math.PI / 2).setPosition(p.x, p.y || 0, p.z);
+              mesh.setMatrixAt(i, at.clone().multiply(part));
+            });
+            mesh.castShadow = mesh.receiveShadow = true;
+            mesh.computeBoundingSphere();
+            group.add(mesh);
+          });
+        });
+        group.userData.onLoad?.();
+      }
+    }).catch(e => console.warn(`kit ${kit} didn't load`, e));
+  }
+  return group;
+}
 
 // UVs in meters, projected along each vertex's main normal axis (like the boxes in world.js).
 function meterUVs(g) {
@@ -83,8 +128,9 @@ function ladderGeometry({ x, z, side, top, run, width }) {
 }
 
 // All of a map's props as meshes, merged by material. surfaces: the map's box materials (world.js).
-export function propMeshes(props, surfaces, renderer) {
+export function propMeshes(props, surfaces, renderer, indoor = null) {
   const out = plantMeshes(props, renderer);
+  if (props.some(p => p.kind === 'piece')) out.push(kitPieces(props, indoor));
   const rocks = [], roofs = [], undersides = [], ladders = [];
   for (const p of props) {
     if (p.kind === 'rock') rocks.push(rockGeometry(p.seed, p.sx, p.sy, p.sz).translate(p.x, p.y || 0, p.z));

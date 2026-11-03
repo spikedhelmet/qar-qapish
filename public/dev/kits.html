@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kit Browser</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #2a2e34; color: #eee; font: 13px Helvetica, Arial, sans-serif; overflow: hidden; }
+    canvas { display: block; }
+    #ui { position: fixed; top: 10px; left: 10px; width: 330px; padding: 10px; background: rgba(0, 0, 0, 0.6); border-radius: 4px; }
+    #ui select { width: 100%; margin: 4px 0 8px; }
+    #info { white-space: pre-wrap; color: #bbb; max-height: 70vh; overflow: auto; font-size: 12px; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js", "three/addons/": "/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <!-- Dev tool: lay out every piece of a model kit from assets-src/textures/ in a grid, with its size in
+       meters, to see what a kit has and how its pieces fit. Open /dev/kits.html on the host Mac. -->
+  <div id="ui">
+    <b>Kit</b><select id="kit"></select>
+    <div id="info">Loading…</div>
+  </div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    const KITS = ['abandoned_building__modular_environment_kit', 'modular_house_l_garage_l_shed_l_pool_l_kit', 'modular_modern_house_pack',
+      'modular_modernist_mediterranean_buildings_kit', 'modular_kit_horror_housev2_update', 'modular_set_template', 'free_modular_pillar_base_kit',
+      'kit_fortification_update', 'modular_urban_fence_pack_w_graffiti_textures', 'concrete_barriers', 'modular_osbwood_shipping_crates_2k',
+      'psx_barrels_pack', 'door_pack_asset__key_pack_one_material', 'street_light', 'vent_collection', 'rooftiles2', 'old_sofas',
+      'modular_vintage_living_room_-_game_ready_pbr', 'thunderbird_hillbilly_1957'];
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x3a3f46);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(5, 10, 7); scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 2000);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    const grid = new THREE.GridHelper(200, 200, 0x555555, 0x444444); scene.add(grid);
+    let group = null;
+
+    function label(text) {
+      const c = document.createElement('canvas'); c.width = 512; c.height = 64;
+      const g = c.getContext('2d'); g.font = 'bold 26px Helvetica'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(text, 256, 40);
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false }));
+      s.scale.set(2, 0.25, 1);
+      return s;
+    }
+
+    // The pieces of a kit: the first level below the root wrappers that has more than one child.
+    function piecesOf(root) {
+      let level = root;
+      for (let d = 0; d < 8 && level.children.length === 1; d++) level = level.children[0];
+      return level.children.length ? level.children : [level];
+    }
+
+    async function show(kit) {
+      if (group) scene.remove(group);
+      document.getElementById('info').textContent = 'Loading ' + kit + '…';
+      const gltf = await new GLTFLoader().loadAsync(`/assets-src/textures/${kit}.glb`);
+      const root = gltf.scene;
+      root.updateMatrixWorld(true);
+      // Units: if the whole kit is hundreds of units across, it's centimeters.
+      const all = new THREE.Box3().setFromObject(root), size = all.getSize(new THREE.Vector3());
+      const unit = Math.max(size.x, size.y, size.z) > 150 ? 0.01 : 1;
+      group = new THREE.Group();
+      const pieces = piecesOf(root), lines = [], cols = Math.ceil(Math.sqrt(pieces.length));
+      let x = 0, z = 0, rowDepth = 0, i = 0;
+      for (const p of [...pieces]) {
+        const box = new THREE.Box3().setFromObject(p), s = box.getSize(new THREE.Vector3()).multiplyScalar(unit);
+        let tris = 0;
+        p.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+        const holder = new THREE.Group();
+        const center = box.getCenter(new THREE.Vector3());
+        const copy = p.clone();
+        copy.applyMatrix4(new THREE.Matrix4().copy(p.parent.matrixWorld));
+        copy.position.sub(new THREE.Vector3(center.x, box.min.y, center.z));
+        holder.add(copy);
+        holder.scale.setScalar(unit);
+        holder.position.set(x + s.x / 2, 0, z + s.z / 2);
+        group.add(holder);
+        const l = label(`${p.name}  ${s.x.toFixed(2)}×${s.y.toFixed(2)}×${s.z.toFixed(2)}`);
+        l.position.set(x + s.x / 2, s.y + 0.3, z + s.z / 2);
+        group.add(l);
+        lines.push(`${p.name}: ${s.x.toFixed(2)} × ${s.y.toFixed(2)} × ${s.z.toFixed(2)} m, ${Math.round(tris)} tris`);
+        x += Math.max(s.x, 1.5) + 1; rowDepth = Math.max(rowDepth, s.z);
+        if (++i % cols === 0) { x = 0; z += rowDepth + 1.5; rowDepth = 0; }
+      }
+      scene.add(group);
+      const b = new THREE.Box3().setFromObject(group), c = b.getCenter(new THREE.Vector3()), r = b.getSize(new THREE.Vector3()).length();
+      controls.target.copy(c);
+      camera.position.set(c.x, c.y + r * 0.55, c.z + r * 0.7);
+      controls.update();
+      window.kitInfo = { kit, unit, pieces: lines };
+      document.getElementById('info').textContent = `${kit}\nunit: ${unit === 1 ? 'meters' : 'centimeters'}, ${pieces.length} pieces\n\n` + lines.join('\n');
+    }
+
+    const sel = document.getElementById('kit');
+    sel.innerHTML = KITS.map(k => `<option>${k}</option>`).join('');
+    sel.onchange = () => show(sel.value);
+    window.showKit = k => { sel.value = k; return show(k); };
+    renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+    addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+    show(KITS[0]);
+  </script>
+</body>
+</html>
