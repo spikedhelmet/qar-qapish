@@ -195,6 +195,12 @@ Other free sources:
 | Hedges | Moss002 | Clipped box hedge, toned down |
 | Tree trunks and branches | Bark012 | Darkened toward brown |
 | Tree leaves | LeafSet005 (an atlas: color + opacity) | The game paints leaf cards from its single leaves, some darkened as if in shade |
+| Dry bushes | LeafSet030 (atlas) | Painted into leaf cards the same way |
+| Tall grass | Foliage001 (atlas of blades) | Painted into tufts: blades fanning up from the bottom |
+| Bastion's walls and towers | Bricks066 | Big grey stone blocks |
+| Roofs | WoodSiding011 | Weathered wood shingles |
+| Boulders | Rock030 | |
+| Pine needles | none | Drawn in code as strokes |
 | Trims, doors | Metal plates / rusted metal | P3, not yet |
 
 To swap a texture:
@@ -248,5 +254,5 @@ Shown in the game's menu (built from each model's licence data). Currently:
   - "GameReady: Colt Python Revolver" (HYQQM)
 - Downloaded, not used: "FREE FPS Arms with glove" (Alexander_Ovelar), "Fps Arms Rigged" (TALL DOOR), "Fps arms" (DJMaesen), all CC-BY 4.0; L115A3 (Mortavex, CC-BY 4.0, 196k triangles, too heavy for now)
 - Characters and animations: Mixamo (Adobe), free for games, no credit required
-- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002, Bark012, LeafSet005), CC0
+- Map textures: ambientCG (Concrete036, Road012A, Bricks085, Planks020, CorrugatedSteel005, PavingStones136, Tiles143, PaintedPlaster017, Ground037, Moss002, Bark012, LeafSet005, LeafSet030, Foliage001, Bricks066, WoodSiding011, Rock030), CC0
 - Sounds (all CC0; see section 4): "The Free Firearm Sound Library" by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney; Kenney "Impact Sounds"; OpenGameArt packs by SpringySpringo, Brian MacIntosh and others

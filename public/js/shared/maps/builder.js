@@ -3,7 +3,8 @@
 export function builder() {
   const boxes = [];
   const decals = []; // flat ground cover (lawn, paths, floorboards): drawn, but not solid
-  const props = [];  // models placed on the map (trees); only their solid part is in boxes
+  const props = [];  // things drawn on the map that aren't boxes (plants, rocks, roofs, ladders; see
+                     // public/js/props.js); their solid parts are hidden boxes
   // Box by center x/z, footprint size, height and base y.
   function box(x, z, sx, sz, h, mat, y = 0) {
     boxes.push({ min: [x - sx / 2, y, z - sz / 2], max: [x + sx / 2, y + h, z + sz / 2], mat });
@@ -18,23 +19,68 @@ export function builder() {
     boxes.push({ min: [x - 0.25, y, z - 0.25], max: [x + 0.25, y + h * 0.45, z + 0.25], mat: 'bark', hidden: true });
     props.push({ kind: 'tree', x, y, z, h, seed });
   }
+  // A pine `h` meters tall. Solid trunk; its branches start low, but don't stop you either.
+  function pine(x, z, h = 8, seed = Math.round(x * 29 + z * 13), y = 0) {
+    boxes.push({ min: [x - 0.22, y, z - 0.22], max: [x + 0.22, y + h * 0.6, z + 0.22], mat: 'bark', hidden: true });
+    props.push({ kind: 'pine', x, y, z, h, seed });
+  }
+  // A bush about `size` meters across, green or dry (yellow-brown). Not solid: you can walk through it.
+  function bush(x, z, size = 1.4, dry = false, seed = Math.round(x * 23 + z * 19), y = 0) {
+    props.push({ kind: 'bush', x, y, z, size, dry, seed });
+  }
+  // A boulder sx × sy × sz meters; a box a little smaller than it is solid.
+  function rock(x, z, sx, sy, sz, seed = Math.round(x * 37 + z * 11), y = 0) {
+    boxes.push({ min: [x - sx * 0.38, y, z - sz * 0.38], max: [x + sx * 0.38, y + sy * 0.8, z + sz * 0.38], mat: 'rock', hidden: true });
+    props.push({ kind: 'rock', x, y, z, sx, sy, sz, seed });
+  }
+  // A hip roof w × d meters with its eaves at height y, rising h. Only drawn.
+  function roof(x, z, y, w, d, h) {
+    props.push({ kind: 'roof', x, y, z, w, d, h });
+  }
+  // A ladder up a wall to height `top`. (x, z): the middle of its top, against the wall's face; side:
+  // which way the wall is from the ladder ('n', 's', 'e', 'w'). Behind it are hidden steep steps
+  // (0.4 m rise, 0.2 m deep) that you walk up like stairs; the game slows you on them.
+  function ladder(x, z, side, top, width = 0.8) {
+    const [dx, dz] = { n: [0, -1], s: [0, 1], w: [-1, 0], e: [1, 0] }[side];
+    const n = Math.ceil(top / 0.4), rise = top / n, tread = 0.2;
+    for (let i = 1; i <= n; i++) {
+      const d0 = (n - i) * tread, d1 = d0 + tread, mid = (d0 + d1) / 2; // distance out from the wall
+      const cx = x - dx * mid, cz = z - dz * mid, sx = dx ? tread : width, sz = dz ? tread : width;
+      boxes.push({ min: [cx - sx / 2, 0, cz - sz / 2], max: [cx + sx / 2, i * rise, cz + sz / 2], mat: 'ladder', hidden: true });
+    }
+    props.push({ kind: 'ladder', x, z, side, top, run: n * tread, width });
+  }
+  // Tufts of tall grass scattered over x0…x1, z0…z1, kept off anything standing on the ground. Call
+  // it last, after the boxes are placed.
+  function grass(count, x0, x1, z0, z1, seed = 1) {
+    let a = seed * 9301 + 49297;
+    const rand = () => ((a = (a * 9301 + 49297) % 233280) / 233280);
+    const points = [];
+    for (let i = 0; i < count * 3 && points.length < count; i++) {
+      const x = x0 + rand() * (x1 - x0), z = z0 + rand() * (z1 - z0), s = 0.7 + rand() * 0.7;
+      const blocked = boxes.some(b => b.min[1] <= 0.1 && b.max[1] > 0.1 &&
+        x > b.min[0] - 0.4 && x < b.max[0] + 0.4 && z > b.min[2] - 0.4 && z < b.max[2] + 0.4);
+      if (!blocked) points.push([+x.toFixed(2), +z.toFixed(2), +s.toFixed(2), +(rand() * 3.14).toFixed(2)]);
+    }
+    props.push({ kind: 'grass', points });
+  }
   // Same box on both halves of the map (mirrored across x = 0).
   function both(x, z, sx, sz, h, mat, y = 0) {
     box(x, z, sx, sz, h, mat, y);
     box(-x, z, sx, sz, h, mat, y);
   }
   // Ground plus outer walls around the playable area (half extents w, d).
-  function arena(w, d, wall = 7) {
+  function arena(w, d, wall = 7, mat = 'concrete') {
     boxes.push({ min: [-w - 1, -1, -d - 1], max: [w + 1, 0, d + 1], mat: 'asphalt' });
-    box(0, -d - 0.5, 2 * w + 2, 1, wall, 'concrete');
-    box(0, d + 0.5, 2 * w + 2, 1, wall, 'concrete');
-    box(-w - 0.5, 0, 1, 2 * d, wall, 'concrete');
-    box(w + 0.5, 0, 1, 2 * d, wall, 'concrete');
+    box(0, -d - 0.5, 2 * w + 2, 1, wall, mat);
+    box(0, d + 0.5, 2 * w + 2, 1, wall, mat);
+    box(-w - 0.5, 0, 1, 2 * d, wall, mat);
+    box(w + 0.5, 0, 1, 2 * d, wall, mat);
   }
   // Spawn points in a column at x = side * x, facing the middle. (A spawn may also give y: the
 // height of the ground it stands on.)
   function spawnColumn(side, x, zs) {
     return zs.map(z => ({ x: side * x, z, yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2 }));
   }
-  return { boxes, decals, props, box, decal, tree, both, arena, spawnColumn };
+  return { boxes, decals, props, box, decal, tree, pine, bush, rock, roof, ladder, grass, both, arena, spawnColumn };
 }

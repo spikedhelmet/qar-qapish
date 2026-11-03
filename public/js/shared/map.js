@@ -5,9 +5,10 @@ import { DEPOT } from './maps/depot.js';
 import { PLAZA } from './maps/plaza.js';
 import { OLDTOWN } from './maps/oldtown.js';
 import { VILLA } from './maps/villa.js';
+import { BASTION } from './maps/bastion.js';
 
-export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA, oldtown: OLDTOWN, villa: VILLA };
-export const MAP_ORDER = ['yard', 'depot', 'plaza', 'oldtown', 'villa'];
+export const MAPS = { yard: YARD, depot: DEPOT, plaza: PLAZA, oldtown: OLDTOWN, villa: VILLA, bastion: BASTION };
+export const MAP_ORDER = ['yard', 'depot', 'plaza', 'oldtown', 'villa', 'bastion'];
 
 export const MAP = { ...YARD };
 

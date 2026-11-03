@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createSurfaces, siteDecal } from './textures.js';
-import { treeMeshes } from './trees.js';
+import { propMeshes } from './props.js';
 
 // Box geometry in world space with UVs in meters projected from world coordinates (each texture's
 // repeat sets its tile size), so textures keep the same density and line up across neighbouring boxes.
@@ -79,7 +79,7 @@ export function showMap(scene, map) {
     level.add(mesh);
   }
 
-  for (const mesh of treeMeshes(map.props || [], w.renderer)) level.add(mesh);
+  for (const mesh of propMeshes(map.props || [], w.surfaces, w.renderer)) level.add(mesh);
 
   for (const site of map.sites) {
     const sx = site.max[0] - site.min[0], sz = site.max[1] - site.min[1];

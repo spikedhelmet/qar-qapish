@@ -37,6 +37,26 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 
 ## Progress log
 
+### 2026-11-03 · Bastion map; pines, bushes, grass, boulders, roofs and ladders (`feature/milestone-5`)
+- **New map "Bastion"**, built after the team's screenshots of a towered courtyard. 58 × 44 m, mirrored both ways.
+  - **Four stone towers** (9 × 9 m, 5 m): a door toward the middle, stairs inside up to a hatch, a ladder outside, and a wooden lookout on top with posts, a railing and a hip roof.
+  - **An H-shaped wooden walkway** at lookout height joins the four towers, with planks piled on it for cover; a table and crates under it.
+  - **Stone outposts** against the north and south walls, with a door and windows; stacked crates to climb onto the roof.
+  - **Gates:** west and east, with a barricade in front of each that covers the spawn.
+  - **Around the yard:** low stone walls with a rope between them, fences, crates, pines, dry bushes, boulders and about 900 tufts of tall grass.
+- **New props** (`public/js/props.js`, `public/js/trees.js`; placed with builder helpers):
+  - `pine()`: a straight trunk with 11–13 whorls of branches, long and drooping low down, short near the tip. Three needle cards on each branch; the needles are drawn in code.
+  - `bush()`: green or dry, leaf cards in a low dome. Not solid.
+  - `grass()`: tufts of two crossed cards painted from grass-blade photos, scattered clear of everything on the ground. Not solid.
+  - `rock()`: a lumpy smoothed sphere with a rock photo; a slightly smaller hidden box is solid.
+  - `roof()`: a hip roof with shingles and a wooden underside.
+  - `ladder()`: rails and rungs, with hidden steep steps behind (0.4 m rise, 0.2 m deep). You walk up them like stairs, and the game slows you to 40% on them.
+- New surfaces: grey stone blocks (Bricks066), shingles (WoodSiding011), rock (Rock030). Leaf and grass sheets: LeafSet030, Foliage001.
+- Checks:
+  - Map check: no open spawn lines, all ground reachable.
+  - 60 random wandering runs never got stuck.
+  - Walking by script: in a tower door, up the stairs, out of the hatch, across the walkway into the far tower; up a ladder to a lookout; onto an outpost roof by the crates. That walk found the stair ceiling too low at the 6th step, so the hatch now starts at the 5th.
+
 ### 2026-11-03 · Real trees (`feature/milestone-5`)
 - The cube trees are gone. Trees are now built in code (`public/js/trees.js`, original):
   - A tapered, slightly bent trunk with a flared foot, 5–7 branches off the upper trunk, each with two side branches.

@@ -245,6 +245,9 @@ export function createSurfaces(renderer) {
     hedge: make(lawn(size, [44, 84, 34], 79), 1.2, 0.95),
     floor: make(slabs(size, [128, 88, 56], 8, 2, true, 83), 2.5, 0.8),
     water: make(lawn(size, [34, 92, 120], 89), 3, 0.08, 0.1), // painted only: glossy, deep pool water
+    castle: make(slabs(size, [150, 152, 150], 4, 2, true, 97), 3, 0.92),
+    shingles: make(slabs(size, [120, 108, 92], 10, 3, true, 101), 2, 0.9),
+    rock: make(lawn(size, [118, 116, 110], 103), 3, 0.95),
   };
   loadPhotos(surfaces, renderer);
   return surfaces;
@@ -268,6 +271,9 @@ const PHOTO = {
   grass: { tex: 'grass', tile: [3, 3], rough: 0.95 },                                         // a worn lawn with bare patches
   hedge: { tex: 'hedge', tile: [1.5, 1.5], tint: [0.6, 0.66, 0.5], rough: 0.95, bump: 1.2 },                     // clipped box hedge (also the tree tops)
   floor: { tex: 'wood', tile: [2.5, 2.5], tint: [0.9, 0.8, 0.72], rough: 0.7 },             // the crate planks as floorboards
+  castle: { tex: 'castle', tile: [3, 3], rough: 0.92 },                                       // big grey stone blocks
+  shingles: { tex: 'shingles', tile: [2, 2], rough: 0.9 },                                    // weathered wood roof shingles
+  rock: { tex: 'rock', tile: [3, 3], rough: 0.95 },
 };
 const PHOTO_DIR = '/assets/game/textures/';
 

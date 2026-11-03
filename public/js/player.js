@@ -1,6 +1,6 @@
 // Local player: keyboard/mouse input and client-side movement physics.
 import { PLAYER } from './shared/config.js';
-import { moveBody, canStand, findLedge, findVault } from './shared/collision.js';
+import { moveBody, canStand, findLedge, findVault, surfaceUnder } from './shared/collision.js';
 import { translate } from './keys.js';
 
 export class Input {
@@ -169,6 +169,7 @@ export class LocalPlayer {
     const fresh = 1 - P.landSlow * (this.landT / P.landRecover);
     const base = this.crouching ? P.crouchSpeed : walking ? P.walkSpeed : this.sprinting ? P.sprintSpeed : P.runSpeed;
     let maxSpeed = base * (this.sprinting ? sprintMult : speedMult) * fresh;
+    if (this.onGround && surfaceUnder(this.map, this.pos) === 'ladder') maxSpeed *= 0.4; // climbing a ladder
     if (!this.onGround) maxSpeed = Math.min(maxSpeed, P.jumpMaxSpeed); // no speeding up mid-air
     const wishSpeed = (fx || fz) && !this.sliding ? maxSpeed : 0;
 

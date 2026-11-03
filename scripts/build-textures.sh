@@ -22,6 +22,9 @@ SURFACES=(
   "grass Ground037"
   "hedge Moss002"
   "bark Bark012"
+  "castle Bricks066"
+  "shingles WoodSiding011"
+  "rock Rock030"
 )
 
 mkdir -p "$OUT"
@@ -30,6 +33,7 @@ for entry in "${SURFACES[@]}"; do
   read -r name id <<< "$entry"
   for map in Color NormalGL Roughness; do
     in="$SRC/$id/${id}_1K-JPG_${map}.jpg"
+    if [ "$map" = Roughness ] && [ ! -f "$in" ]; then continue; fi # some assets have none: the game sets a fixed roughness
     [ -f "$in" ] || { echo "Missing $in (download ${id}_1K-JPG.zip from ambientcg.com and unzip it into $SRC/$id/)"; exit 1; }
     suffix=$(echo "$map" | tr '[:upper:]' '[:lower:]' | sed 's/normalgl/normal/;s/roughness/rough/')
     sips -s format jpeg -s formatOptions "$QUALITY" "$in" --out "$OUT/${name}_${suffix}.jpg" > /dev/null
@@ -37,10 +41,20 @@ for entry in "${SURFACES[@]}"; do
   size=$(sips -g pixelWidth -g pixelHeight "$SRC/$id/${id}_1K-JPG_Color.jpg" | awk '/pixel/ {print $2}' | paste -sd, -)
   json="$json\"$name\":{\"id\":\"$id\",\"size\":[$size],\"source\":\"https://ambientcg.com/view?id=$id\"},"
 done
-# Leaves for the trees: a sheet of single leaves (color, and opacity for the cut-out).
-for map in Color Opacity; do
-  sips -s format jpeg -s formatOptions "$QUALITY" "$SRC/LeafSet005/LeafSet005_1K-JPG_${map}.jpg" --out "$OUT/leaves_$(echo $map | tr '[:upper:]' '[:lower:]').jpg" > /dev/null
+# Sheets of cut-outs for the plants (color, and opacity for the cut-out): tree leaves, dry bush
+# leaves, grass blades.
+SHEETS=(
+  "leaves LeafSet005"
+  "dryleaves LeafSet030"
+  "blades Foliage001"
+)
+for entry in "${SHEETS[@]}"; do
+  read -r name id <<< "$entry"
+  for map in Color Opacity; do
+    sips -s format jpeg -s formatOptions "$QUALITY" "$SRC/$id/${id}_1K-JPG_${map}.jpg" --out "$OUT/${name}_$(echo $map | tr '[:upper:]' '[:lower:]').jpg" > /dev/null
+  done
+  size=$(sips -g pixelWidth -g pixelHeight "$SRC/$id/${id}_1K-JPG_Color.jpg" | awk '/pixel/ {print $2}' | paste -sd, -)
+  json="$json\"$name\":{\"id\":\"$id\",\"size\":[$size],\"source\":\"https://ambientcg.com/view?id=$id\"},"
 done
-json="$json\"leaves\":{\"id\":\"LeafSet005\",\"size\":[1024,512],\"source\":\"https://ambientcg.com/view?id=LeafSet005\"},"
 echo "${json%,}}" > "$OUT/textures.json"
 du -sh "$OUT"
