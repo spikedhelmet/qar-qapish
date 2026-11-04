@@ -843,6 +843,8 @@ async function hostChange(change) {
 }
 hostMode.addEventListener('change', () => hostChange({ mode: hostMode.value }));
 hostEven.addEventListener('change', () => hostChange({ even: hostEven.checked }));
+document.getElementById('bot-add').addEventListener('click', () => hostChange({ bots: 1 }));
+document.getElementById('bot-remove').addEventListener('click', () => hostChange({ bots: -1 }));
 hostMap.addEventListener('change', () => hostChange({ map: hostMap.value }));
 document.getElementById('host-restart').addEventListener('click', () => hostChange({ restart: true }));
 
@@ -851,6 +853,7 @@ function applyMatchSettings(m) {
   if (MODES[m.mode]) game.mode = m.mode;
   if (m.map) changeMap(m.map);
   game.even = m.even !== false;
+  document.getElementById('bot-count').textContent = m.bots ?? 0;
 }
 fetch('/api/match').then(r => r.json()).then(m => { applyMatchSettings(m); updateHostPanel(); }).catch(() => {});
 

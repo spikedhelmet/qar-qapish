@@ -42,6 +42,17 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-04 · Wider menu, bots, a real sky, no flicker (`feature/milestone-5`)
+- **Menu:** three columns (you, settings, host) instead of one long stack.
+- **Bots for testing** (`bots.js`): + and − in Host controls, up to 12.
+  - They're players with no connection, added to the smaller team.
+  - They walk a half-meter navigation grid of the ground floor, hunt the nearest enemy and sidestep in fights.
+  - They fire in bursts through the normal fire path, aiming badly on purpose.
+  - They don't use stairs or ladders, or play objectives.
+- **Sky:** a photo of real clouds (Poly Haven, CC0) instead of the empty gradient, turned on each map so its sun matches the map's sun. The computed sky still lights the map.
+- **Flicker (z-fighting):** touching boxes can have faces in exactly the same plane. Each visible box is now drawn a few millimeters bigger or smaller than its neighbors, largest first, so no two touching boxes share a plane. This fixes every map at once; collision is unchanged.
+- **Invisible wall on Freight:** the "long concrete wall" kit piece is really a 6 m slab and a small part 14 m away, and its bounding box was solid. It now uses a fitted shape, and the kit build warns about any box-collision piece that's mostly empty (no others).
+
 ### 2026-11-04 · Proper street lamp; the team's own recordings (`feature/milestone-5`)
 - **Street lamp:** the old model was a wall-mounted light. It's replaced by "Stylized Street Light" by Willowboxart, a freestanding lamp with a glowing head, scaled to 5.5 m, with its pole and arm as collision. On Freight every lamp's arm reaches over its street.
 - **Recordings** in `public/assets/sounds/recordings/`:

@@ -9,6 +9,7 @@ import { MAP, MAPS, setMap } from './public/js/shared/map.js';
 import { TICK_RATE, PLAYER, MODES, WEAPONS, TEAMS, CLASSES, DEFAULT_CLASS, classOffered, GRENADES, THROW, loadoutFor, damageFor, spawnSide, siteAt, onSiteFloor } from './public/js/shared/config.js';
 import { stepGrenade } from './public/js/shared/grenade.js';
 import { raycastMap, getHitboxes } from './public/js/shared/collision.js';
+import { botThink } from './bots.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 // The Mac running the server: its player is the host, and only it can use the dev tools.
@@ -557,10 +558,36 @@ function handleHost(p, msg) {
   if (p.host) applyHost(msg);
 }
 
-const matchSettings = () => ({ mode: match.mode, map: match.map, even: match.evenTeams });
+const botList = () => [...players.values()].filter(p => p.isBot);
+const matchSettings = () => ({ mode: match.mode, map: match.map, even: match.evenTeams, bots: botList().length });
+
+// Bots for testing (see bots.js): a player with no connection, added to the smaller team.
+const MAX_BOTS = 12;
+function addBot() {
+  const bots = botList();
+  if (bots.length >= MAX_BOTS) return;
+  const team = teamCount('A') <= teamCount('B') ? 'A' : 'B';
+  let n = 1;
+  while (bots.some(b => b.name === `Bot ${n}`)) n++;
+  const p = { id: nextId++, ws: { readyState: 0 }, isBot: true, name: `Bot ${n}`, team, cls: DEFAULT_CLASS, host: false,
+    pos: [0, 0, 0], yaw: 0, pitch: 0, crouch: false, weapon: loadoutFor(DEFAULT_CLASS)[0],
+    hp: 0, alive: false, life: 0, kills: 0, deaths: 0, respawnAt: 0, protectedUntil: 0, history: [], lastFire: {} };
+  players.set(p.id, p);
+  broadcast({ t: 'notice', text: `${p.name} joined the ${TEAMS[team].name}` });
+  if (cfg().respawn ? match.phase === 'live' : match.phase === 'freeze') spawn(p);
+}
+function removeBot() {
+  const p = botList().pop();
+  if (!p) return;
+  dropCharge(p);
+  players.delete(p.id);
+  broadcast({ t: 'notice', text: `${p.name} left` });
+}
 
 // Host changes, from the in-game panel (WebSocket) or the menu (POST /api/host, this Mac only).
 function applyHost(msg) {
+  if (msg.bots === 1) addBot();
+  if (msg.bots === -1) removeBot();
   if (typeof msg.even === 'boolean' && msg.even !== match.evenTeams) {
     match.evenTeams = msg.even;
     broadcast({ t: 'notice', text: msg.even ? 'Teams must stay even' : 'Anyone can switch teams' });
@@ -680,6 +707,9 @@ function tick() {
       if (t >= match.phaseEnds) startMatch();
       break;
   }
+
+  const api = { players, now, live: () => match.phase === 'live', fire: handleFire };
+  for (const p of players.values()) if (p.isBot) botThink(p, api);
 
   const r = v => Math.round(v * 1000) / 1000;
   broadcast({

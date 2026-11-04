@@ -8,10 +8,31 @@ import { propMeshes } from './props.js';
 // Box geometry in world space with UVs in meters projected from world coordinates (each texture's
 // repeat sets its tile size), so textures keep the same density and line up across neighbouring boxes.
 // scale 0: the texture is stretched over each face instead.
-function boxGeometry(b, scale) {
-  const sx = b.max[0] - b.min[0], sy = b.max[1] - b.min[1], sz = b.max[2] - b.min[2];
+// Boxes that touch can have faces in exactly the same plane, and those flicker (z-fighting). Each
+// visible box is drawn a few millimeters bigger or smaller than its neighbors: largest first, each
+// takes the lowest step its neighbors don't use, so big walls stay put and thin glass stays on top.
+const GROW_STEP = 0.003;
+const SKY_SUN = 0.597;     // where the sun is in the sky photo: atan2(z, x) in radians
+function growSteps(boxes) {
+  const volume = b => (b.max[0] - b.min[0]) * (b.max[1] - b.min[1]) * (b.max[2] - b.min[2]);
+  const touch = (a, b) => [0, 1, 2].every(i => a.min[i] <= b.max[i] + 0.001 && b.min[i] <= a.max[i] + 0.001);
+  const order = [...boxes].sort((a, b) => volume(b) - volume(a)), steps = new Map();
+  for (const b of order) {
+    const used = new Set();
+    for (const [o, step] of steps) if (touch(b, o)) used.add(step);
+    let step = 0;
+    while (used.has(step)) step++;
+    steps.set(b, step);
+  }
+  return steps;
+}
+
+function boxGeometry(b, scale, grow = 0) {
+  // The ground's top stays exact (ground cover sits a few millimeters above it), and so does anything's foot.
+  const top = b.max[1] > 0.001 ? grow : 0, bottom = b.min[1] > 0.001 ? grow : 0;
+  const sx = b.max[0] - b.min[0] + 2 * grow, sy = b.max[1] - b.min[1] + top + bottom, sz = b.max[2] - b.min[2] + 2 * grow;
   const g = new THREE.BoxGeometry(sx, sy, sz);
-  g.translate((b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2);
+  g.translate((b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1] + top - bottom) / 2, (b.min[2] + b.max[2]) / 2);
   if (scale > 0) {
     const pos = g.attributes.position, nrm = g.attributes.normal, uv = g.attributes.uv;
     for (let i = 0; i < pos.count; i++) {
@@ -45,6 +66,14 @@ export function buildWorld(renderer, map) {
   u.mieCoefficient.value = 0.005;
   u.mieDirectionalG.value = 0.8;
   scene.add(sky);
+  // The sky you see: a photo of clouds (Poly Haven, CC0), if it's there; the computed sky stays
+  // behind it and still lights the map.
+  new THREE.TextureLoader().load('/assets/game/sky/sky.jpg', t => {
+    t.mapping = THREE.EquirectangularReflectionMapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    scene.background = t;
+    sky.visible = false;
+  });
 
   const sun = new THREE.DirectionalLight(0xfff1dc, 2.6);
   sun.castShadow = true;
@@ -90,11 +119,11 @@ export function showMap(scene, map) {
   };
 
   // Merge all boxes that share a surface (and are on the same side of a wall) into one mesh.
-  const groups = {};
+  const groups = {}, steps = growSteps(map.boxes.filter(b => !b.hidden));
   for (const b of [...map.boxes, ...(map.decals || [])]) {
     if (b.hidden) continue;
     const c = [0, 1, 2].map(i => (b.min[i] + b.max[i]) / 2);
-    (groups[b.mat + (inside(...c) ? '|in' : '')] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale));
+    (groups[b.mat + (inside(...c) ? '|in' : '')] ||= []).push(boxGeometry(b, w.surfaces[b.mat].scale, (steps.get(b) || 0) * GROW_STEP));
   }
   for (const [key, geos] of Object.entries(groups)) {
     const [mat, where] = key.split('|');
@@ -134,8 +163,11 @@ export function showMap(scene, map) {
   w.sky.material.uniforms.sunPosition.value.copy(sunDir);
   w.sun.position.copy(sunDir).multiplyScalar(80);
   const pmrem = new THREE.PMREMGenerator(w.renderer);
-  const envScene = new THREE.Scene();
-  envScene.add(w.sky.clone());
+  const envScene = new THREE.Scene(), envSky = w.sky.clone();
+  envSky.visible = true;
+  envScene.add(envSky);
+  // Turn the photo so its sun sits where this map's sun is, and shadows fall the right way.
+  scene.backgroundRotation.y = SKY_SUN - Math.PI / 2 + THREE.MathUtils.degToRad(map.sun.azimuth);
   scene.environment?.dispose();
   scene.environment = pmrem.fromScene(envScene, 0.04).texture;
   scene.environmentIntensity = map.ambient ?? 0.55;

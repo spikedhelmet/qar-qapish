@@ -85,7 +85,7 @@ export const KITS = {
   fort: {
     src: 'textures/kit_fortification_update.glb', unit: 1, tex: 1024,
     credit: '"Kit Fortification update" by TuszPro',
-    pieces: { wall: { node: 'Concreto2', collide: 'box' } },
+    pieces: { wall: { node: 'Concreto2', collide: 'shape' } },   // a 6 m slab and a small part 14 m off: its bounding box is mostly empty
   },
   // "Door Pack Asset + key pack (one material)" by BlackMonolith (authored in centimeters).
   doors: {

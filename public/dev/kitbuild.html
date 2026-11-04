@@ -136,6 +136,12 @@
           const r = v => +v.toFixed(3);
           const boxes = spec.collide === 'none' ? [] : spec.collide === 'shape' ? shapeBoxes(holder)
             : [[r(b.min.x), r(b.min.y), r(b.min.z), r(b.max.x), r(b.max.y), r(b.max.z)]];
+          // A bounding box that's mostly empty would be a solid invisible wall: say so.
+          if (spec.collide === 'box') {
+            const vol = bs => bs.reduce((a, [x0, y0, z0, x1, y1, z1]) => a + (x1 - x0) * (y1 - y0) * (z1 - z0), 0);
+            const fill = vol(shapeBoxes(holder)) / vol(boxes);
+            if (fill < 0.5 && Math.min(s.x, s.y, s.z) > 0.25) log(`  ! ${id}.${pid}: only ${Math.round(fill * 100)}% of its bounding box is solid; use collide: 'shape'`);
+          }
           pieces[pid] = { size: [r(s.x), r(s.y), r(s.z)], boxes };
           out.add(holder);
         }
