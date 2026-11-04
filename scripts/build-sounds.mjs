@@ -14,6 +14,7 @@ const KENNEY = `${SRC}/kenney-impact/kenney-impact-sounds-for-godot-main/addons/
 const MELEE = `${SRC}/combat-150/01_combat_melee`, BOOM = `${SRC}/combat-150/03_explosions_destruction`;
 // The team's own downloads (assets-src/sounds/new/, not fetched by script): "FREE FPS SFX Pack" and others.
 const NEW = `${SRC}/new`, FPS = `${NEW}/fps-pack`;
+const OWN = 'public/assets/sounds/recordings';   // the team's own recordings
 const nums = (n, f) => Array.from({ length: n }, (_, i) => f(String(i + 1).padStart(3, '0')));
 const five = (name) => [0, 1, 2, 3, 4].map(i => `${KENNEY}/${name}_00${i}.ogg`);
 // Up to three of the separate shots in a gun recording (they're seconds apart), as variants. The
@@ -65,6 +66,7 @@ const SOUNDS = {
   hit_wood: five('impact_wood_light').map(src => ({ src, len: 0.35, gain: -8 })),
   hit_metal: five('impact_metal_light').map(src => ({ src, len: 0.35, gain: -10 })),
   hit_body: five('impact_punch_medium').map(src => ({ src, len: 0.3, gain: -6 })),
+  death: [{ src: `${OWN}/death scream.aac`, at: 0.38, to: 1.64, fadeOut: 0.15, gain: -2 }],
   // Kill confirmation: a heavy, low body hit.
   kill: PUNCH.map(f => ({ src: `${MELEE}/${f}`, len: 0.5, gain: -3, lowpass: 2400 })),
 };
@@ -255,6 +257,14 @@ try {
     labelled++;
   }
 } catch { /* nothing labelled yet */ }
-console.log(`announcer: ${lines.length} lines to label, ${labelled} labelled lines written to ${VOICE}`);
+// The team's own recorded lines win over anything labelled above.
+for (const [id, spec] of Object.entries({
+  headshot: { src: `${OWN}/headshot.aac`, at: 0.42, to: 1.41, fadeOut: 0.08 },
+  double_kill: { src: `${OWN}/double kill.aac`, at: 0.15, to: 2.26, fadeOut: 0.08 },
+})) {
+  encode(cut(decode(spec.src), spec), join(VOICE, `${id}.m4a`));
+  labelled++;
+}
+console.log(`announcer: ${lines.length} lines to label, ${labelled} recorded lines written to ${VOICE}`);
 const bytes = readdirSync(OUT).reduce((n, f) => n + readFileSync(join(OUT, f)).length, 0);
 console.log(`${Object.keys(manifest).length} sounds, ${Object.values(manifest).flat().length} files, ${(bytes / 1e6).toFixed(1)} MB in ${OUT}`);

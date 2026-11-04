@@ -181,6 +181,9 @@
   "hit_body_3.m4a",
   "hit_body_4.m4a"
  ],
+ "death": [
+  "death_0.m4a"
+ ],
  "kill": [
   "kill_0.m4a",
   "kill_1.m4a",

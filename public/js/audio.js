@@ -184,6 +184,11 @@ export function playStep(pos, loud = 1, mat) {
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });
 }
 
+// Someone dying: at pos, or null for your own death.
+export function playDeath(pos) {
+  if (ctx) sample('death', output(pos), { gain: pos ? 1.4 : 0.8 });
+}
+
 // Landing from a jump or a drop: both feet on the surface, a little heavier than a step.
 export function playLand(pos, mat) {
   if (!ctx) return;

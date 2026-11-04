@@ -42,6 +42,13 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-04 · Proper street lamp; the team's own recordings (`feature/milestone-5`)
+- **Street lamp:** the old model was a wall-mounted light. It's replaced by "Stylized Street Light" by Willowboxart, a freestanding lamp with a glowing head, scaled to 5.5 m, with its pole and arm as collision. On Freight every lamp's arm reaches over its street.
+- **Recordings** in `public/assets/sounds/recordings/`:
+  - `headshot` and `double kill` are now the announcer's lines.
+  - `death scream` plays on every death: at full level for your own, from the victim's position for others.
+  - Headshot only plays when nothing outranks it: first blood, a multi-kill, a streak or a knife kill take its place.
+
 ### 2026-11-03 · Model kits for maps; Freight rebuilt with them; indoor lighting (`feature/milestone-5`)
 - **Why:** play-testing found boxes with tiling textures too small and fake, not a real place. The team downloaded 21 model kits from Sketchfab into `assets-src/textures/`.
 - **Kit pipeline:**

@@ -227,13 +227,18 @@ function onMessage(msg) {
       hud.killfeed(killer, victim, msg.w, msg.hs, msg.k === game.myId || msg.v === game.myId);
       if (msg.v === game.myId) {
         me.alive = false;
+        audio.playDeath(null);
         game.deathInfo = { killer, at: performance.now() };
         if (game.streak >= 5) announce('streak_ended');
         game.streak = 0;
       }
       announceKill(msg);
       const r = remotes.players.get(msg.v);
-      if (r?.state) effects.blood(new THREE.Vector3(r.state.x, r.state.y + 1.2, r.state.z), null);
+      if (r?.state) {
+        const at = new THREE.Vector3(r.state.x, r.state.y + 1.2, r.state.z);
+        effects.blood(at, null);
+        audio.playDeath(at);
+      }
       break;
     }
     case 'round':

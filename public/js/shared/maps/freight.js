@@ -152,8 +152,8 @@ barrels(13.6, -4.6, ['hazard', 'hazard', 'red']);
 barrels(-1.8, -11.6, ['oil', 'open']);
 
 // ---------------------------------------------------------------- west street
-piece('lamp', 'street', -13.2, -10, 1);
-piece('lamp', 'street', -13.2, 8, 1);
+piece('lamp', 'street', -13.2, -10, 3);
+piece('lamp', 'street', -13.2, 8, 3);
 barrels(-18.6, -12, ['rusty', 'crushed']);
 stack(-14, 4.5, 'large', 1, 1);
 stack(-16.6, -6.5, 'large', 2); stack(-16.6, -5.05, 'large', 1); stack(-17.4, -7.2, 'tall', 1);   // a stack of crates

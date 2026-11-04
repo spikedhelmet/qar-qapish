@@ -100,11 +100,12 @@ export const KITS = {
       greenFrame: { node: 'wood_frame_G', collide: 'none' },
     },
   },
-  // "Street light" by adventurer (authored in centimeters, lying down).
+  // "Stylized Street Light" by Willowboxart: a freestanding lamp, its arm along +z (about 3 m tall in
+  // the file, in centimeters; a street lamp should be taller).
   lamp: {
-    src: 'textures/street_light.glb', unit: 0.01, tex: 512,
-    credit: '"Street light" by adventurer',
-    pieces: { street: { node: 'Object_2', collide: 'shape', rotX: -72 } },   // the pole leans 18° in the file
+    src: 'textures/stylized_street_light.glb', unit: 0.01, tex: 1024,
+    credit: '"Stylized Street Light" by Willowboxart',
+    pieces: { street: { node: 'SM_Street_Light', collide: 'shape', height: 5.5 } },
   },
   // "Vent Collection" by XploRXR — CC-BY-NC 4.0 (non-commercial: fine for this private game).
   vents: {
