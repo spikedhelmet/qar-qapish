@@ -119,7 +119,7 @@ export class Remotes {
         r.stepDist += Math.hypot(st.x - prev.x, st.z - prev.z);
         if (r.stepDist > 2.3) {
           r.stepDist = 0;
-          playStep(new THREE.Vector3(st.x, st.y, st.z), 1.4, surfaceUnder(MAP, [st.x, st.y, st.z]));
+          playStep(new THREE.Vector3(st.x, st.y, st.z), 1, surfaceUnder(MAP, [st.x, st.y, st.z]));
         }
       }
     }

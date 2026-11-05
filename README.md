@@ -94,11 +94,11 @@ Class changes apply instantly during freeze time or right after spawning, otherw
   - **Old Town:** close quarters. Narrow alleys between solid buildings, and rooms you fight through: a hall onto a small courtyard with a well, two houses with inner rooms, and a chapel. Each team spawns in a walled yard at its end, with four ways out. Mirrored east/west.
   - **Villa** (laid out after the team's schematic): a walled estate around a one-storey house. Defenders start in the carport at the front, across the road from the lawn; attackers start in the back yard behind the bedroom. The house has a lounge, dining room and study across the front, and a back room and a bedroom behind. Its windows can be climbed through. Around it: a sunken pool you can jump into, a barn, a storehouse with a corridor and a front room, and a long walled alley along the west side, reached through the road gate. Not mirrored.
   - **Bastion** (after the team's screenshots): a walled courtyard with four stone towers. Each tower has a door, stairs up to a hatch, a ladder outside, and a roofed wooden lookout on top; an H-shaped walkway joins the four lookouts. Stone outposts on the north and south walls (climb the crates to their roofs), low walls, fences, pines, dry bushes, boulders and tall grass. Teams spawn inside the west and east gates, behind a barricade. Mirrored both ways.
-  - **Freight:** a warehouse assault in an industrial street block, 70 × 50 m, built from real model kits.
-    - Brick and concrete building fronts with window frames, glass and old doors; a covered arcade on concrete pillars; graffiti fences, crates, barrels, street lamps.
-    - Attackers start in a fenced lot; defenders in the loading yard behind the warehouse.
-    - The warehouse is dim inside, lit by hanging lamps. It has a wide opening each side, four doors, crate stacks, and a mezzanine with two offices reached by two stairs.
-    - Not mirrored.
+  - **Freight:** a riverside cold-storage depot at the edge of a town, 90 × 64 m.
+    - Attackers start in the town square: shop fronts, market stalls, a kiosk, a bus stop. Defenders start in the truck yard under the water tower.
+    - The cold store holds the middle: a loading dock on the rail spur, three cold rooms, a dim main floor, and offices on a mezzanine.
+    - Along the south are a canteen with flats above, a boiler house with its chimney, and a scrapyard. A pipe catwalk crosses the back alley from the store to the boiler house.
+    - One main route down the cannery lane, and flanks along the dock and the back alley. Not mirrored.
   - All but Villa and Freight are mirrored so neither team has an edge.
   - All seven have plant sites A and B for objective mode.
 - **Real models:** animated SWAT soldiers (blue Falcons, black Jackals) with walk/run/sprint/crouch/jump/death animations and their guns in hand; first-person guns with arms and hand-made animations (idle, walk, fire, reload) by Cransh, photo textures on the maps (ambientCG), and recorded CC0 sounds: real gunshots (a close and a far take for each gun), reloads, footsteps that change with the surface, landings, bullet impacts, knife and grenades. See [ASSETS.md](ASSETS.md) for how assets are added and built.

@@ -69,6 +69,16 @@ export function builder() {
     }
     props.push({ kind: 'grass', points });
   }
+  // A round thing (tank, chimney, boiler): radius r at the foot, rTop at the top, h tall, from height
+  // y. Solid unless `solid` is false (a box inside the circle).
+  function cyl(x, z, r, h, mat, { y = 0, rTop = r, solid = true } = {}) {
+    if (solid) boxes.push({ min: [x - r * 0.75, y, z - r * 0.75], max: [x + r * 0.75, y + h, z + r * 0.75], mat, hidden: true });
+    props.push({ kind: 'cyl', x, y, z, r, rTop, h, mat });
+  }
+  // A painted sign w × h meters centered at x, y, z, facing +z turned by rot quarter turns. Only drawn.
+  function sign(x, y, z, w, h, rot, text, { bg = '#27323a', fg = '#e8e0cc' } = {}) {
+    props.push({ kind: 'sign', x, y, z, w, h, rot, text, bg, fg });
+  }
   // A piece of a model kit (public/dev/kits.config.js; built by /dev/kitbuild.html) standing at x, z
   // (its center) on height y, turned by rot quarter turns (0 … 3, counter-clockwise seen from above).
   // Its collision boxes go into the map, turned with it; the model is drawn by public/js/props.js.
@@ -103,5 +113,5 @@ export function builder() {
   function spawnColumn(side, x, zs) {
     return zs.map(z => ({ x: side * x, z, yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2 }));
   }
-  return { boxes, decals, props, box, decal, tree, pine, bush, rock, roof, ladder, grass, piece, pieceSize, both, arena, spawnColumn };
+  return { boxes, decals, props, box, decal, tree, pine, bush, rock, roof, ladder, grass, piece, pieceSize, cyl, sign, both, arena, spawnColumn };
 }

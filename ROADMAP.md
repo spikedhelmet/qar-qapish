@@ -42,6 +42,21 @@ An original round-based team shooter for 4–6 friends on a home network. One Ma
 - Its files were being trimmed, filtered and re-leveled by the build. Now they're only converted to AAC (same length, level and stereo). The far-away muffling, footstep softening and volume are applied in the game as the sounds play.
 - Credited in the menu's Credits and in ASSETS.md.
 
+### 2026-11-05 · Freight rebuilt as a cold-storage depot; grenade, footsteps, pistol (`feature/milestone-5`)
+- **Freight, third version**, built from a schema approved first. A riverside cold-storage depot at the edge of a town, 90 × 64 m, so every area has a job:
+  - Town square (attackers): cobbles, shop fronts of different heights with signs, market stalls, a kiosk, a bus stop, trees. A graffiti fence with gaps divides it from the cannery lane.
+  - Rail spur: two tracks with sleepers on ballast, freight wagons you can climb or go around.
+  - Cold store: a raised loading dock under a canopy with two dock doors into three cold rooms, a dim main floor with crate rows, a mezzanine with two offices reached by two stairs.
+  - South row: a walk-through canteen with flats above, a side yard, a boiler house with boilers, a gantry and a 22 m chimney, and a scrapyard.
+  - Pipe catwalk: from the mezzanine over the back alley to the boiler-house gantry.
+  - Truck yard (defenders): a water tower, a weighbridge and hut, parked trailers.
+  - Routes: one main (lane to the west doors), flanks along the dock and the back alley.
+- **New props:** `cyl()` for round tanks, chimneys and boilers, `sign()` for painted signs. New surfaces: ballast, cobble, rust, dirt, striped awning. Lights can have a color, for the cold rooms' blue and the boiler's orange.
+- **Grenade:** frag radius 7 → 10 m.
+- **Footsteps:** other players' steps are quieter and fade out completely by 22 m.
+- **Pistol:** 0.22 → 0.17 s between shots.
+- Checks: map check on all maps; ten walked routes (every door, stair, the catwalk and both flanks); 60 random wandering runs. That caught barrels blocking the main fence gap and the chimney blocking the boiler house's east door.
+
 ### 2026-11-04 · Wider menu, bots, a real sky, no flicker (`feature/milestone-5`)
 - **Menu:** three columns (you, settings, host) instead of one long stack.
 - **Bots for testing** (`bots.js`): + and − in Host controls, up to 12.

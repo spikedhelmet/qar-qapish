@@ -105,7 +105,7 @@ export function loadoutFor(cls) {
 // fuse = seconds from the throw. Frag: damage falls off to 0 at `radius`, walls block it.
 // Smoke: cloud of `radius` meters for `duration` seconds. Flash: blinds anyone who can see it within `radius`.
 export const GRENADES = {
-  frag: { name: 'Frag', fuse: 2.2, damage: 110, radius: 7 },
+  frag: { name: 'Frag', fuse: 2.2, damage: 110, radius: 10 },
   smoke: { name: 'Smoke', fuse: 1.6, duration: 16, radius: 4.8 },
   flash: { name: 'Flashbang', fuse: 1.4, radius: 34, maxBlind: 5 },
 };
@@ -134,7 +134,7 @@ export const WEAPONS = {
   pistol: {
     name: 'Pistol', slot: 2, auto: false, pellets: 1,
     damage: 34, headMult: 4, legMult: 0.75, range: 150,
-    fireInterval: 0.22, mag: 12, reserve: 48, reload: 1.8, draw: 0.35,
+    fireInterval: 0.17, mag: 12, reserve: 48, reload: 1.8, draw: 0.35,
     spread: { base: 0.005, move: 0.025, air: 0.09, crouch: 0.7, perShot: 0.012, max: 0.05, recover: 0.12 },
     recoil: { pitch: 0.016, yaw: 0.005, recover: 8 },
     ads: { fov: 0.85, spread: 0.55, speed: 0.8, time: 0.12 },

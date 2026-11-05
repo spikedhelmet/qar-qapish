@@ -127,12 +127,48 @@ function ladderGeometry({ x, z, side, top, run, width }) {
   return mergeGeometries(parts.map(p => { p.deleteAttribute('uv'); return meterUVs(p); }));
 }
 
+// A painted sign: block letters on a board, weathered a little.
+function signMesh({ x, y, z, w, h, rot, text, bg, fg }, renderer) {
+  const H = 128, W = Math.round((H * w) / h), c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d'), rand = rng(text.length * 31 + W);
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `bold ${Math.round(H * 0.56)}px Helvetica, Arial, sans-serif`;
+  const fit = g.measureText(text).width, k = Math.min(1, (W * 0.9) / fit);
+  g.setTransform(k, 0, 0, 1, W / 2, H / 2);
+  g.fillText(text, 0, H * 0.03);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < 260; i++) { // wear
+    g.fillStyle = `rgba(20,16,12,${rand() * 0.16})`;
+    g.fillRect(rand() * W, rand() * H, 3 + rand() * 40, 1 + rand() * 7);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 }));
+  mesh.position.set(x, y, z);
+  mesh.rotation.y = rot * Math.PI / 2;
+  mesh.receiveShadow = true;
+  mesh.userData.own = true;
+  return mesh;
+}
+
 // All of a map's props as meshes, merged by material. surfaces: the map's box materials (world.js).
 export function propMeshes(props, surfaces, renderer, indoor = null) {
   const out = plantMeshes(props, renderer);
   if (props.some(p => p.kind === 'piece')) out.push(kitPieces(props, indoor));
   const rocks = [], roofs = [], undersides = [], ladders = [];
   for (const p of props) {
+    if (p.kind === 'cyl') {
+      const g = new THREE.CylinderGeometry(p.rTop, p.r, p.h, 18), uv = g.attributes.uv, around = Math.PI * (p.r + p.rTop);
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * around, uv.getY(i) * p.h); // meters, like the boxes
+      g.translate(p.x, p.y + p.h / 2, p.z);
+      const base = surfaces[p.mat].material, mesh = new THREE.Mesh(g, indoor?.inside(p.x, p.y + 1, p.z) ? indoor.material(base) : base);
+      mesh.castShadow = mesh.receiveShadow = true;
+      out.push(mesh);
+    }
+    if (p.kind === 'sign') out.push(signMesh(p, renderer));
     if (p.kind === 'rock') rocks.push(rockGeometry(p.seed, p.sx, p.sy, p.sz).translate(p.x, p.y || 0, p.z));
     if (p.kind === 'roof') {
       roofs.push(roofGeometry(p.w, p.d, p.h).translate(p.x, p.y, p.z));

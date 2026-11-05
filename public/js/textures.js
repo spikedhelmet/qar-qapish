@@ -128,6 +128,20 @@ function brick(size) {
 }
 
 // photo: plank image to build the crate from (a corner of it, about six planks); painted if absent.
+// Market awning: faded canvas stripes.
+function awning(size) {
+  const c = canvas(size), ctx = c.getContext('2d'), r = rng(137), n = 8;
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = i % 2 ? '#d9cfb8' : '#a2452f';
+    ctx.fillRect((i * size) / n, 0, size / n, size);
+  }
+  for (let i = 0; i < 900; i++) {
+    ctx.fillStyle = `rgba(40,30,20,${r() * 0.05})`;
+    ctx.fillRect(r() * size, r() * size, 4 + r() * 40, 2 + r() * 14);
+  }
+  return c;
+}
+
 function crate(size, photo) {
   const c = canvas(size), ctx = c.getContext('2d');
   if (!photo) {
@@ -266,6 +280,11 @@ export function createSurfaces(renderer) {
     water: make(lawn(size, [34, 92, 120], 89), 3, 0.08, 0.1), // painted only: glossy, deep pool water
     castle: make(slabs(size, [150, 152, 150], 4, 2, true, 97), 3, 0.92),
     corrugated: make(container(size, [118, 122, 126], 53), 2.6, 0.6, 0.4),
+    ballast: make(lawn(size, [122, 118, 108], 109), 2, 0.95),
+    cobble: make(slabs(size, [128, 122, 110], 8, 8, true, 113), 2.4, 0.9),
+    rust: make(lawn(size, [132, 78, 44], 127), 2.5, 0.8, 0.3),
+    dirt: make(lawn(size, [84, 66, 50], 131), 3, 0.95),
+    awning: make(awning(size), 0, 0.85),
     glass: make(lawn(size, [28, 36, 44], 107), 2, 0.08, 0.6),            // painted only: dark window glass
     shingles: make(slabs(size, [120, 108, 92], 10, 3, true, 101), 2, 0.9),
     rock: make(lawn(size, [118, 116, 110], 103), 3, 0.95),
@@ -293,6 +312,10 @@ const PHOTO = {
   hedge: { tex: 'hedge', tile: [1.5, 1.5], tint: [0.6, 0.66, 0.5], rough: 0.95, bump: 1.2 },                     // clipped box hedge (also the tree tops)
   floor: { tex: 'wood', tile: [2.5, 2.5], tint: [0.9, 0.8, 0.72], rough: 0.7 },             // the crate planks as floorboards
   castle: { tex: 'castle', tile: [3, 3], rough: 0.92 },                                       // big grey stone blocks
+  ballast: { tex: 'ballast', tile: [3, 3], tint: [0.8, 0.78, 0.74], rough: 0.95 },
+  cobble: { tex: 'cobble', tile: [2.6, 2.6], rough: 0.9 },
+  rust: { tex: 'rust', tile: [2.5, 2.5], tint: [0.8, 0.72, 0.66], rough: 0.85, metalness: 0.3 },
+  dirt: { tex: 'dirt', tile: [3, 3], rough: 0.95 },
   corrugated: { tex: 'steel', tile: [3, 3], tint: [0.56, 0.53, 0.49], metalness: 0.3 },     // warehouse cladding
   shingles: { tex: 'shingles', tile: [2, 2], rough: 0.9 },                                    // weathered wood roof shingles
   rock: { tex: 'rock', tile: [3, 3], rough: 0.95 },

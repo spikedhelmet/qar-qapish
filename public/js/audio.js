@@ -48,7 +48,7 @@ function sample(id, dest, { gain = 1, rate = 1, lowpass = 0, delay = 0 } = {}) {
 }
 
 // What a surface sounds like underfoot and when a bullet hits it.
-const SURFACE = { grass: 'grass', hedge: 'grass', floor: 'wood', crate: 'wood', bark: 'wood', ladder: 'wood', shingles: 'wood', container_red: 'metal', container_blue: 'metal', container_green: 'metal' };
+const SURFACE = { grass: 'grass', hedge: 'grass', dirt: 'grass', ballast: 'grass', rust: 'metal', corrugated: 'metal', floor: 'wood', crate: 'wood', bark: 'wood', ladder: 'wood', shingles: 'wood', container_red: 'metal', container_blue: 'metal', container_green: 'metal' };
 const surface = mat => SURFACE[mat] || 'concrete';
 
 const _lp = new THREE.Vector3();
@@ -104,13 +104,15 @@ export function updateListener(camera) {
 }
 
 // Output node: positioned in the world, or straight to the speakers for the local player.
-function output(pos) {
+// short: quiet sounds (footsteps), which fade out completely by 22 m instead of carrying across the map.
+function output(pos, short = false) {
   if (!pos) return master;
   const p = ctx.createPanner();
   p.panningModel = 'HRTF';
-  p.distanceModel = 'inverse';
-  p.refDistance = 4;
-  p.rolloffFactor = 1.1;
+  p.distanceModel = short ? 'linear' : 'inverse';
+  p.refDistance = short ? 2 : 4;
+  p.maxDistance = short ? 22 : 10000;
+  p.rolloffFactor = short ? 1 : 1.1;
   p.positionX.value = pos.x; p.positionY.value = pos.y; p.positionZ.value = pos.z;
   p.connect(master);
   return p;
@@ -178,7 +180,7 @@ export function playSwish(pos) {
 // mat: the surface underfoot (a map material), for the recorded steps.
 export function playStep(pos, loud = 1, mat) {
   if (!ctx) return;
-  const out = output(pos);
+  const out = output(pos, true);
   if (sample('step_' + surface(mat), out, { gain: 0.55 * loud, lowpass: 3500 })) return; // softened as it plays
   burst(out, { dur: 0.09, freq: 420, q: 1.2, gain: 0.25 * loud });
   thump(out, { freq: 70, dur: 0.07, gain: 0.25 * loud });

@@ -26,6 +26,10 @@ SURFACES=(
   "shingles WoodSiding011"
   "rock Rock030"
   "crate Planks012"
+  "ballast Gravel041"
+  "cobble PavingStones119"
+  "rust Rust009"
+  "dirt Ground048"
 )
 
 mkdir -p "$OUT"

@@ -137,8 +137,8 @@ export function showMap(scene, map) {
     mesh.userData.onLoad = () => w.refreshIndoor?.();     // kit pieces arrive later
     level.add(mesh);
   }
-  for (const [x, y, z, intensity, distance] of map.lights || []) {
-    const lamp = new THREE.PointLight(0xffe2b8, intensity, distance, 2);
+  for (const [x, y, z, intensity, distance, color = 0xffe2b8] of map.lights || []) {
+    const lamp = new THREE.PointLight(color, intensity, distance, 2);
     lamp.position.set(x, y, z);
     level.add(lamp);
   }
